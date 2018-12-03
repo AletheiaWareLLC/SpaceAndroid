@@ -1,0 +1,37 @@
+*.class
+*.iml
+.classpath
+.externalNativeBuild
+.gradle
+.metadata/
+.project
+.idea/assetWizardSettings.xml
+.idea/caches
+.idea/codeStyles
+.idea/dictionaries
+.idea/gradle.xml
+.idea/libraries
+.idea/misc.xml
+.idea/modules.xml
+.idea/runConfigurations.xml
+.idea/tasks.xml
+.idea/vcs.xml
+.idea/workspace.xml
+app/build
+build
+gradle.properties
+local.properties
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.aar
+*.apk
+*.dex
+*.ear
+*.jar
+*.war
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
