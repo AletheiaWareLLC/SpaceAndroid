@@ -18,23 +18,20 @@ package com.aletheiaware.space.android;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.util.Base64;
 import android.util.Log;
-import android.view.View;
 
 import com.aletheiaware.bc.BC;
 import com.aletheiaware.bc.utils.BCUtils;
-import com.aletheiaware.space.Space;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
-import com.stripe.android.model.Token;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -49,7 +46,6 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
-import java.sql.Ref;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -57,7 +53,6 @@ import java.util.Scanner;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.net.ssl.HttpsURLConnection;
 
 public class SpaceAndroidUtils {
 
@@ -93,15 +88,10 @@ public class SpaceAndroidUtils {
     }
 
     public static void register(KeyPair keys, String email, String paymentId) throws IOException {
-        System.out.println("PublicKey:" + keys.getPublic());
-        String publicKey = Base64.encodeToString(keys.getPublic().getEncoded(), Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE);
-        System.out.println("PublicKey:" + publicKey);
-        System.out.println("PublicKeyFormat:" + keys.getPublic().getFormat());
-        System.out.println("PaymentID:" + paymentId);
         String params = "stripeEmail=" + URLEncoder.encode(email, "utf-8")
                 + "&stripeToken=" + URLEncoder.encode(paymentId, "utf-8")
                 + "&publicKeyFormat=" + URLEncoder.encode(keys.getPublic().getFormat(), "utf-8")
-                + "&publicKey=" + publicKey;
+                + "&publicKey=" + Base64.encodeToString(keys.getPublic().getEncoded(), Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE);
         System.out.println("Params:" + params);
         byte[] data = params.getBytes(StandardCharsets.UTF_8);
         //TODO URL url = new URL("https://space.aletheiaware.com:443/register");
@@ -126,6 +116,73 @@ public class SpaceAndroidUtils {
         while (in.hasNextLine()) {
             System.out.println(in.nextLine());
         }
+    }
+
+    public static void exportKeyPair(File directory, String alias, String accessCode) throws IOException {
+        File privFile = new File(directory, alias + ".priv");
+        File pubFile = new File(directory, alias + ".pub");
+        byte[] privBytes = BCUtils.readFile(privFile);
+        byte[] pubBytes = BCUtils.readFile(pubFile);
+
+        String params = "accessCode=" + URLEncoder.encode(accessCode, "utf-8")
+                + "&privateKey=" + Base64.encodeToString(privBytes, Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE)
+                + "&publicKey=" + Base64.encodeToString(pubBytes, Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE);
+        System.out.println("Params:" + params);
+        byte[] data = params.getBytes(StandardCharsets.UTF_8);
+
+        //TODO URL url = new URL("https://space.aletheiaware.com:443/keys");
+        //TODO HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+        URL url = new URL("http://space.aletheiaware.com/keys");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setDoOutput(true);
+        conn.setInstanceFollowRedirects(false);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        conn.setRequestProperty("charset", "utf-8");
+        conn.setRequestProperty("Content-Length", Integer.toString(data.length));
+        conn.setUseCaches(false);
+        try (OutputStream o = conn.getOutputStream()) {
+            o.write(data);
+            o.flush();
+        }
+
+        int response = conn.getResponseCode();
+        System.out.println("Response: " + response);
+        Scanner in = new Scanner(conn.getInputStream());
+        while (in.hasNextLine()) {
+            System.out.println(in.nextLine());
+        }
+    }
+
+    public static void importKey(File directory, String accessCode) throws IOException {
+        //TODO URL url = new URL("https://space.aletheiaware.com:443/keys");
+        //TODO HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+        URL url = new URL("http://space.aletheiaware.com/keys?accessCode=" + URLEncoder.encode(accessCode, "utf-8"));
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setDoOutput(true);
+        conn.setInstanceFollowRedirects(false);
+        conn.setRequestMethod("GET");
+        conn.setUseCaches(false);
+
+        int response = conn.getResponseCode();
+        System.out.println("Response: " + response);
+        Scanner in = new Scanner(conn.getInputStream());
+        String privKeyLine = in.nextLine();
+        System.out.println(privKeyLine);
+        byte[] decodedPrivKey = Base64.decode(privKeyLine, Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE);
+
+        String pubKeyLine = in.nextLine();
+        System.out.println(pubKeyLine);
+        byte[] decodedPubKey = Base64.decode(pubKeyLine, Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE);
+
+        System.out.println("PrivateKey:" + decodedPrivKey);
+        System.out.println("PublicKey:" + decodedPubKey);
+
+        File privFile = new File(directory, "private.key");
+        File pubFile = new File(directory, "public.key");
+
+        BCUtils.writeFile(privFile, decodedPrivKey);
+        BCUtils.writeFile(pubFile, decodedPubKey);
     }
 
     public static String getCustomerId(InetAddress address, KeyPair keys) throws IOException, NoSuchAlgorithmException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException, NoSuchPaddingException, BadPaddingException {
@@ -160,7 +217,7 @@ public class SpaceAndroidUtils {
                             byte[] key = a.getSecretKey().toByteArray();
                             byte[] decryptedKey = BCUtils.decryptRSA(keys.getPrivate(), key);
                             byte[] decryptedPayload = BCUtils.decryptAES(decryptedKey, m.getPayload().toByteArray());
-                            adapter.onResult(bh, b, e, key, decryptedPayload);
+                            adapter.addFile(bh, b, e, key, decryptedPayload);
                             List<BC.Reference> refs = m.getReferenceList();
                             if (refs.size() == 2) {
                                 // Load preview
@@ -169,7 +226,7 @@ public class SpaceAndroidUtils {
                                     @Override
                                     public void run() {
                                         try {
-                                            adapter.onPreview(mh, SpaceUtils.getMessageData(address, keys, preview));
+                                            adapter.addPreview(mh, SpaceUtils.getMessageData(address, keys, preview));
                                         } catch (IOException e) {
                                             e.printStackTrace();
                                         } catch (NoSuchAlgorithmException e) {
@@ -235,6 +292,19 @@ public class SpaceAndroidUtils {
             // TODO create binary string
         }
         return null;
+    }
+
+    public static void showDeleteAccountDialog(final Activity parent, final DialogInterface.OnClickListener listener) {
+        parent.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog.Builder ab = new AlertDialog.Builder(parent);
+                ab.setTitle(R.string.delete_account);
+                ab.setMessage(R.string.delete_account_legalese);
+                ab.setPositiveButton(R.string.delete_account_action, listener);
+                ab.show();
+            }
+        });
     }
 
     public static void showErrorDialog(final Activity parent, final int resource, final Exception exception) {

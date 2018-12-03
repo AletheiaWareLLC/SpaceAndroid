@@ -17,13 +17,11 @@
 package com.aletheiaware.space.android;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.os.AsyncTask;
+import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -53,6 +51,7 @@ import javax.crypto.NoSuchPaddingException;
 
 public class CreateAccountActivity extends AppCompatActivity {
 
+    private Toolbar toolbar;
     private EditText emailText;
     private EditText passwordText;
     private EditText confirmPasswordText;
@@ -69,6 +68,11 @@ public class CreateAccountActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_account);
+
+        // Toolbar
+        toolbar = findViewById(R.id.create_account_toolbar);
+        setSupportActionBar(toolbar);
+
         emailText = findViewById(R.id.create_account_email_text);
         passwordText = findViewById(R.id.create_account_password_text);
         confirmPasswordText = findViewById(R.id.create_account_confirm_password_text);

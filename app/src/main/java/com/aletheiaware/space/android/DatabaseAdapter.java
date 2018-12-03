@@ -21,7 +21,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.ByteArrayInputStream;
-import java.util.AbstractSequentialList;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,7 +58,7 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
         return previewReferences.get(sorted.get(index));
     }
 
-    public void onResult(ByteString blockHash, BC.Block block, BC.BlockEntry entry, byte[] key, byte[] payload) {
+    public void addFile(ByteString blockHash, BC.Block block, BC.BlockEntry entry, byte[] key, byte[] payload) {
         try {
             ByteString messageHash = entry.getMessageHash();
             BC.Message message = entry.getMessage();
@@ -87,7 +86,7 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
         }
     }
 
-    public void onPreview(ByteString hash, byte[] preview) {
+    public void addPreview(ByteString hash, byte[] preview) {
         previews.put(hash, preview);
         activity.runOnUiThread(new Runnable() {
             public void run() {
@@ -95,10 +94,11 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
             }
         });
     }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        final RelativeLayout view = (RelativeLayout) inflater.inflate(R.layout.list_item, parent, false);
+        final RelativeLayout view = (RelativeLayout) inflater.inflate(R.layout.detail_list_item, parent, false);
         final ViewHolder holder = new ViewHolder(view);
         view.setOnClickListener(new View.OnClickListener() {
             @Override

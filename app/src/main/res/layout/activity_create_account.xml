@@ -151,6 +151,7 @@ limitations under the License.
                 android:id="@+id/create_account_privacy_policy_check"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:autoLink="web"
                 android:text="@string/create_account_privacy_policy_legalese"
                 android:textColor="?android:attr/textColorSecondary" />
 
@@ -158,6 +159,7 @@ limitations under the License.
                 android:id="@+id/create_account_terms_of_service_check"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:autoLink="web"
                 android:text="@string/create_account_terms_of_service_legalese"
                 android:textColor="?android:attr/textColorSecondary" />
         </LinearLayout>

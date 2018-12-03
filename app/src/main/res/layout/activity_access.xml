@@ -74,60 +74,17 @@ limitations under the License.
             android:orientation="vertical"
             android:padding="@dimen/activity_padding">
 
-            <LinearLayout
-                android:id="@+id/access_account"
+            <ListView
+                android:id="@+id/access_account_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:visibility="gone">
+                android:visibility="gone"/>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:labelFor="@id/access_password"
-                    android:text="@string/unlock_account_label"
-                    android:textColor="?android:attr/textColorPrimary"/>
-
-                <EditText
-                    android:id="@+id/access_password"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textPassword" />
-
-                <Button
-                    android:id="@+id/access_unlock_account"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/unlock_account_action"
-                    android:textColor="?android:attr/textColorPrimary"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/access_import"
+            <View
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:labelFor="@id/access_token"
-                    android:text="@string/import_account_label"
-                    android:textColor="?android:attr/textColorPrimary"/>
-
-                <EditText
-                    android:id="@+id/access_token"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text" />
-
-                <Button
-                    android:id="@+id/access_import_account"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/import_account_action"
-                    android:textColor="?android:attr/textColorPrimary"/>
-            </LinearLayout>
+                android:layout_height="1dp"
+                android:background="@color/accent" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -142,6 +99,25 @@ limitations under the License.
                 android:layout_height="wrap_content"
                 android:text="@string/create_account"
                 android:textColor="?android:attr/textColorPrimary" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/accent" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:labelFor="@id/access_import_account"
+                android:text="@string/import_account_label"
+                android:textColor="?android:attr/textColorPrimary"/>
+
+            <Button
+                android:id="@+id/access_import_account"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/import_account_action"
+                android:textColor="?android:attr/textColorPrimary"/>
 
         </LinearLayout>
 

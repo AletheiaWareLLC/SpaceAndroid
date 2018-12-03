@@ -22,14 +22,18 @@ limitations under the License.
 
     <string name="backdrop_description">Backdrop</string>
 
+    <string name="account_delete_action">Delete</string>
+    <string name="account_export_action">Export</string>
+    <string name="account_switch_action">Switch</string>
+
     <string name="create_account">Create Account</string>
     <string name="create_account_action">Create</string>
     <string name="create_account_label">Create a new account</string>
     <string name="create_account_email">Email</string>
     <string name="create_account_password">Password</string>
     <string name="create_account_confirm_password">Confirm Password</string>
-    <string name="create_account_privacy_policy_legalese">I understand, and agree to Aletheia Ware LLC\'s Privacy Policy (aletheiaware.com/privacy-policy)</string><!-- TODO make link clickable -->
-    <string name="create_account_terms_of_service_legalese">I understand, and agree to Aletheia Ware LLC\'s Terms of Service (aletheiaware.com/terms-of-service)</string><!-- TODO make link clickable -->
+    <string name="create_account_privacy_policy_legalese">I understand, and agree to Aletheia Ware LLC\'s Privacy Policy - https://aletheiaware.com/privacy-policy.html</string>
+    <string name="create_account_terms_of_service_legalese">I understand, and agree to Aletheia Ware LLC\'s Terms of Service - https://aletheiaware.com/terms-of-service.html</string>
     <string name="create_account_step_1">Step 1: Email</string>
     <string name="create_account_step_2">Step 2: Password</string>
     <string name="create_account_step_3">Step 3: Payment</string>
@@ -76,15 +80,23 @@ limitations under the License.
 
     <string name="unlock_account">Unlock Account</string>
     <string name="unlock_account_action">Unlock</string>
+    <string name="unlock_account_alias">Alias</string>
+    <string name="unlock_account_password">Password</string>
     <string name="unlock_account_label">Unlock your account by entering the password to decrypt your private key</string>
 
     <string name="import_account">Import Account</string>
     <string name="import_account_action">Import</string>
-    <string name="import_account_label">Import your account from another device by entering the access token to import your private key</string>
+    <string name="import_account_access_code">Access Code</string>
+    <string name="import_account_label">Import your account from another device by entering the Access Code to import your private key</string>
 
     <string name="export_account">Export Account</string>
     <string name="export_account_action">Export</string>
-    <string name="export_account_label">Export your account to another device by generating an access token and entering it the other device to export your private key</string>
+    <string name="export_account_access_code">Access Code</string>
+    <string name="export_account_label">Export your account to another device by generating an Access Code and entering it the other device to export your private key</string>
+
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_action">Delete</string>
+    <string name="delete_account_legalese">TODO Delete your account from this device.</string>
 
     <string name="upload_image">The image to be uploaded</string>
     <string name="upload">Upload</string>

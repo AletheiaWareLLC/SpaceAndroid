@@ -225,7 +225,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void account() {
-        // TODO
+        Intent i = new Intent(this, AccountActivity.class);
+        startActivityForResult(i, SpaceAndroidUtils.ACCOUNT_ACTIVITY);
     }
 
     private void refresh() {
