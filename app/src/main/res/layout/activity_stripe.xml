@@ -18,6 +18,7 @@ limitations under the License.
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="false"
     android:background="@android:color/background_dark">
 
     <android.support.design.widget.AppBarLayout
@@ -41,38 +42,45 @@ limitations under the License.
         android:id="@+id/stripe_nested_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fitsSystemWindows="false"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:padding="@dimen/activity_padding">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/view_margin"
+                    android:id="@+id/stripe_amount_label"
                     android:labelFor="@id/stripe_amount_text"
                     android:text="@string/payment_amount"
-                    android:textColor="?android:attr/textColorSecondary" />
+                    android:textColor="@color/textSecondary" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/view_margin"
                     android:id="@+id/stripe_amount_text"
                     android:text="@string/payment_amount"
-                    android:textColor="?android:attr/textColorPrimary" />
+                    android:textColor="@color/textPrimary" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/view_margin"
                     android:labelFor="@id/stripe_email_text"
                     android:text="@string/payment_email"
-                    android:textColor="?android:attr/textColorSecondary" />
+                    android:textColor="@color/textSecondary" />
 
                 <EditText
                     android:id="@+id/stripe_email_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/view_margin"
                     android:gravity="center"
                     android:imeOptions="actionDone"
                     android:inputType="textEmailAddress" />
@@ -80,19 +88,26 @@ limitations under the License.
                 <com.stripe.android.view.CardInputWidget
                     android:id="@+id/stripe_card_widget"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/view_margin" />
 
                 <CheckBox
                     android:id="@+id/stripe_privacy_policy_check"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/payment_privacy_policy_legalese" />
+                    android:layout_margin="@dimen/view_margin"
+                    android:autoLink="web"
+                    android:text="@string/legalese_privacy_policy"
+                    android:textColor="@color/textSecondary" />
 
                 <CheckBox
                     android:id="@+id/stripe_terms_of_service_check"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/payment_terms_of_service_legalese" />
+                    android:layout_margin="@dimen/view_margin"
+                    android:autoLink="web"
+                    android:text="@string/legalese_terms_of_service"
+                    android:textColor="@color/textSecondary" />
 
             </LinearLayout>
 

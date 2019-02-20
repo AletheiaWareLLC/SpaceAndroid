@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="mime_types">
+        <item>text/plain</item>
+    </string-array>
+</resources>

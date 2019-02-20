@@ -22,61 +22,77 @@ limitations under the License.
 
     <string name="backdrop_description">Backdrop</string>
 
+    <string name="access_new_label">New Account</string>
+    <string name="access_import_label">Import Account</string>
+    <string name="access_unlock_label">Unlock Account</string>
+
+    <string name="account_delete">Delete Account</string>
+    <string name="account_export">Export Account</string>
+    <string name="account_switch">Switch Accounts</string>
     <string name="account_delete_action">Delete</string>
     <string name="account_export_action">Export</string>
     <string name="account_switch_action">Switch</string>
 
-    <string name="create_account">Create Account</string>
-    <string name="create_account_action">Create</string>
-    <string name="create_account_label">Create a new account</string>
-    <string name="create_account_email">Email</string>
-    <string name="create_account_password">Password</string>
-    <string name="create_account_confirm_password">Confirm Password</string>
-    <string name="create_account_privacy_policy_legalese">I understand, and agree to Aletheia Ware LLC\'s Privacy Policy - https://aletheiaware.com/privacy-policy.html</string>
-    <string name="create_account_terms_of_service_legalese">I understand, and agree to Aletheia Ware LLC\'s Terms of Service - https://aletheiaware.com/terms-of-service.html</string>
-    <string name="create_account_step_1">Step 1: Email</string>
-    <string name="create_account_step_2">Step 2: Password</string>
-    <string name="create_account_step_3">Step 3: Payment</string>
-    <string name="create_account_step_4">Step 4: Legal</string>
+    <string name="new_account">New Account</string>
+    <string name="new_account_action">New</string>
+    <string name="new_account_label">Create a new account</string>
+    <string name="new_account_alias">Alias</string>
+    <string name="new_account_email">Email</string>
+    <string name="new_account_new_password">New Password</string>
+    <string name="new_account_confirm_password">Confirm Password</string>
+    <string name="new_account_step_1">Step 1: Alias</string>
+    <string name="new_account_step_2">Step 2: Email</string>
+    <string name="new_account_step_3">Step 3: Password</string>
+    <string name="new_account_step_4">Step 4: Payment</string>
+    <string name="new_account_step_5">Step 5: Legal</string>
 
     <string name="error_connection">Failed to connect to AletheiaWare.com</string>
-    <string name="error_create_account">Failed to create account</string>
+    <string name="error_new_account">Failed to create account</string>
     <string name="error_decoding_image">Failed to decode image</string>
+    <string name="error_decoding_video">Failed to decode video</string>
     <string name="error_downloading">Failed to download file</string>
-    <string name="error_downloading_preview">Failed to download file preview</string>
     <string name="error_export_key_pair">Failed to export keys</string>
     <string name="error_import_key_pair">Failed to import keys</string>
-    <string name="error_import_key_pair_invalid_access_token">Failed to import keys - invalid access token</string>
     <string name="error_listing">Failed to list files</string>
-    <string name="error_loading_extras">Failed to load extras from intent</string>
-    <string name="error_reading_image">Failed to read image</string>
+    <string name="error_loading_metadata">Failed to load metadata from intent</string>
+    <string name="error_loading_file">Failed to load file</string>
+    <string name="error_reading_uri">Failed to read URI</string>
     <string name="error_unlock_account">Failed to unlock account</string>
     <string name="error_uploading">Failed to upload file</string>
+    <string name="error_mining">Failed to mine file</string>
+    <string name="error_no_camera">No camera found on this device</string>
+
+    <string name="legalese_privacy_policy">I understand, and agree to Aletheia Ware LLC\'s Privacy Policy - https://aletheiaware.com/privacy-policy.html</string>
+    <string name="legalese_terms_of_service">I understand, and agree to Aletheia Ware LLC\'s Terms of Service - https://aletheiaware.com/terms-of-service.html</string>
 
     <string name="menu_account">Account</string>
     <string name="menu_refresh">Refresh</string>
     <string name="menu_config">Configs</string>
     <string name="more_info">More Info</string>
 
-    <string name="notification_channel_name">Upload</string>
-    <string name="notification_channel_description">Ongoing uploads</string>
+    <string name="notification_channel_name_local">Local Mining</string>
+    <string name="notification_channel_name_remote">Remote Mining</string>
+    <string name="notification_channel_description_local">Ongoing Local Mining</string>
+    <string name="notification_channel_description_remote">Ongoing Remote Mining</string>
 
     <string name="payment_action">Pay</string>
     <string name="payment_amount">Amount</string>
     <string name="payment_email">Email</string>
-    <string name="payment_privacy_policy_legalese">I understand, and agree to Aletheia Ware LLC\'s Privacy Policy (aletheiaware.com/privacy-policy)</string><!-- TODO make link clickable -->
-    <string name="payment_terms_of_service_legalese">I understand, and agree to Aletheia Ware LLC\'s Terms of Service (aletheiaware.com/terms-of-service)</string><!-- TODO make link clickable -->
 
-    <string name="title_activity_access">Account Access</string>
+    <string name="title_activity_access">Access</string>
     <string name="title_activity_account">Account</string>
-    <string name="title_activity_create_account">Create Account</string>
     <string name="title_activity_detail">Detail</string>
     <string name="title_activity_main">Space</string>
+    <string name="title_activity_new_account">New Account</string>
+    <string name="title_activity_new_record">New Record</string>
     <string name="title_activity_payment">Payment</string>
-    <string name="title_activity_upload">Upload</string>
-    <string name="title_dialog_create_account">Creating Account</string>
+    <string name="title_activity_upload">Upload File</string>
     <string name="title_dialog_error">Error</string>
-    <string name="title_notification_upload">Uploading</string>
+    <string name="title_dialog_select_input">Select Input</string>
+    <string name="title_dialog_select_miner">Select Miner</string>
+    <string name="title_dialog_new_account">Creating Account</string>
+    <string name="title_notification_local">Mining Locally</string>
+    <string name="title_notification_remote">Mining Remotely</string>
 
     <string name="unlock_account">Unlock Account</string>
     <string name="unlock_account_action">Unlock</string>
@@ -86,20 +102,24 @@ limitations under the License.
 
     <string name="import_account">Import Account</string>
     <string name="import_account_action">Import</string>
+    <string name="import_account_alias">Alias</string>
     <string name="import_account_access_code">Access Code</string>
-    <string name="import_account_label">Import your account from another device by entering the Access Code to import your private key</string>
+    <string name="import_account_label">Import your account from another device.</string>
 
     <string name="export_account">Export Account</string>
     <string name="export_account_action">Export</string>
+    <string name="export_account_alias">Alias</string>
     <string name="export_account_access_code">Access Code</string>
-    <string name="export_account_label">Export your account to another device by generating an Access Code and entering it the other device to export your private key</string>
+    <string name="export_account_label">Export your account to another device.</string>
 
     <string name="delete_account">Delete Account</string>
     <string name="delete_account_action">Delete</string>
     <string name="delete_account_legalese">TODO Delete your account from this device.</string>
 
-    <string name="upload_image">The image to be uploaded</string>
-    <string name="upload">Upload</string>
-    <string name="empty_list">No Files Found, Tap Upload Below</string>
+    <string name="upload_image">The image to upload</string>
+    <string name="upload_video">The video to upload</string>
+    <string name="empty_list">No records found - add your first using the button below</string>
 
+    <string name="space_logo">Space Logo</string>
+    <string name="aletheia_ware_llc_logo">Aletheia Ware LLC Logo</string>
 </resources>

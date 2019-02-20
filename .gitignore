@@ -19,8 +19,12 @@
 .idea/workspace.xml
 app/build
 build
+gradle
+gradlew
+gradlew.bat
 gradle.properties
 local.properties
+private
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/

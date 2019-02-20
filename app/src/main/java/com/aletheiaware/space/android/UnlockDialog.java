@@ -17,8 +17,8 @@
 package com.aletheiaware.space.android;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -40,7 +40,7 @@ public abstract class UnlockDialog {
         final EditText passwordText = unlockView.findViewById(R.id.unlock_password_text);
         passwordText.setFocusable(true);
         passwordText.setFocusableInTouchMode(true);
-        AlertDialog.Builder ab = new AlertDialog.Builder(activity);
+        AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
         ab.setTitle(R.string.unlock_account);
         ab.setView(unlockView);
         ab.setPositiveButton(R.string.unlock_account_action, new DialogInterface.OnClickListener() {
@@ -49,11 +49,11 @@ public abstract class UnlockDialog {
                 final int passwordLength = passwordText.length();
                 final char[] password = new char[passwordLength];
                 passwordText.getText().getChars(0, passwordLength, password, 0);
-                onUnlock(password);
+                onUnlock(dialog, password);
             }
         });
         final AlertDialog dialog = ab.show();
     }
 
-    public abstract void onUnlock(char[] password);
+    public abstract void onUnlock(DialogInterface dialog, char[] password);
 }

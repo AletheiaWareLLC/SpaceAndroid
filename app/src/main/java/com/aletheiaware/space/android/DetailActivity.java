@@ -19,32 +19,52 @@ package com.aletheiaware.space.android;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.MediaController;
 import android.widget.TextView;
+import android.widget.VideoView;
 
-import com.aletheiaware.bc.BC.Reference;
-import com.aletheiaware.space.Space.Meta;
+import com.aletheiaware.bc.BC;
+import com.aletheiaware.bc.BCProto;
+import com.aletheiaware.bc.BCProto.Reference;
+import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.space.SpaceProto.Meta;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.sql.Ref;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -53,12 +73,11 @@ import javax.crypto.NoSuchPaddingException;
 public class DetailActivity extends AppCompatActivity {
 
     private Meta meta;
-    private Reference file;
-    private Reference preview;
+    private List<Reference> references = new ArrayList<>();
 
-    private Toolbar toolbar;
-    private ImageView previewImageView;
-    private TextView previewTextView;
+    private ImageView contentImageView;
+    private VideoView contentVideoView;
+    private TextView contentTextView;
     private TextView nameTextView;
     private TextView typeTextView;
     private TextView sizeTextView;
@@ -73,14 +92,17 @@ public class DetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_detail);
 
         // Toolbar
-        toolbar = findViewById(R.id.detail_toolbar);
+        Toolbar toolbar = findViewById(R.id.detail_toolbar);
         setSupportActionBar(toolbar);
 
-        // Preview ImageView
-        previewImageView = findViewById(R.id.detail_image_view);
+        // Content VideoView
+        contentVideoView = findViewById(R.id.detail_video_view);
 
-        // Preview TextView
-        previewTextView = findViewById(R.id.detail_text_view);
+        // Content ImageView
+        contentImageView = findViewById(R.id.detail_image_view);
+
+        // Content TextView
+        contentTextView = findViewById(R.id.detail_text_view);
 
         // Name TextView
         nameTextView = findViewById(R.id.detail_name);
@@ -113,98 +135,211 @@ public class DetailActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         if (SpaceAndroidUtils.isInitialized()) {
-            long timestamp = 0L;
-            Meta.Builder mb = Meta.newBuilder();
-            Reference.Builder fb = Reference.newBuilder();
-            Reference.Builder pb = Reference.newBuilder();
-            boolean hasPreview = false;
-            Intent intent = getIntent();
+            byte[] metaRecordHash = null;
+            final Intent intent = getIntent();
             if (intent != null) {
-                timestamp = intent.getLongExtra(SpaceAndroidUtils.TIMESTAMP_EXTRA, 0L);
-                try {
-                    byte[] metaBytes = intent.getByteArrayExtra(SpaceAndroidUtils.META_EXTRA);
-                    if (metaBytes != null && metaBytes.length > 0) {
-                        mb.mergeFrom(metaBytes);
-                    }
-                    byte[] fileBytes = intent.getByteArrayExtra(SpaceAndroidUtils.FILE_REFERENCE_EXTRA);
-                    if (fileBytes != null && fileBytes.length > 0) {
-                        fb.mergeFrom(fileBytes);
-                    }
-                    byte[] previewBytes = intent.getByteArrayExtra(SpaceAndroidUtils.PREVIEW_REFERENCE_EXTRA);
-                    if (previewBytes != null && previewBytes.length > 0) {
-                        hasPreview = true;
-                        pb.mergeFrom(previewBytes);
-                    }
-                } catch (InvalidProtocolBufferException e) {
-                    SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_loading_extras, e);
-                    finish();
+                Bundle extras = intent.getExtras();
+                if (extras != null) {
+                    metaRecordHash = extras.getByteArray(SpaceAndroidUtils.META_RECORD_HASH_EXTRA);
                 }
             }
-            meta = mb.build();
-            file = fb.build();
-            preview = pb.build();
-
-            nameTextView.setText(meta.getName());
-            typeTextView.setText(meta.getType());
-            sizeTextView.setText(SpaceUtils.sizeToString(meta.getSize()));
-            timestampTextView.setText(SpaceUtils.timeToString(timestamp));
-
-            // TODO only show FAB when file data has been mined
-            fab.setVisibility(View.VISIBLE);
-
-            loadData(SpaceAndroidUtils.getKeys(), file, hasPreview);
+            if (metaRecordHash != null) {
+                loadData(SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), metaRecordHash);
+            }
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
             startActivityForResult(intent, SpaceAndroidUtils.ACCESS_ACTIVITY);
         }
     }
 
-    private void loadData(final KeyPair keys, final Reference file, final boolean hasPreview) {
+    private void loadData(final String alias, final KeyPair keys, final byte[] hash) {
         new Thread() {
             @Override
             public void run() {
                 try {
-                    InetAddress address = InetAddress.getByName("space.aletheiaware.com");
-                    byte[] data;
-                    if (hasPreview) {
-                        data = SpaceUtils.getMessageData(address, keys, preview);
-                    } else {
-                        data = SpaceUtils.getMessageData(address, keys, file);
-                    }
-                    if (data != null && data.length > 0) {
-                        if (meta.getType().startsWith("image/")) {
-                            Log.d(SpaceUtils.TAG, "Setting Image");
-                            final Bitmap image = BitmapFactory.decodeStream(new ByteArrayInputStream(data));
-                            if (image == null) {
-                                SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_decoding_image, null);
-                            } else {
-                                runOnUiThread(new Runnable() {
+                    final long[] timestamp = new long[1];
+                    InetAddress address = InetAddress.getByName(SpaceUtils.SPACE_HOST);
+                    BC.Channel metas = new BC.Channel(SpaceUtils.META_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
+                    BC.Channel files = new BC.Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
+                    final Meta.Builder metaBuilder = Meta.newBuilder();
+                    metas.read(alias, keys, hash, new BC.Channel.RecordCallback() {
+                        @Override
+                        public void onRecord(ByteString blockHash, BCProto.Block block, BCProto.BlockEntry blockEntry, byte[] key, byte[] payload) {
+                            timestamp[0] = blockEntry.getRecord().getTimestamp();
+                            references.addAll(blockEntry.getRecord().getReferenceList());
+                            try {
+                                metaBuilder.mergeFrom(payload);
+                            } catch (InvalidProtocolBufferException e) {
+                                SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_loading_metadata, e);
+                                finish();
+                            }
+                        }
+                    });
+                    meta = metaBuilder.build();
+                    // TODO if meta has preview, show it
+                    String type = meta.getType();
+                    if (SpaceUtils.isVideo(type)) {
+                        Log.d(SpaceUtils.TAG, "Setting Video");
+                        File f = new File(getCacheDir(), new String(BCUtils.encodeBase64URL(hash)));
+                        Log.d(SpaceUtils.TAG, f.getAbsolutePath());
+                        final Uri uri = FileProvider.getUriForFile(DetailActivity.this, SpaceAndroidUtils.FILE_PROVIDER_PACKAGE, f);
+                        if (!f.exists()) {
+                            writeToUri(uri, references);
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                contentVideoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                                     @Override
-                                    public void run() {
-                                        previewImageView.setImageBitmap(image);
-                                        previewImageView.setVisibility(View.VISIBLE);
+                                    public void onCompletion(MediaPlayer mp) {
+                                        Log.d(SpaceUtils.TAG, "onCompletion");
                                     }
                                 });
+                                contentVideoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                                    @Override
+                                    public boolean onError(MediaPlayer mp, int what, int extra) {
+                                        Log.d(SpaceUtils.TAG, "onError " + what + " " + extra);
+                                        return true;
+                                    }
+                                });
+                                contentVideoView.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+                                    @Override
+                                    public boolean onInfo(MediaPlayer mp, int what, int extra) {
+                                        Log.d(SpaceUtils.TAG, "onInfo " + what + " " + extra);
+                                        return true;
+                                    }
+                                });
+                                contentVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                                    @Override
+                                    public void onPrepared(MediaPlayer mp) {
+                                        Log.d(SpaceUtils.TAG, "onPrepared");
+                                    }
+                                });
+                                contentVideoView.setVisibility(View.VISIBLE);
+                                contentVideoView.requestFocus();
+                                final MediaController controller = new MediaController(DetailActivity.this);
+                                controller.setMediaPlayer(contentVideoView);
+                                controller.setAnchorView(contentVideoView);
+                                contentVideoView.setMediaController(controller);
+                                contentVideoView.setVideoURI(uri);
+                                contentVideoView.setZOrderOnTop(true);
+                                contentVideoView.start();
+                                contentVideoView.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        if (controller.isShowing()) {
+                                            controller.hide();
+                                        } else {
+                                            controller.show();
+                                        }
+                                    }
+                                });
+                                contentVideoView.requestLayout();
+                                controller.show(3 * 1000);// Show for 3 seconds in ms
                             }
-                        } else if (meta.getType().startsWith("text/")) {
-                            Log.d(SpaceUtils.TAG, "Setting Text");
-                            final String text = new String(data);
-                            runOnUiThread(new Runnable() {
+                        });
+                    } else if (SpaceUtils.isImage(type)) {
+                        Log.d(SpaceUtils.TAG, "Setting Image");
+                        File f = new File(getCacheDir(), new String(BCUtils.encodeBase64URL(hash)));
+                        Log.d(SpaceUtils.TAG, f.getAbsolutePath());
+                        final Uri uri = FileProvider.getUriForFile(DetailActivity.this, SpaceAndroidUtils.FILE_PROVIDER_PACKAGE, f);
+                        if (!f.exists()) {
+                            writeToUri(uri, references);
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                contentImageView.setVisibility(View.VISIBLE);
+                                contentImageView.setImageURI(uri);
+                                contentImageView.requestLayout();
+                            }
+                        });
+                    } else if (SpaceUtils.isText(type)) {
+                        Log.d(SpaceUtils.TAG, "Setting Text");
+                        final StringBuilder sb = new StringBuilder();
+                        for (Reference r : references) {
+                            files.read(alias, keys, r.getRecordHash().toByteArray(), new BC.Channel.RecordCallback() {
                                 @Override
-                                public void run() {
-                                    previewTextView.setText(text);
-                                    previewTextView.setVisibility(View.VISIBLE);
+                                public void onRecord(ByteString blockHash, BCProto.Block block, BCProto.BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                    if (payload != null && payload.length > 0) {
+                                        sb.append(new String(payload));
+                                    }
                                 }
                             });
                         }
+                        final String text = sb.toString();
+                        Log.d(SpaceUtils.TAG, "Text: " + text);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                contentTextView.setText(text);
+                                contentTextView.setVisibility(View.VISIBLE);
+                                contentTextView.requestLayout();
+                            }
+                        });
                     }
-                } catch (SocketException | SocketTimeoutException e) {
-                    SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_connection, e);
-                } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_downloading_preview, e);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (meta != null) {
+                                nameTextView.setText(meta.getName());
+                                typeTextView.setText(meta.getType());
+                                sizeTextView.setText(BCUtils.sizeToString(meta.getSize()));
+                            }
+                            timestampTextView.setText(BCUtils.timeToString(timestamp[0]));
+
+                            // TODO only show FAB when file data has been mined
+                            fab.setVisibility(View.VISIBLE);
+                        }
+                    });
+                } catch (UnknownHostException e) {
+                    SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_loading_file, e);
+                    finish();
+                } catch (IOException e) {
+                    SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_loading_file, e);
+                    finish();
                 }
             }
         }.start();
+    }
+
+    private void writeToUri(Uri uri, List<Reference> references) {
+        OutputStream output = null;
+        try {
+            String alias = SpaceAndroidUtils.getAlias();
+            KeyPair keys = SpaceAndroidUtils.getKeyPair();
+            InetAddress address = InetAddress.getByName(SpaceUtils.SPACE_HOST);
+            BC.Channel files = new BC.Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
+            output = getContentResolver().openOutputStream(uri);
+
+            if (output != null) {
+                final OutputStream out = output;
+                for (Reference r : references) {
+                    files.read(alias, keys, r.getRecordHash().toByteArray(), new BC.Channel.RecordCallback() {
+                        @Override
+                        public void onRecord(ByteString blockHash, BCProto.Block block, BCProto.BlockEntry blockEntry, byte[] key, byte[] payload) {
+                            if (payload != null && payload.length > 0) {
+                                try {
+                                    out.write(payload);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        } catch (IOException e) {
+            SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_downloading, e);
+        } finally {
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    /* Ignored */
+                }
+            }
+        }
     }
 
     @Override
@@ -230,26 +365,7 @@ public class DetailActivity extends AppCompatActivity {
                             new Thread() {
                                 @Override
                                 public void run() {
-                                    OutputStream output = null;
-                                    try {
-                                        InetAddress address = InetAddress.getByName("space.aletheiaware.com");
-                                        output = getContentResolver().openOutputStream(uri);
-
-                                        byte[] data = SpaceUtils.getMessageData(address, SpaceAndroidUtils.getKeys(), file);
-                                        if (output != null && data != null && data.length > 0) {
-                                            output.write(data);
-                                        }
-                                    } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                                        SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_downloading, e);
-                                    } finally {
-                                        if (output != null) {
-                                            try {
-                                                output.close();
-                                            } catch (IOException e) {
-                                                /* Ignored */
-                                            }
-                                        }
-                                    }
+                                    writeToUri(uri, references);
                                 }
                             }.start();
                         }

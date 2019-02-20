@@ -13,114 +13,91 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tool="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tool="http://schemas.android.com/tools"
     android:background="@android:color/background_dark"
-    android:fitsSystemWindows="true"
+    android:fitsSystemWindows="false"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/activity_padding"
     tool:context=".AccessActivity">
 
-    <android.support.design.widget.AppBarLayout
-        android:id="@+id/access_appbar"
+    <android.support.v7.widget.AppCompatImageButton
+        android:id="@+id/space_logo"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:background="@color/primary"
-        android:fitsSystemWindows="true"
-        android:theme="@style/AppBarOverlay">
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/space_logo"
+        android:padding="5dp"
+        android:tint="@color/textPrimary"
+        app:srcCompat="@drawable/space_logo" />
 
-        <android.support.design.widget.CollapsingToolbarLayout
-            android:id="@+id/access_collapsing_toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:fitsSystemWindows="true"
-            app:contentScrim="@color/primary"
-            app:expandedTitleMarginEnd="64dp"
-            app:expandedTitleMarginStart="48dp"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed">
-
-            <ImageView
-                android:id="@+id/access_backdrop"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:contentDescription="@string/backdrop_description"
-                android:fitsSystemWindows="true"
-                android:scaleType="centerCrop"
-                app:srcCompat="@drawable/cloud"
-                app:layout_collapseMode="parallax" />
-
-            <android.support.v7.widget.Toolbar
-                android:id="@+id/access_toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:theme="@style/ActionBarTheme"
-                app:layout_collapseMode="pin"
-                app:popupTheme="@style/PopupOverlay" />
-
-        </android.support.design.widget.CollapsingToolbarLayout>
-
-    </android.support.design.widget.AppBarLayout>
-
-    <android.support.v4.widget.NestedScrollView
-        android:id="@+id/access_nested_scroll_view"
+    <View
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:layout_height="1dp"
+        android:layout_margin="@dimen/view_margin"
+        android:background="@color/accent" />
 
-        <LinearLayout
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/access_unlock_account_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
+        android:orientation="vertical"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/access_unlock_account_separator"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_margin="@dimen/view_margin"
+        android:background="@color/accent"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/activity_padding">
+
+        <Button
+            android:id="@+id/access_new_account"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="@dimen/activity_padding">
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:text="@string/new_account"
+            android:textColor="@color/textPrimary" />
 
-            <ListView
-                android:id="@+id/access_account_list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"/>
+        <Button
+            android:id="@+id/access_import_account"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:text="@string/import_account"
+            android:textColor="@color/textPrimary" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/accent" />
+    </LinearLayout>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:labelFor="@id/access_create_account"
-                android:text="@string/create_account_label"
-                android:textColor="?android:attr/textColorPrimary"/>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_margin="@dimen/view_margin"
+        android:background="@color/accent" />
 
-            <Button
-                android:id="@+id/access_create_account"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/create_account"
-                android:textColor="?android:attr/textColorPrimary" />
+    <android.support.v7.widget.AppCompatImageButton
+        android:id="@+id/aletheia_ware_llc_logo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/aletheia_ware_llc_logo"
+        android:padding="5dp"
+        android:tint="@color/textPrimary"
+        app:srcCompat="@drawable/aletheia_ware_llc_logo" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/accent" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:labelFor="@id/access_import_account"
-                android:text="@string/import_account_label"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-            <Button
-                android:id="@+id/access_import_account"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/import_account_action"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-        </LinearLayout>
-
-    </android.support.v4.widget.NestedScrollView>
-
-</android.support.design.widget.CoordinatorLayout>
+</LinearLayout>

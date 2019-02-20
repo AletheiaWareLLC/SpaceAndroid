@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="miners">
+        <item>This device</item>
+        <item>Aletheia Ware Remote Mining Service</item>
+    </string-array>
+</resources>

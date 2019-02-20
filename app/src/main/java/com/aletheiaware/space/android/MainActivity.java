@@ -17,9 +17,12 @@
 package com.aletheiaware.space.android;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -30,72 +33,76 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.aletheiaware.bc.BC.Reference;
-import com.aletheiaware.space.Space.Meta;
+import com.aletheiaware.bc.BC;
+import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.space.SpaceProto.Meta;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
+import com.google.protobuf.ByteString;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-
 public class MainActivity extends AppCompatActivity {
 
     private DatabaseAdapter adapter;
-
-    private RecyclerView recyclerView;
-    private FloatingActionButton fab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         // Toolbar
         Toolbar toolbar = findViewById(R.id.main_toolbar);
+        toolbar.setTitle("");
         setSupportActionBar(toolbar);
         //account
         //refresh
 
+        // CollapsingToolbar
+        final CollapsingToolbarLayout collapsingToolbar = findViewById(R.id.main_collapsing_toolbar);
+        collapsingToolbar.setTitle("");
+        final CharSequence title = getString(R.string.title_activity_main);
         // Appbar
         AppBarLayout appbar = findViewById(R.id.main_appbar);
         appbar.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
+            boolean showing = false;
             @Override
-            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
-                // TODO
+            public void onOffsetChanged(AppBarLayout appBar, int verticalOffset) {
+                if (Math.abs(appBar.getTotalScrollRange() + verticalOffset) < 10) {
+                    collapsingToolbar.setTitle(title);
+                    showing = true;
+                } else if (showing) {
+                    collapsingToolbar.setTitle("");
+                    showing = false;
+                }
             }
         });
 
         // RecyclerView
-        recyclerView = findViewById(R.id.main_recycler_view);
+        RecyclerView recyclerView = findViewById(R.id.main_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // FloatingActionButton
-        fab = findViewById(R.id.main_fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        // Add FloatingActionButton
+        FloatingActionButton addFab = findViewById(R.id.main_add_fab);
+        addFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                upload();
+                SpaceAndroidUtils.add(MainActivity.this);
             }
         });
 
         // Adapter
         adapter = new DatabaseAdapter(this) {
             @Override
-            public void onFileSelected(long timestamp, Meta meta, Reference file, Reference preview) {
+            public void onSelection(ByteString metaRecordHash, Meta meta) {
                 Intent i = new Intent(MainActivity.this, DetailActivity.class);
-                i.putExtra(SpaceAndroidUtils.TIMESTAMP_EXTRA, timestamp);
+                i.putExtra(SpaceAndroidUtils.META_RECORD_HASH_EXTRA, metaRecordHash.toByteArray());
                 i.putExtra(SpaceAndroidUtils.META_EXTRA, meta.toByteArray());
-                i.putExtra(SpaceAndroidUtils.FILE_REFERENCE_EXTRA, file.toByteArray());
-                if (preview != null) {
-                    i.putExtra(SpaceAndroidUtils.PREVIEW_REFERENCE_EXTRA, preview.toByteArray());
-                }
                 startActivityForResult(i, SpaceAndroidUtils.DETAIL_ACTIVITY);
             }
         };
@@ -120,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         switch (requestCode) {
             case SpaceAndroidUtils.ACCESS_ACTIVITY:
                 switch (resultCode) {
@@ -148,14 +155,15 @@ public class MainActivity extends AppCompatActivity {
             case SpaceAndroidUtils.DETAIL_ACTIVITY:
                 break;
             case SpaceAndroidUtils.OPEN_ACTIVITY:
+                Log.d(SpaceUtils.TAG, "OPEN_ACTIVITY");
                 switch (resultCode) {
                     case RESULT_OK:
-                        if (data != null) {
-                            Log.i(SpaceUtils.TAG, "Intent: " + data);
-                            Uri uri = data.getData();
-                            Log.i(SpaceUtils.TAG, "Uri: " + uri);
-                            String type = data.getType();
-                            Log.i(SpaceUtils.TAG, "Type: " + type);
+                        Log.d(SpaceUtils.TAG, "Intent:" + intent);
+                        if (intent != null) {
+                            Uri uri = intent.getData();
+                            Log.d(SpaceUtils.TAG, "URI:" + uri);
+                            String type = intent.getType();
+                            Log.d(SpaceUtils.TAG, "Type:" + type);
                             Intent i = new Intent(this, UploadActivity.class);
                             i.setAction(Intent.ACTION_SEND);
                             i.setDataAndType(uri, type);
@@ -171,19 +179,21 @@ public class MainActivity extends AppCompatActivity {
             case SpaceAndroidUtils.PAYMENT_ACTIVITY:
                 switch (resultCode) {
                     case RESULT_OK:
-                        final String email = data.getStringExtra(SpaceAndroidUtils.EMAIL_EXTRA);
-                        Log.d(SpaceUtils.TAG, "Email: " + email);
-                        final String paymentId = data.getStringExtra(SpaceAndroidUtils.STRIPE_TOKEN_EXTRA);
-                        Log.d(SpaceUtils.TAG, "PaymentId: " + paymentId);
+                        final String alias = SpaceAndroidUtils.getAlias();
+                        final String email = intent.getStringExtra(SpaceAndroidUtils.EMAIL_EXTRA);
+                        final String paymentId = intent.getStringExtra(SpaceAndroidUtils.STRIPE_TOKEN_EXTRA);
                         new Thread() {
                             @Override
                             public void run() {
                                 try {
-                                    InetAddress address = InetAddress.getByName("space.aletheiaware.com");
-                                    Log.d(SpaceUtils.TAG, "Address: " + address);
-                                    KeyPair keys = SpaceAndroidUtils.getKeys();
-                                    SpaceAndroidUtils.register(keys, email, paymentId);
+                                    SpaceUtils.subscribe(alias, email, paymentId);
                                 } catch (IOException e) {
+                                    e.printStackTrace();
+                                } catch (NoSuchAlgorithmException e) {
+                                    e.printStackTrace();
+                                } catch (SignatureException e) {
+                                    e.printStackTrace();
+                                } catch (InvalidKeyException e) {
                                     e.printStackTrace();
                                 }
                             }
@@ -194,10 +204,53 @@ public class MainActivity extends AppCompatActivity {
                     default:
                         break;
                 }
+            case SpaceAndroidUtils.NEW_RECORD_ACTIVITY:
+                break;
             case SpaceAndroidUtils.UPLOAD_ACTIVITY:
                 break;
+            case SpaceAndroidUtils.IMAGE_CAPTURE_ACTIVITY:
+                Log.d(SpaceUtils.TAG, "IMAGE_CAPTURE_ACTIVITY");
+                // fallthrough
+            case SpaceAndroidUtils.VIDEO_CAPTURE_ACTIVITY:
+                Log.d(SpaceUtils.TAG, "VIDEO_CAPTURE_ACTIVITY");
+                switch (resultCode) {
+                    case RESULT_OK:
+                        Log.d(SpaceUtils.TAG, "Intent:" + intent);
+                        Uri uri = null;
+                        String type = null;
+                        Bitmap preview = null;
+                        if (intent != null) {
+                            uri = intent.getData();
+                            type = intent.getType();
+                            Bundle extras = intent.getExtras();
+                            if (extras != null) {
+                                preview = (Bitmap) extras.get(SpaceAndroidUtils.DATA_EXTRA);
+                            }
+                        }
+                        if (uri == null) {
+                            uri = SpaceAndroidUtils.getTempURI();
+                        }
+                        if (type == null) {
+                            type = SpaceAndroidUtils.getTempURIType();
+                        }
+                        Log.d(SpaceUtils.TAG, "URI:" + uri);
+                        Log.d(SpaceUtils.TAG, "Type:" + type);
+                        Intent i = new Intent(this, UploadActivity.class);
+                        i.setAction(Intent.ACTION_SEND);
+                        if (preview != null) {
+                            i.putExtra(SpaceAndroidUtils.DATA_EXTRA, preview);
+                        }
+                        i.setDataAndType(uri, type);
+                        startActivityForResult(i, SpaceAndroidUtils.UPLOAD_ACTIVITY);
+                        break;
+                    case RESULT_CANCELED:
+                        break;
+                    default:
+                        break;
+                }
+                break;
             default:
-                super.onActivityResult(requestCode, resultCode, data);
+                super.onActivityResult(requestCode, resultCode, intent);
                 break;
         }
     }
@@ -234,33 +287,16 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    InetAddress address = InetAddress.getByName("space.aletheiaware.com");
-                    Log.d(SpaceUtils.TAG, "Address: " + address);
-                    KeyPair keys = SpaceAndroidUtils.getKeys();
-                    SpaceAndroidUtils.getFileList(address, keys, adapter);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                } catch (NoSuchPaddingException e) {
-                    e.printStackTrace();
-                } catch (InvalidKeyException e) {
-                    e.printStackTrace();
-                } catch (InvalidAlgorithmParameterException e) {
-                    e.printStackTrace();
-                } catch (IllegalBlockSizeException e) {
-                    e.printStackTrace();
-                } catch (BadPaddingException e) {
+                    InetAddress address = InetAddress.getByName(SpaceUtils.SPACE_HOST);
+                    String alias = SpaceAndroidUtils.getAlias();
+                    BC.Channel metas = new BC.Channel(SpaceUtils.META_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
+                    metas.sync();
+                    KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                    metas.read(alias, keys, null, adapter);
+                } catch (IOException | NoSuchAlgorithmException e) {
                     e.printStackTrace();
                 }
             }
         }.start();
-    }
-
-    public void upload() {
-        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        i.addCategory(Intent.CATEGORY_OPENABLE);
-        i.setType("*/*");
-        startActivityForResult(i, SpaceAndroidUtils.OPEN_ACTIVITY);
     }
 }

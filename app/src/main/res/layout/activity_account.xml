@@ -13,67 +13,51 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<android.support.design.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/background_dark">
+    android:background="@android:color/background_dark"
+    android:fitsSystemWindows="false"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/activity_padding">
 
-    <android.support.design.widget.AppBarLayout
-        android:id="@+id/account_appbar"
+    <TextView
+        android:id="@+id/account_alias_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/primary"
-        android:theme="@style/AppBarOverlay">
+        android:layout_margin="@dimen/view_margin" />
 
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/account_toolbar"
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/activity_padding">
+
+        <Button
+            android:id="@+id/account_switch_button"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:theme="@style/ActionBarTheme"
-            app:layout_collapseMode="pin"
-            app:popupTheme="@style/PopupOverlay" />
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:text="@string/account_switch" />
 
-    </android.support.design.widget.AppBarLayout>
-
-    <android.support.v4.widget.NestedScrollView
-        android:id="@+id/account_nested_scroll_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <LinearLayout
+        <Button
+            android:id="@+id/account_export_button"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="@dimen/activity_padding">
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:text="@string/account_export" />
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/account_alias_text"/>
+        <Button
+            android:id="@+id/account_delete_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:text="@string/account_delete"
+            android:textColor="@color/warning"/>
 
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/account_switch_button"
-                android:text="@string/account_switch_action"/>
+    </LinearLayout>
 
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/account_export_button"
-                android:text="@string/account_export_action"/>
-
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/account_delete_button"
-                android:text="@string/account_delete_action"/>
-
-        </LinearLayout>
-
-    </android.support.v4.widget.NestedScrollView>
-
-</android.support.design.widget.CoordinatorLayout>
+</LinearLayout>

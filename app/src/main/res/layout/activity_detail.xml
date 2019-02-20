@@ -13,12 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<android.support.design.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/background_dark">
+    android:background="@android:color/background_dark"
+    android:fitsSystemWindows="false"
+    android:gravity="center">
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/detail_appbar"
@@ -41,18 +42,28 @@ limitations under the License.
         android:id="@+id/detail_nested_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fitsSystemWindows="false"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:gravity="center"
             android:orientation="vertical"
             android:padding="@dimen/activity_padding">
+
+            <VideoView
+                android:id="@+id/detail_video_view"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_margin="@dimen/view_margin"
+                android:visibility="gone" />
 
             <ImageView
                 android:id="@+id/detail_image_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_margin="@dimen/view_margin"
                 android:adjustViewBounds="true"
                 android:visibility="gone" />
 
@@ -60,32 +71,37 @@ limitations under the License.
                 android:id="@+id/detail_text_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColor"
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/text"
                 android:visibility="gone" />
 
             <TextView
                 android:id="@+id/detail_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorPrimary" />
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/textPrimary" />
 
             <TextView
                 android:id="@+id/detail_type"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorSecondary" />
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/textSecondary" />
 
             <TextView
                 android:id="@+id/detail_size"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorSecondary" />
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/textSecondary" />
 
             <TextView
                 android:id="@+id/detail_timestamp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorSecondary" />
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/textSecondary" />
         </LinearLayout>
 
     </android.support.v4.widget.NestedScrollView>

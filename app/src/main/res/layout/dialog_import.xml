@@ -23,20 +23,44 @@ limitations under the License.
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
+        android:labelFor="@id/import_alias_text"
+        android:text="@string/import_account_alias"
+        android:textColor="@color/textSecondary" />
+
+    <EditText
+        android:id="@+id/import_alias_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
+        android:inputType="text"
+        android:imeOptions="actionDone"
+        android:gravity="center"
+        android:textColor="@color/textPrimary" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
         android:labelFor="@id/import_access_code_text"
-        android:text="@string/import_account_access_code" />
+        android:text="@string/import_account_access_code"
+        android:textColor="@color/textSecondary" />
 
     <EditText
         android:id="@+id/import_access_code_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
         android:inputType="text"
         android:imeOptions="actionDone"
-        android:gravity="center" />
+        android:gravity="center"
+        android:textColor="@color/textPrimary" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/import_account_label" />
+        android:layout_margin="@dimen/view_margin"
+        android:text="@string/import_account_label"
+        android:textColor="@color/textSecondary" />
 
 </LinearLayout>

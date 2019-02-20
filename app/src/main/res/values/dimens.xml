@@ -17,4 +17,5 @@ limitations under the License.
 <resources>
     <dimen name="activity_padding">10dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+    <dimen name="view_margin">10dp</dimen>
 </resources>

@@ -23,18 +23,40 @@ limitations under the License.
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
+        android:labelFor="@id/export_alias_text"
+        android:text="@string/export_account_alias"
+        android:textColor="@color/textSecondary" />
+
+    <TextView
+        android:id="@+id/export_alias_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
+        android:gravity="center"
+        android:textColor="@color/textPrimary" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
         android:labelFor="@id/export_access_code_text"
-        android:text="@string/export_account_access_code" />
+        android:text="@string/export_account_access_code"
+        android:textColor="@color/textSecondary" />
 
     <TextView
         android:id="@+id/export_access_code_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center" />
+        android:layout_margin="@dimen/view_margin"
+        android:gravity="center"
+        android:textColor="@color/textPrimary" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/export_account_label" />
+        android:layout_margin="@dimen/view_margin"
+        android:text="@string/export_account_label"
+        android:textColor="@color/textSecondary" />
 
 </LinearLayout>

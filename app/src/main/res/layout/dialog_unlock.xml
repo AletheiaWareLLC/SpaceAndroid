@@ -23,32 +23,42 @@ limitations under the License.
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
         android:labelFor="@id/unlock_alias_text"
-        android:text="@string/unlock_account_alias" />
+        android:text="@string/unlock_account_alias"
+        android:textColor="@color/textSecondary" />
 
     <TextView
         android:id="@+id/unlock_alias_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center" />
+        android:layout_margin="@dimen/view_margin"
+        android:gravity="center"
+        android:textColor="@color/textPrimary" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
         android:labelFor="@id/unlock_password_text"
-        android:text="@string/unlock_account_password" />
+        android:text="@string/unlock_account_password"
+        android:textColor="@color/textSecondary" />
 
     <EditText
         android:id="@+id/unlock_password_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
         android:inputType="textPassword"
         android:imeOptions="actionDone"
-        android:gravity="center" />
+        android:gravity="center"
+        android:textColor="@color/textPrimary" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/unlock_account_label" />
+        android:layout_margin="@dimen/view_margin"
+        android:text="@string/unlock_account_label"
+        android:textColor="@color/textSecondary" />
 
 </LinearLayout>

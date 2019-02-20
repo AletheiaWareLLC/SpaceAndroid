@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright 2018 Aletheia Ware LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+  <group android:translateX="24"
+      android:translateY="24">
+      <path
+          android:strokeColor="#ffffff"
+          android:strokeWidth="1"
+          android:strokeLineJoin="bevel"
+          android:pathData="M 36 6 L 12 18 L 36 30 L 12 42 " />
+      <path
+          android:fillColor="#ffffff"
+          android:pathData="M 36 5 C 36.5522847498 5 37 5.44771525017 37 6 C 37 6.55228474983 36.5522847498 7 36 7 C 35.4477152502 7 35 6.55228474983 35 6 C 35 5.44771525017 35.4477152502 5 36 5 Z" />
+      <path
+          android:fillColor="#ffffff"
+          android:pathData="M 12 17 C 12.5522847498 17 13 17.4477152502 13 18 C 13 18.5522847498 12.5522847498 19 12 19 C 11.4477152502 19 11 18.5522847498 11 18 C 11 17.4477152502 11.4477152502 17 12 17 Z" />
+      <path
+          android:fillColor="#ffffff"
+          android:pathData="M 36 29 C 36.5522847498 29 37 29.4477152502 37 30 C 37 30.5522847498 36.5522847498 31 36 31 C 35.4477152502 31 35 30.5522847498 35 30 C 35 29.4477152502 35.4477152502 29 36 29 Z" />
+      <path
+          android:fillColor="#ffffff"
+          android:pathData="M 12 41 C 12.5522847498 41 13 41.4477152502 13 42 C 13 42.5522847498 12.5522847498 43 12 43 C 11.4477152502 43 11 42.5522847498 11 42 C 11 41.4477152502 11.4477152502 41 12 41 Z" />
+  </group>
+</vector>

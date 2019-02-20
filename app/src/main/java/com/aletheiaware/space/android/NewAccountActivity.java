@@ -27,7 +27,10 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.aletheiaware.alias.utils.AliasUtils;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
+import com.aletheiaware.space.utils.SpaceUtils;
 import com.stripe.android.Stripe;
 import com.stripe.android.TokenCallback;
 import com.stripe.android.model.Card;
@@ -41,6 +44,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.Arrays;
@@ -49,11 +53,11 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-public class CreateAccountActivity extends AppCompatActivity {
+public class NewAccountActivity extends AppCompatActivity {
 
-    private Toolbar toolbar;
+    private EditText aliasText;
     private EditText emailText;
-    private EditText passwordText;
+    private EditText newPasswordText;
     private EditText confirmPasswordText;
     private CardInputWidget cardWidget;
     private CheckBox policyCheck;
@@ -67,73 +71,84 @@ public class CreateAccountActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_create_account);
+        setContentView(R.layout.activity_new_account);
 
         // Toolbar
-        toolbar = findViewById(R.id.create_account_toolbar);
+        Toolbar toolbar = findViewById(R.id.new_account_toolbar);
         setSupportActionBar(toolbar);
 
-        emailText = findViewById(R.id.create_account_email_text);
-        passwordText = findViewById(R.id.create_account_password_text);
-        confirmPasswordText = findViewById(R.id.create_account_confirm_password_text);
-        cardWidget = findViewById(R.id.create_account_card_widget);
-        policyCheck = findViewById(R.id.create_account_privacy_policy_check);
-        termsCheck = findViewById(R.id.create_account_terms_of_service_check);
-        createAccountFab = findViewById(R.id.create_account_fab);
+        aliasText = findViewById(R.id.new_account_alias_text);
+        emailText = findViewById(R.id.new_account_email_text);
+        newPasswordText = findViewById(R.id.new_account_new_password_text);
+        confirmPasswordText = findViewById(R.id.new_account_confirm_password_text);
+        cardWidget = findViewById(R.id.new_account_card_widget);
+        policyCheck = findViewById(R.id.new_account_privacy_policy_check);
+        termsCheck = findViewById(R.id.new_account_terms_of_service_check);
+        createAccountFab = findViewById(R.id.new_account_fab);
         createAccountFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                createAccountFab.setVisibility(View.INVISIBLE);
+                // Alias
+                final String alias = aliasText.getText().toString();
+                // TODO ensure alias is valid and unique
+                if (alias.isEmpty()) {
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Invalid alias");
+                    return;
+                }
+
                 // Email
                 final String email = emailText.getText().toString();
                 // TODO ensure email is valid
                 if (email.isEmpty()) {
-                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, "Invalid email");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Invalid email");
                     return;
                 }
 
                 // Password
                 // TODO ensure password meets minimum security
-                final int passwordLength = passwordText.length();
+                final int passwordLength = newPasswordText.length();
                 if (passwordLength < 12) {
-                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, "Password too short (12 character minimum)");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Password too short (12 character minimum)");
                     return;
                 }
                 if (passwordLength != confirmPasswordText.length()) {
-                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, "Password and confirm password differ in length");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Password and confirm password differ in length");
                     return;
                 }
 
-                final char[] password = new char[passwordLength];
+                final char[] newPassword = new char[passwordLength];
                 final char[] confirmPassword = new char[passwordLength];
-                passwordText.getText().getChars(0, passwordLength, password, 0);
+                newPasswordText.getText().getChars(0, passwordLength, newPassword, 0);
                 confirmPasswordText.getText().getChars(0, passwordLength, confirmPassword, 0);
-                if (!Arrays.equals(password, confirmPassword)) {
-                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, "Password and confirm password do not match");
+                if (!Arrays.equals(newPassword, confirmPassword)) {
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Password and confirm password do not match");
                     return;
                 }
 
                 // Payment
                 final Card card = cardWidget.getCard();
                 if (card == null || !card.validateCard()) {
-                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, "Invalid payment information");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Invalid payment information");
                     return;
                 }
 
                 // Legal
                 if (!policyCheck.isChecked()) {
-                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, "You must read, understand, and agree to the Privacy Policy");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "You must read, understand, and agree to the Privacy Policy");
                     return;
                 }
 
                 if (!termsCheck.isChecked()) {
-                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, "You must read, understand, and agree to the Terms of Service");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "You must read, understand, and agree to the Terms of Service");
                     return;
                 }
-                progressView = View.inflate(CreateAccountActivity.this, R.layout.dialog_progress, null);
+
+                createAccountFab.setVisibility(View.INVISIBLE);
+
+                progressView = View.inflate(NewAccountActivity.this, R.layout.dialog_progress, null);
                 progressBar = progressView.findViewById(R.id.progress);
-                dialog = new AlertDialog.Builder(CreateAccountActivity.this)
-                        .setTitle(R.string.title_dialog_create_account)
+                dialog = new AlertDialog.Builder(NewAccountActivity.this, R.style.AlertDialogTheme)
+                        .setTitle(R.string.title_dialog_new_account)
                         .setCancelable(false)
                         .setView(progressBar)
                         .show();
@@ -142,10 +157,12 @@ public class CreateAccountActivity extends AppCompatActivity {
                     public void run() {
                         try {
                             setProgressBar(1);
-                            final KeyPair keyPair = BCUtils.createRSAKeyPair(getFilesDir(), password);
+                            final KeyPair keyPair = BCUtils.createRSAKeyPair(getFilesDir(), alias, newPassword);
                             setProgressBar(2);
-                            Stripe stripe = new Stripe(CreateAccountActivity.this, "pk_test_gvdQJ2CsMiwE0gARM6nGUbUb");
+                            AliasUtils.registerAlias(alias, keyPair);
                             setProgressBar(3);
+                            Stripe stripe = new Stripe(NewAccountActivity.this, "pk_test_gvdQJ2CsMiwE0gARM6nGUbUb");
+                            setProgressBar(4);
                             stripe.createToken(
                                     card,
                                     new TokenCallback() {
@@ -154,7 +171,7 @@ public class CreateAccountActivity extends AppCompatActivity {
                                                 @Override
                                                 public void run() {
                                                     try {
-                                                        SpaceAndroidUtils.register(keyPair, email, token.getId());
+                                                        SpaceUtils.subscribe(alias, email, token.getId());
                                                     } catch (Exception e) {
                                                         e.printStackTrace();
                                                     }
@@ -166,13 +183,14 @@ public class CreateAccountActivity extends AppCompatActivity {
                                             error.printStackTrace();
                                             StringWriter sw = new StringWriter();
                                             error.printStackTrace(new PrintWriter(sw));
-                                            Toast.makeText(CreateAccountActivity.this, sw.toString(), Toast.LENGTH_LONG).show();
+                                            Toast.makeText(NewAccountActivity.this, sw.toString(), Toast.LENGTH_LONG).show();
                                         }
                                     }
                             );
-                            setProgressBar(4);
-                            SpaceAndroidUtils.initialize(keyPair);
                             setProgressBar(5);
+                            SpaceAndroidUtils.initialize(alias, keyPair);
+                            setProgressBar(6);
+                            // TODO show user the generated key pair, explain public vs private key, and provide options to backup their private key
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -198,6 +216,8 @@ public class CreateAccountActivity extends AppCompatActivity {
                             e.printStackTrace();
                         } catch (NoSuchPaddingException e) {
                             e.printStackTrace();
+                        } catch (SignatureException e) {
+                            e.printStackTrace();
                         } finally {
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -213,6 +233,7 @@ public class CreateAccountActivity extends AppCompatActivity {
                 }.start();
             }
         });
+        aliasText.requestFocus();
     }
 
     private void setProgressBar(final int v) {

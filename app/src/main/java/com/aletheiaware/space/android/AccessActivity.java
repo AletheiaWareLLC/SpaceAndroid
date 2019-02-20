@@ -16,18 +16,23 @@
 
 package com.aletheiaware.space.android;
 
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.support.v7.widget.AppCompatImageButton;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
 
+import com.aletheiaware.bc.BCProto.KeyShare;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
+import com.aletheiaware.space.utils.SpaceUtils;
 
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
@@ -44,34 +49,31 @@ import javax.crypto.NoSuchPaddingException;
 
 public class AccessActivity extends AppCompatActivity {
 
-    private Toolbar toolbar;
-    private ListView accountList;
-    private Button importAccountButton;
-    private Button createAccountButton;
+    private RecyclerView unlockAccountRecycler;
+    private View unlockAccountSeparator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_access);
 
-        // Toolbar
-        toolbar = findViewById(R.id.access_toolbar);
-        setSupportActionBar(toolbar);
-
-        accountList = findViewById(R.id.access_account_list);
-        importAccountButton = findViewById(R.id.access_import_account);
+        unlockAccountRecycler = findViewById(R.id.access_unlock_account_recycler);
+        unlockAccountSeparator = findViewById(R.id.access_unlock_account_separator);
+        Button importAccountButton = findViewById(R.id.access_import_account);
         importAccountButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new ImportAccountDialog(AccessActivity.this) {
                     @Override
-                    public void onImport(final String accessCode) {
+                    public void onImport(DialogInterface dialog, final String alias, final String accessCode) {
+                        dialog.dismiss();
                         new Thread() {
                             @Override
                             public void run() {
                                 // Use access code to import key
                                 try {
-                                    SpaceAndroidUtils.importKey(getFilesDir(), accessCode);
+                                    KeyShare ks = BCUtils.getKeyShare(alias);
+                                    BCUtils.importRSAKeyPair(getFilesDir(), accessCode, ks);
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
@@ -88,11 +90,19 @@ public class AccessActivity extends AppCompatActivity {
                 }.create();
             }
         });
-        createAccountButton = findViewById(R.id.access_create_account);
+        Button createAccountButton = findViewById(R.id.access_new_account);
         createAccountButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AccessActivity.this, CreateAccountActivity.class);
+                Intent intent = new Intent(AccessActivity.this, NewAccountActivity.class);
+                startActivity(intent);
+            }
+        });
+        AppCompatImageButton logoButton = findViewById(R.id.aletheia_ware_llc_logo);
+        logoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://aletheiaware.com"));
                 startActivity(intent);
             }
         });
@@ -107,23 +117,25 @@ public class AccessActivity extends AppCompatActivity {
         } else {
             // A key exists, show unlock option
             final List<String> ks = BCUtils.listRSAKeyPairs(getFilesDir());
+            Log.d(SpaceUtils.TAG, "Keys: " + ks);
             if (ks.isEmpty()) {
-                accountList.setVisibility(View.GONE);
+                unlockAccountRecycler.setVisibility(View.GONE);
+                unlockAccountSeparator.setVisibility(View.GONE);
             } else {
-                accountList.setVisibility(View.VISIBLE);
-                final ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.account_list_item, ks);
-                accountList.setAdapter(adapter);
-                accountList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                unlockAccountRecycler.setVisibility(View.VISIBLE);
+                unlockAccountSeparator.setVisibility(View.VISIBLE);
+                unlockAccountRecycler.setLayoutManager(new LinearLayoutManager(this));
+                final AccountAdapter adapter = new AccountAdapter(this, ks){
                     @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                        final String alias = ks.get(position);
+                    public void unlockAccount(final String alias) {
                         new UnlockDialog(AccessActivity.this, alias) {
                             @Override
-                            public void onUnlock(char[] password) {
+                            public void onUnlock(DialogInterface dialog, char[] password) {
+                                dialog.dismiss();
                                 try {
                                     // Use password to decrypt key
                                     KeyPair keyPair = BCUtils.getRSAKeyPair(getFilesDir(), alias, password);
-                                    SpaceAndroidUtils.initialize(keyPair);
+                                    SpaceAndroidUtils.initialize(alias, keyPair);
                                     // Sign In successful, exit
                                     runOnUiThread(new Runnable() {
                                         @Override
@@ -138,24 +150,24 @@ public class AccessActivity extends AppCompatActivity {
                             }
                         }.create();
                     }
-                });
-                accountList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+
                     @Override
-                    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                        final String alias = ks.get(position);
+                    public void deleteAccount(final String alias) {
                         SpaceAndroidUtils.showDeleteAccountDialog(AccessActivity.this, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int id) {
                                 if (BCUtils.deleteRSAKeyPair(getFilesDir(), alias)) {
-                                    adapter.remove(alias);
-                                    adapter.notifyDataSetChanged();
+                                    removeAlias(alias);
+                                    notifyDataSetChanged();
                                     dialog.dismiss();
+                                    // TODO need to hide alias list UI if no more keys left
                                 }
                             }
                         });
-                        return true;
                     }
-                });
+                };
+                unlockAccountRecycler.setAdapter(adapter);
+                //unlockAccountList.requestLayout();
             }
         }
     }

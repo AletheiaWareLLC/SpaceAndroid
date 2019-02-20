@@ -17,7 +17,7 @@
 package com.aletheiaware.space.android;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.support.v7.app.AlertDialog;
 import android.content.DialogInterface;
 import android.view.View;
 import android.widget.EditText;
@@ -32,20 +32,22 @@ public abstract class ImportAccountDialog {
 
     public void create() {
         View accessView = View.inflate(activity, R.layout.dialog_import, null);
+        final EditText aliasText = accessView.findViewById(R.id.import_alias_text);
+        aliasText.setFocusable(true);
+        aliasText.setFocusableInTouchMode(true);
         final EditText accessCodeText = accessView.findViewById(R.id.import_access_code_text);
-        accessCodeText.setFocusable(true);
         accessCodeText.setFocusableInTouchMode(true);
-        AlertDialog.Builder ab = new AlertDialog.Builder(activity);
+        AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
         ab.setTitle(R.string.import_account);
         ab.setView(accessView);
         ab.setPositiveButton(R.string.import_account_action, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                onImport(accessCodeText.getText().toString());
+                onImport(dialog, aliasText.getText().toString(), accessCodeText.getText().toString());
             }
         });
         final AlertDialog dialog = ab.show();
     }
 
-    public abstract void onImport(String accessCode);
+    public abstract void onImport(DialogInterface dialog, String alias, String accessCode);
 }

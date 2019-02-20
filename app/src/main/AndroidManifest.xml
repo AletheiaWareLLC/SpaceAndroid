@@ -14,16 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.aletheiaware.space.android">
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- TODO add tagging and searching -->
+    <!-- TODO add sharing and receiving -->
+    <!-- TODO offer automatic backup service -->
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/icon_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/icon_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
@@ -35,8 +41,8 @@ limitations under the License.
             android:label="@string/title_activity_account"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".CreateAccountActivity"
-            android:label="@string/title_activity_create_account"
+            android:name=".NewAccountActivity"
+            android:label="@string/title_activity_new_account"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".DetailActivity"
@@ -55,7 +61,11 @@ limitations under the License.
         <activity
             android:name=".StripeActivity"
             android:label="@string/title_activity_payment"
-            android:theme="@style/AppTheme" />
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".NewRecordActivity"
+            android:label="@string/title_activity_new_record"
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".UploadActivity"
             android:label="@string/title_activity_upload"
@@ -67,14 +77,16 @@ limitations under the License.
 
                 <data android:mimeType="*/*" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <data android:mimeType="*/*" />
-            </intent-filter>
         </activity>
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.aletheiaware.space.android.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

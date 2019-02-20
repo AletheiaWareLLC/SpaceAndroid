@@ -21,11 +21,11 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.stripe.android.Stripe;
 import com.stripe.android.TokenCallback;
 import com.stripe.android.model.Card;
@@ -37,30 +37,33 @@ import java.io.StringWriter;
 
 public class StripeActivity extends AppCompatActivity {
 
-    private TextView amountText;
     private EditText emailText;
     private CardInputWidget cardWidget;
-    private FloatingActionButton payFab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stripe);
-        String amount = getIntent().getStringExtra(SpaceAndroidUtils.STRIPE_AMOUNT_EXTRA);
-        if (amount != null && !amount.isEmpty()) {
-            amountText = findViewById(R.id.stripe_amount_text);
-            amountText.setVisibility(View.VISIBLE);
-            amountText.setText(amount);
-        }
+        TextView amountLabel = findViewById(R.id.stripe_amount_label);
+        TextView amountText = findViewById(R.id.stripe_amount_text);
         emailText = findViewById(R.id.stripe_email_text);
         cardWidget = findViewById(R.id.stripe_card_widget);
-        payFab = findViewById(R.id.stripe_fab);
-        payFab.setOnClickListener(new View.OnClickListener() {
+        FloatingActionButton fab = findViewById(R.id.stripe_fab);
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 pay();
             }
         });
+        String amount = getIntent().getStringExtra(SpaceAndroidUtils.STRIPE_AMOUNT_EXTRA);
+        if (amount != null && !amount.isEmpty()) {
+            amountLabel.setVisibility(View.VISIBLE);
+            amountText.setVisibility(View.VISIBLE);
+            amountText.setText(amount);
+        } else {
+            amountLabel.setVisibility(View.GONE);
+            amountText.setVisibility(View.GONE);
+        }
     }
 
     public void pay() {

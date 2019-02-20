@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
 Copyright 2018 Aletheia Ware LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<android.support.design.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/background_dark">
+    android:background="@android:color/background_dark"
+    android:fitsSystemWindows="false">
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/upload_appbar"
@@ -42,6 +41,7 @@ limitations under the License.
         android:id="@+id/upload_nested_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:fitsSystemWindows="false"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -50,40 +50,55 @@ limitations under the License.
             android:orientation="vertical"
             android:padding="@dimen/activity_padding">
 
-            <ImageView
-                android:id="@+id/upload_image_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:adjustViewBounds="true"
-                android:visibility="gone"
-                android:contentDescription="@string/upload_image" />
-
-            <TextView
-                android:id="@+id/upload_text_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColor"
-                android:visibility="gone" />
-
             <EditText
                 android:id="@+id/upload_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorPrimary"
+                android:layout_margin="@dimen/view_margin"
                 android:imeOptions="actionDone"
-                android:inputType="text|textNoSuggestions"/>
+                android:inputType="text|textNoSuggestions"
+                android:textColor="@color/textPrimary" />
 
             <TextView
                 android:id="@+id/upload_type"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorSecondary" />
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/textSecondary" />
 
             <TextView
                 android:id="@+id/upload_size"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorSecondary" />
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/textSecondary" />
+
+            <VideoView
+                android:id="@+id/upload_video_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/view_margin"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/upload_video"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/upload_image_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/view_margin"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/upload_image"
+                android:scaleType="centerInside"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/upload_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/text"
+                android:visibility="gone" />
 
         </LinearLayout>
 
@@ -98,6 +113,7 @@ limitations under the License.
         app:fabSize="normal"
         app:layout_anchor="@id/upload_nested_scroll_view"
         app:layout_anchorGravity="bottom|end"
-        app:srcCompat="@drawable/cloud_upload" />
+        app:srcCompat="@drawable/bc_mine"
+        android:visibility="gone"/>
 
 </android.support.design.widget.CoordinatorLayout>

@@ -17,39 +17,38 @@
 package com.aletheiaware.space.android;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.support.v7.app.AlertDialog;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.TextView;
-
-import org.w3c.dom.Text;
 
 public abstract class ExportAccountDialog {
 
     private final Activity activity;
+    private final String alias;
     private final String accessCode;
 
-    public ExportAccountDialog(Activity activity, String accessCode) {
+    public ExportAccountDialog(Activity activity, String alias, String accessCode) {
         this.activity = activity;
+        this.alias = alias;
         this.accessCode = accessCode;
     }
 
     public void create() {
         View accessView = View.inflate(activity, R.layout.dialog_export, null);
+        final TextView aliasText = accessView.findViewById(R.id.export_alias_text);
+        aliasText.setText(alias);
         final TextView accessCodeText = accessView.findViewById(R.id.export_access_code_text);
         accessCodeText.setText(accessCode);
-        AlertDialog.Builder ab = new AlertDialog.Builder(activity);
+        AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
         ab.setTitle(R.string.export_account);
         ab.setView(accessView);
-        ab.setPositiveButton(R.string.export_account_action, new DialogInterface.OnClickListener() {
+        ab.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                onExport();
+                dialog.dismiss();
             }
         });
         final AlertDialog dialog = ab.show();
     }
-
-    public abstract void onExport();
 }

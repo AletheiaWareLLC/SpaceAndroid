@@ -22,5 +22,7 @@ limitations under the License.
     <color name="textPrimary">#FFFFFF</color><!--212121-->
     <color name="textSecondary">#DEDEDE</color><!--757575-->
     <color name="text">#8A8A8A</color><!--000000-->
+    <color name="black">#000000</color>
     <color name="divider">#BDBDBD</color>
+    <color name="warning">#FF0000</color>
 </resources>
