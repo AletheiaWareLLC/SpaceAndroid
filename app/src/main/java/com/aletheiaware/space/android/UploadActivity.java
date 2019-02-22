@@ -19,10 +19,10 @@ package com.aletheiaware.space.android;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -95,6 +95,9 @@ public class UploadActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // TODO disable fab and nameEditText until mining fails (if mining succeeds, activity will finish)
+                //fab.setEnabled(false);
+                //nameEditText.setEnabled(false);
                 String name = nameEditText.getText().toString();
                 String type = typeTextView.getText().toString();
                 if (in != null) {
@@ -114,20 +117,24 @@ public class UploadActivity extends AppCompatActivity {
                 if (action == null) {
                     action = "";
                 }
-                Log.d(SpaceUtils.TAG, "Action " + action);
+                Log.d(SpaceUtils.TAG, "Action:" + action);
                 Uri uri = intent.getData();
                 if (uri == null) {
                     uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
                 }
-                Log.d(SpaceUtils.TAG, "URI " + uri);
+                Log.d(SpaceUtils.TAG, "URI:" + uri);
                 String type = intent.getType();
-                Log.d(SpaceUtils.TAG, "Type " + type);
+                Log.d(SpaceUtils.TAG, "Type:" + type);
                 if (type == null && uri != null) {
                     type = getContentResolver().getType(uri);
                     Log.i(SpaceUtils.TAG, "Type: " + type);
+                    if (type == null) {
+                        type = SpaceUtils.getTypeByExtension(uri.toString());
+                        Log.i(SpaceUtils.TAG, "Type: " + type);
+                    }
                 }
                 if (type == null) {
-                    type = "?/?";
+                    type = SpaceUtils.UNKNOWN_TYPE;
                 } else if (type.equals("image/*")) {
                     type = SpaceUtils.DEFAULT_IMAGE_TYPE;
                 } else if (type.equals("video/*")) {
@@ -146,6 +153,7 @@ public class UploadActivity extends AppCompatActivity {
                     contentTextView.setText(text);
                     contentTextView.setVisibility(View.VISIBLE);
                     preview = Preview.newBuilder()
+                            .setType(SpaceUtils.TEXT_PLAIN_TYPE)
                             .setData(ByteString.copyFromUtf8(text.substring(0, Math.min(text.length(), SpaceUtils.PREVIEW_TEXT_LENGTH))))
                             .build();
                     byte[] bytes = text.getBytes();
@@ -190,15 +198,25 @@ public class UploadActivity extends AppCompatActivity {
                             // VideoView
                             contentVideoView.setVideoURI(uri);
                             contentVideoView.setVisibility(View.VISIBLE);
-                            bitmap = ThumbnailUtils.createVideoThumbnail(uri.getPath(), MediaStore.Video.Thumbnails.MINI_KIND);
+                            try {
+                                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                                retriever.setDataSource(this, uri);
+                                bitmap = retriever.getFrameAtTime();
+                                retriever.release();
+                            } catch (Exception e) {
+                                /* Ignored */
+                                e.printStackTrace();
+                            }
                         }
                         if (bitmap != null) {
                             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os);
+                            preview = Preview.newBuilder()
+                                    .setType(SpaceUtils.IMAGE_JPEG_TYPE)
+                                    .setData(ByteString.copyFrom(os.toByteArray()))
+                                    .setWidth(bitmap.getWidth())
+                                    .setHeight(bitmap.getHeight())
+                                    .build();
                         }
-                        preview = Preview.newBuilder()
-                                .setType(SpaceUtils.IMAGE_JPEG_TYPE)
-                                .setData(ByteString.copyFrom(os.toByteArray()))
-                                .build();
                         fab.setVisibility(View.VISIBLE);
                     }
                 }

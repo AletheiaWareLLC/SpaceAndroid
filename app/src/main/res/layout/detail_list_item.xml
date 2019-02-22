@@ -24,7 +24,11 @@ limitations under the License.
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
+        android:maxWidth="64dp"
+        android:maxHeight="64dp"
         android:adjustViewBounds="true"
+        android:cropToPadding="true"
+        android:scaleType="centerInside"
         android:visibility="gone" />
 
     <TextView android:id="@+id/list_item_text_view"

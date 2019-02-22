@@ -39,12 +39,15 @@ import android.support.v7.app.AlertDialog;
 import android.util.Log;
 
 import com.aletheiaware.bc.BC;
+import com.aletheiaware.bc.BC.Channel;
+import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BC.Node;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Record;
 import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.finance.FinanceProto.Customer;
 import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Preview;
@@ -54,6 +57,7 @@ import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.StripeActivity;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -64,7 +68,6 @@ import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.net.URI;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -202,29 +205,27 @@ public class SpaceAndroidUtils {
 
     private static void takePicture(Activity parent) {
         Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        try {
-            File f = File.createTempFile("picture", ".jpg", parent.getCacheDir());
-            Log.d(SpaceUtils.TAG, f.getAbsolutePath());
-            tempURI = FileProvider.getUriForFile(parent, FILE_PROVIDER_PACKAGE, f);
-            tempURIType = SpaceUtils.DEFAULT_IMAGE_TYPE;
-            i.putExtra(MediaStore.EXTRA_OUTPUT, tempURI);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        File images = new File(parent.getCacheDir(), "image");
+        images.mkdirs();
+        File file = new File(images, "image" + System.nanoTime());
+        Log.d(SpaceUtils.TAG, file.getAbsolutePath());
+        tempURI = FileProvider.getUriForFile(parent, FILE_PROVIDER_PACKAGE, file);
+        Log.d(SpaceUtils.TAG, tempURI.toString());
+        tempURIType = SpaceUtils.DEFAULT_IMAGE_TYPE;
+        i.putExtra(MediaStore.EXTRA_OUTPUT, tempURI);
         parent.startActivityForResult(i, SpaceAndroidUtils.IMAGE_CAPTURE_ACTIVITY);
     }
 
     private static void recordVideo(Activity parent) {
         Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-        try {
-            File f = File.createTempFile("video", ".mpg", parent.getCacheDir());
-            Log.d(SpaceUtils.TAG, f.getAbsolutePath());
-            tempURI = FileProvider.getUriForFile(parent, FILE_PROVIDER_PACKAGE, f);
-            tempURIType = SpaceUtils.DEFAULT_VIDEO_TYPE;
-            i.putExtra(MediaStore.EXTRA_OUTPUT, tempURI);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        File videos = new File(parent.getCacheDir(), "video");
+        videos.mkdirs();
+        File file = new File(videos, "video" + System.nanoTime());
+        Log.d(SpaceUtils.TAG, file.getAbsolutePath());
+        tempURI = FileProvider.getUriForFile(parent, FILE_PROVIDER_PACKAGE, file);
+        Log.d(SpaceUtils.TAG, tempURI.toString());
+        tempURIType = SpaceUtils.DEFAULT_VIDEO_TYPE;
+        i.putExtra(MediaStore.EXTRA_OUTPUT, tempURI);
         parent.startActivityForResult(i, SpaceAndroidUtils.VIDEO_CAPTURE_ACTIVITY);
     }
 
@@ -247,7 +248,7 @@ public class SpaceAndroidUtils {
                                             final BC.Channel fileChannel = new BC.Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                                             final Map<String, PublicKey> acl = new HashMap<>();
                                             acl.put(alias, keyPair.getPublic());
-                                            final List<Reference> references = new ArrayList<>();
+                                            final List<Reference> metaReferences = new ArrayList<>();
                                             long size = BCUtils.createEntries(alias, keyPair, acl, new ArrayList<Reference>(), in, new BCUtils.RecordCallback() {
                                                 @Override
                                                 public void onRecord(Record record) {
@@ -262,7 +263,7 @@ public class SpaceAndroidUtils {
                                                         BCUtils.Pair<byte[], Block> result = node.mine(fileChannel, entries);
                                                         ByteString blockHash = ByteString.copyFrom(result.a);
                                                         Block block = result.b;
-                                                        references.add(Reference.newBuilder()
+                                                        metaReferences.add(Reference.newBuilder()
                                                                 .setTimestamp(block.getTimestamp())
                                                                 .setChannelName(fileChannel.name)
                                                                 .setBlockHash(blockHash)
@@ -282,18 +283,38 @@ public class SpaceAndroidUtils {
                                                     .setName(name)
                                                     .setType(type)
                                                     .setSize(size)
-                                                    .setPreview(preview)
                                                     .build();
                                             Log.d(SpaceUtils.TAG, "Meta " + meta);
-                                            Record record = BCUtils.createRecord(alias, keyPair, acl, references, meta.toByteArray());
-                                            ByteString recordHash = ByteString.copyFrom(BCUtils.getHash(record.toByteArray()));
-                                            List<BlockEntry> entries = new ArrayList<>();
-                                            entries.add(BlockEntry.newBuilder()
-                                                    .setRecordHash(recordHash)
-                                                    .setRecord(record)
+                                            Record metaRecord = BCUtils.createRecord(alias, keyPair, acl, metaReferences, meta.toByteArray());
+                                            byte[] metaRecordHashBytes = BCUtils.getHash(metaRecord.toByteArray());
+                                            ByteString metaRecordHash = ByteString.copyFrom(metaRecordHashBytes);
+                                            List<BlockEntry> metaEntries = new ArrayList<>();
+                                            metaEntries.add(BlockEntry.newBuilder()
+                                                    .setRecordHash(metaRecordHash)
+                                                    .setRecord(metaRecord)
                                                     .build());
-                                            BCUtils.Pair<byte[], Block> result = node.mine(metaChannel, entries);
-                                            Log.d(SpaceUtils.TAG, "Mined Meta " + new String(BCUtils.encodeBase64URL(result.a)));
+                                            BCUtils.Pair<byte[], Block> metaResult = node.mine(metaChannel, metaEntries);
+                                            Log.d(SpaceUtils.TAG, "Mined Meta " + new String(BCUtils.encodeBase64URL(metaResult.a)));
+                                            if (preview != null) {
+                                                Log.d(SpaceUtils.TAG, "Preview " + preview);
+                                                final List<Reference> previewReferences = new ArrayList<>();
+                                                previewReferences.add(Reference.newBuilder()
+                                                        .setTimestamp(metaResult.b.getTimestamp())
+                                                        .setChannelName(metaResult.b.getChannelName())
+                                                        .setBlockHash(ByteString.copyFrom(metaResult.a))
+                                                        .setRecordHash(metaRecordHash)
+                                                        .build());
+                                                Record previewRecord = BCUtils.createRecord(alias, keyPair, acl, previewReferences, preview.toByteArray());
+                                                ByteString previewRecordHash = ByteString.copyFrom(BCUtils.getHash(previewRecord.toByteArray()));
+                                                List<BlockEntry> previewEntries = new ArrayList<>();
+                                                previewEntries.add(BlockEntry.newBuilder()
+                                                        .setRecordHash(previewRecordHash)
+                                                        .setRecord(previewRecord)
+                                                        .build());
+                                                final BC.Channel previewChannel = new BC.Channel(SpaceUtils.PREVIEW_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
+                                                BCUtils.Pair<byte[], Block> previewResult = node.mine(previewChannel, previewEntries);
+                                                Log.d(SpaceUtils.TAG, "Mined Preview " + new String(BCUtils.encodeBase64URL(previewResult.a)));
+                                            }
                                         } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
                                             SpaceAndroidUtils.showErrorDialog(parent, R.string.error_mining, e);
                                         } finally {
@@ -317,8 +338,22 @@ public class SpaceAndroidUtils {
                                     public void run() {
                                         try {
                                             final InetAddress address = InetAddress.getByName(SpaceUtils.SPACE_HOST);
-                                            final String customerId = FinanceUtils.getCustomerId(address, alias, keyPair);
-                                            if (customerId == null) {
+                                            final Channel customers = new Channel(FinanceUtils.CUSTOMER_CHANNEL, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), address);
+                                            final Customer.Builder cb = Customer.newBuilder();
+                                            customers.read(alias, keyPair, null, new RecordCallback() {
+                                                @Override
+                                                public void onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                                    cb.clear();
+                                                    try {
+                                                        cb.mergeFrom(payload);
+                                                    } catch (InvalidProtocolBufferException e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                }
+                                            });
+                                            final Customer customer = cb.build();
+                                            String customerId = customer.getCustomerId();
+                                            if (customerId == null || customerId.isEmpty()) {
                                                 parent.runOnUiThread(new Runnable() {
                                                     @Override
                                                     public void run() {
@@ -329,15 +364,22 @@ public class SpaceAndroidUtils {
                                             } else {
                                                 final Map<String, PublicKey> acl = new HashMap<>();
                                                 acl.put(alias, keyPair.getPublic());
-                                                final List<Reference> references = new ArrayList<>();
+                                                final List<Reference> metaReferences = new ArrayList<>();
                                                 long size = BCUtils.createEntries(alias, keyPair, acl, new ArrayList<Reference>(), in, new BCUtils.RecordCallback() {
                                                     @Override
                                                     public void onRecord(Record record) {
                                                         try {
-                                                            Reference reference = SpaceUtils.postRecord("file", record);
-                                                            // TODO handle null reference
-                                                            references.add(reference);
-                                                            Log.d(SpaceUtils.TAG, "Uploaded File " + new String(BCUtils.encodeBase64URL(reference.getRecordHash().toByteArray())));
+                                                            Reference fileReference = null;
+                                                            for (int i = 0; fileReference == null && i < 3; i++) {
+                                                                fileReference = SpaceUtils.postRecord("file", record);
+                                                            }
+                                                            if (fileReference == null) {
+                                                                // FIXME
+                                                                System.err.println("Failed to post file record 3 times");
+                                                                return;
+                                                            }
+                                                            metaReferences.add(fileReference);
+                                                            Log.d(SpaceUtils.TAG, "Uploaded File " + new String(BCUtils.encodeBase64URL(fileReference.getRecordHash().toByteArray())));
                                                         } catch (IOException e) {
                                                             e.printStackTrace();
                                                         }
@@ -349,9 +391,37 @@ public class SpaceAndroidUtils {
                                                         .setSize(size)
                                                         .build();
                                                 Log.d(SpaceUtils.TAG, "Meta " + meta);
-                                                Record record = BCUtils.createRecord(alias, keyPair, acl, references, meta.toByteArray());
-                                                Reference reference = SpaceUtils.postRecord("meta", record);
-                                                Log.d(SpaceUtils.TAG, "Uploaded Meta " + new String(BCUtils.encodeBase64URL(reference.getRecordHash().toByteArray())));
+                                                Record metaRecord = BCUtils.createRecord(alias, keyPair, acl, metaReferences, meta.toByteArray());
+                                                Reference metaReference = null;
+                                                for (int i = 0; metaReference == null && i < 3; i++) {
+                                                    metaReference = SpaceUtils.postRecord("meta", metaRecord);
+                                                }
+                                                if (metaReference == null) {
+                                                    // FIXME
+                                                    System.err.println("Failed to post meta record 3 times");
+                                                    return;
+                                                }
+                                                Log.d(SpaceUtils.TAG, "Uploaded Meta " + new String(BCUtils.encodeBase64URL(metaReference.getRecordHash().toByteArray())));
+                                                if (preview != null) {
+                                                    Log.d(SpaceUtils.TAG, "Preview " + preview);
+                                                    final List<Reference> previewReferences = new ArrayList<>();
+                                                    previewReferences.add(Reference.newBuilder()
+                                                            .setTimestamp(metaReference.getTimestamp())
+                                                            .setChannelName(metaReference.getChannelName())
+                                                            .setRecordHash(metaReference.getRecordHash())
+                                                            .build());
+                                                    Record previewRecord = BCUtils.createRecord(alias, keyPair, acl, previewReferences, preview.toByteArray());
+                                                    Reference previewReference = null;
+                                                    for (int i = 0; previewReference == null && i < 3; i++) {
+                                                        previewReference = SpaceUtils.postRecord("preview", previewRecord);
+                                                    }
+                                                    if (previewReference == null) {
+                                                        // FIXME
+                                                        System.err.println("Failed to post preview record 3 times");
+                                                        return;
+                                                    }
+                                                    Log.d(SpaceUtils.TAG, "Uploaded Preview " + new String(BCUtils.encodeBase64URL(previewReference.getRecordHash().toByteArray())));
+                                                }
                                             }
                                         } catch (SocketException | SocketTimeoutException e) {
                                             SpaceAndroidUtils.showErrorDialog(parent, R.string.error_connection, e);

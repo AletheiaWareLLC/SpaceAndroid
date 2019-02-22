@@ -11,35 +11,27 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.aletheiaware.bc.BC;
-import com.aletheiaware.bc.BCProto.Record;
-import com.aletheiaware.bc.BCProto.Block;
-import com.aletheiaware.bc.BCProto.BlockEntry;
-import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.utils.BCUtils;
-import com.aletheiaware.space.SpaceProto;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapter.ViewHolder> implements BC.Channel.RecordCallback {
+public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapter.ViewHolder> {
 
     private final Activity activity;
     private final LayoutInflater inflater;
     private final Map<ByteString, Long> timestamps = new HashMap<>();
-    private final Map<ByteString, Record> records = new HashMap<>();
     private final Map<ByteString, Meta> metas = new HashMap<>();
+    private final Map<ByteString, Preview> previews = new HashMap<>();
     private final List<ByteString> sorted = new ArrayList<>();
 
     DatabaseAdapter(Activity activity) {
@@ -47,27 +39,28 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
         this.inflater = activity.getLayoutInflater();
     }
 
-    @Override
-    public void onRecord(ByteString blockHash, Block block, BlockEntry entry, byte[] key, byte[] payload) {
-        try {
-            ByteString recordHash = entry.getRecordHash();
-            Record record = entry.getRecord();
-            Meta meta = Meta.newBuilder().mergeFrom(payload).build();
-            Log.d(SpaceUtils.TAG, "Adding file: " + meta);
-            records.put(recordHash, record);
-            if (metas.put(recordHash, meta) == null) {
-                sorted.add(recordHash);// Only add if new
-                timestamps.put(recordHash, record.getTimestamp());
-                SpaceUtils.sort(sorted, timestamps);
-            }
-            activity.runOnUiThread(new Runnable() {
-                public void run() {
-                    notifyDataSetChanged();
-                }
-            });
-        } catch (InvalidProtocolBufferException e) {
-            e.printStackTrace();
+    public void addFile(ByteString recordHash, long timestamp, Meta meta) {
+        Log.d(SpaceUtils.TAG, "Adding file: " + meta);
+        if (metas.put(recordHash, meta) == null) {
+            sorted.add(recordHash);// Only add if new
+            timestamps.put(recordHash, timestamp);
+            SpaceUtils.sort(sorted, timestamps);
         }
+        activity.runOnUiThread(new Runnable() {
+            public void run() {
+                notifyDataSetChanged();
+            }
+        });
+    }
+
+    public void addPreview(ByteString recordHash, Preview preview) {
+        Log.d(SpaceUtils.TAG, "Adding preview: " + preview);
+        previews.put(recordHash, preview);
+        activity.runOnUiThread(new Runnable() {
+            public void run() {
+                notifyDataSetChanged();
+            }
+        });
     }
 
     @NonNull
@@ -94,7 +87,12 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
             holder.setEmptyView();
         } else {
             ByteString hash = sorted.get(position);
-            holder.set(hash, metas.get(hash));
+            Meta meta = metas.get(hash);
+            Preview preview = previews.get(hash);
+            if (preview == null) {
+                loadPreview(hash);
+            }
+            holder.set(hash, meta, preview);
         }
     }
 
@@ -105,6 +103,8 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
         }
         return sorted.size();
     }
+
+    public abstract void loadPreview(ByteString metaRecordHash);
 
     public abstract void onSelection(ByteString metaRecordHash, Meta meta);
 
@@ -126,41 +126,60 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
             itemSize = view.findViewById(R.id.list_item_size);
         }
 
-        void set(ByteString hash, Meta meta) {
+        void set(ByteString hash, Meta meta, Preview preview) {
             this.hash = hash;
             this.meta = meta;
             if (SpaceUtils.isText(meta.getType())) {
-                itemImage.setVisibility(View.INVISIBLE);
+                itemImage.setVisibility(View.GONE);
                 itemText.setVisibility(View.VISIBLE);
-                Preview preview = meta.getPreview();
                 if (preview == null) {
-                    itemText.setText("Text");
+                    setDefaultTextPreview();
                 } else {
                     itemText.setText(preview.getData().toStringUtf8());
                 }
             } else if (SpaceUtils.isImage(meta.getType())) {
                 itemImage.setVisibility(View.VISIBLE);
-                itemText.setVisibility(View.INVISIBLE);
-                Preview preview = meta.getPreview();
+                itemText.setVisibility(View.GONE);
                 if (preview == null) {
-                    itemImage.setImageDrawable(itemView.getContext().getDrawable(R.drawable.bc_image));
-                    itemImage.setBackgroundResource(R.color.black);
+                    setDefaultImagePreview();
                 } else {
-                    itemImage.setImageBitmap(BitmapFactory.decodeStream(preview.getData().newInput()));
+                    Bitmap bitmap = BitmapFactory.decodeStream(preview.getData().newInput());
+                    if (bitmap == null) {
+                        setDefaultImagePreview();
+                    } else {
+                        itemImage.setImageBitmap(bitmap);
+                    }
                 }
             } else if (SpaceUtils.isVideo(meta.getType())) {
                 itemImage.setVisibility(View.VISIBLE);
-                itemText.setVisibility(View.INVISIBLE);
-                Preview preview = meta.getPreview();
+                itemText.setVisibility(View.GONE);
                 if (preview == null) {
-                    itemImage.setImageDrawable(itemView.getContext().getDrawable(R.drawable.bc_video));
-                    itemImage.setBackgroundResource(R.color.black);
+                    setDefaultVideoPreview();
                 } else {
-                    itemImage.setImageBitmap(BitmapFactory.decodeStream(preview.getData().newInput()));
+                    Bitmap bitmap = BitmapFactory.decodeStream(preview.getData().newInput());
+                    if (bitmap == null) {
+                        setDefaultVideoPreview();
+                    } else {
+                        itemImage.setImageBitmap(bitmap);
+                    }
                 }
             }
             itemTitle.setText(meta.getName());
             itemSize.setText(BCUtils.sizeToString(meta.getSize()));
+        }
+
+        private void setDefaultTextPreview() {
+            itemText.setText("Text");
+        }
+
+        private void setDefaultImagePreview() {
+            itemImage.setBackgroundResource(R.color.black);
+            itemImage.setImageDrawable(itemImage.getContext().getDrawable(R.drawable.bc_image));
+        }
+
+        private void setDefaultVideoPreview() {
+            itemImage.setBackgroundResource(R.color.black);
+            itemImage.setImageDrawable(itemImage.getContext().getDrawable(R.drawable.bc_video));
         }
 
         ByteString getHash() {

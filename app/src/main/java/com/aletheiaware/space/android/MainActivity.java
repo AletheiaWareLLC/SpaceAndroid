@@ -18,7 +18,6 @@ package com.aletheiaware.space.android;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
@@ -33,12 +32,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.aletheiaware.bc.BC;
+import com.aletheiaware.bc.BC.Channel;
+import com.aletheiaware.bc.BC.Channel.RecordCallback;
+import com.aletheiaware.bc.BCProto.Block;
+import com.aletheiaware.bc.BCProto.BlockEntry;
+import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
+import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -98,6 +103,50 @@ public class MainActivity extends AppCompatActivity {
 
         // Adapter
         adapter = new DatabaseAdapter(this) {
+            @Override
+            public void loadPreview(final ByteString metaRecordHash) {
+                if (SpaceAndroidUtils.isInitialized()) {
+                    Log.d(SpaceUtils.TAG, "Loading Preview for " + new String(BCUtils.encodeBase64URL(metaRecordHash.toByteArray())));
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            try {
+                                String alias = SpaceAndroidUtils.getAlias();
+                                KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                                InetAddress address = InetAddress.getByName(SpaceUtils.SPACE_HOST);
+                                Channel previewChannel = new Channel(SpaceUtils.PREVIEW_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHash.toByteArray())), BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
+                                previewChannel.read(alias, keys, null, new RecordCallback() {
+                                    @Override
+                                    public void onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                        Log.d(SpaceUtils.TAG, "Preview Block " + new String(BCUtils.encodeBase64URL(blockHash.toByteArray())));
+                                        Preview preview = null;
+                                        for (Reference r : blockEntry.getRecord().getReferenceList()) {
+                                            if (r.getRecordHash().equals(metaRecordHash)) {
+                                                try {
+                                                    Preview p = Preview.newBuilder().mergeFrom(payload).build();
+                                                    Log.d(SpaceUtils.TAG, "Found Preview " + p);
+                                                    // TODO choose best preview
+                                                    if (preview == null) {
+                                                        preview = p;
+                                                    }
+                                                } catch (InvalidProtocolBufferException e) {
+                                                    e.printStackTrace();
+                                                }
+                                            }
+                                        }
+                                        if (preview != null) {
+                                            addPreview(metaRecordHash, preview);
+                                        }
+                                    }
+                                });
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }.start();
+                }
+            }
+
             @Override
             public void onSelection(ByteString metaRecordHash, Meta meta) {
                 Intent i = new Intent(MainActivity.this, DetailActivity.class);
@@ -289,10 +338,20 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     InetAddress address = InetAddress.getByName(SpaceUtils.SPACE_HOST);
                     String alias = SpaceAndroidUtils.getAlias();
-                    BC.Channel metas = new BC.Channel(SpaceUtils.META_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
+                    Channel metas = new Channel(SpaceUtils.META_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
                     metas.sync();
                     KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                    metas.read(alias, keys, null, adapter);
+                    metas.read(alias, keys, null, new RecordCallback() {
+                        @Override
+                        public void onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                            try {
+                                Meta meta = Meta.newBuilder().mergeFrom(payload).build();
+                                adapter.addFile(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta);
+                            } catch (InvalidProtocolBufferException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
                 } catch (IOException | NoSuchAlgorithmException e) {
                     e.printStackTrace();
                 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <cache-path name="block" path="." />
-    <cache-path name="channel" path="." />
-    <cache-path name="picture" path="." />
-    <cache-path name="video" path="." />
+    <cache-path name="block" path="block" />
+    <cache-path name="channel" path="channel" />
+    <cache-path name="image" path="image" />
+    <cache-path name="video" path="video" />
 </paths>

@@ -102,12 +102,17 @@ public class NewRecordActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // TODO disable fab, nameEditText, typeSpinner, and contentEditText until mining fails (if mining succeeds, activity will finish)
+                //fab.setEnabled(false);
+                //nameEditText.setEnabled(false);
+                //typeSpinner.setEnabled(false);
+                //contentEditText.setEnabled(false);
                 String name = nameEditText.getText().toString();
                 String type = typeSpinner.getSelectedItem().toString();
                 String text = contentEditText.getText().toString();
                 Preview preview = Preview.newBuilder()
                         .setType(SpaceUtils.TEXT_PLAIN_TYPE)
-                        .setData(ByteString.copyFromUtf8(text.substring(0, Math.min(text.length(), 10))))
+                        .setData(ByteString.copyFromUtf8(text.substring(0, Math.min(text.length(), SpaceUtils.PREVIEW_TEXT_LENGTH))))
                         .build();
                 ByteArrayInputStream in = new ByteArrayInputStream(text.getBytes(Charset.defaultCharset()));
                 SpaceAndroidUtils.mine(NewRecordActivity.this, name, type, preview, in);

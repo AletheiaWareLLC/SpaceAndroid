@@ -180,10 +180,12 @@ public class DetailActivity extends AppCompatActivity {
                     String type = meta.getType();
                     if (SpaceUtils.isVideo(type)) {
                         Log.d(SpaceUtils.TAG, "Setting Video");
-                        File f = new File(getCacheDir(), new String(BCUtils.encodeBase64URL(hash)));
+                        File videos = new File(getCacheDir(), "video");
+                        videos.mkdirs();
+                        File f = new File(videos, new String(BCUtils.encodeBase64URL(hash)));
                         Log.d(SpaceUtils.TAG, f.getAbsolutePath());
                         final Uri uri = FileProvider.getUriForFile(DetailActivity.this, SpaceAndroidUtils.FILE_PROVIDER_PACKAGE, f);
-                        if (!f.exists()) {
+                        if (!f.exists() || f.length() == 0) {
                             writeToUri(uri, references);
                         }
                         runOnUiThread(new Runnable() {
@@ -240,10 +242,12 @@ public class DetailActivity extends AppCompatActivity {
                         });
                     } else if (SpaceUtils.isImage(type)) {
                         Log.d(SpaceUtils.TAG, "Setting Image");
-                        File f = new File(getCacheDir(), new String(BCUtils.encodeBase64URL(hash)));
+                        File images = new File(getCacheDir(), "image");
+                        images.mkdirs();
+                        File f = new File(images, new String(BCUtils.encodeBase64URL(hash)));
                         Log.d(SpaceUtils.TAG, f.getAbsolutePath());
                         final Uri uri = FileProvider.getUriForFile(DetailActivity.this, SpaceAndroidUtils.FILE_PROVIDER_PACKAGE, f);
-                        if (!f.exists()) {
+                        if (!f.exists() || f.length() == 0) {
                             writeToUri(uri, references);
                         }
                         runOnUiThread(new Runnable() {
@@ -304,6 +308,7 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void writeToUri(Uri uri, List<Reference> references) {
+        System.out.println("Writing references: " + references);
         OutputStream output = null;
         try {
             String alias = SpaceAndroidUtils.getAlias();
