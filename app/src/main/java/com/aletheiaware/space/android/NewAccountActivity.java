@@ -71,6 +71,8 @@ public class NewAccountActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Setup UI
         setContentView(R.layout.activity_new_account);
 
         // Toolbar
@@ -90,7 +92,17 @@ public class NewAccountActivity extends AppCompatActivity {
             public void onClick(View view) {
                 // Alias
                 final String alias = aliasText.getText().toString();
-                // TODO ensure alias is valid and unique
+                // TODO ensure alias is valid
+                try {
+                    if (!AliasUtils.isUnique(SpaceAndroidUtils.getHost(), alias)) {
+                        SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Alias already registered");
+                        return;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Could not read Alias blockchain");
+                    return;
+                }
                 if (alias.isEmpty()) {
                     SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Invalid alias");
                     return;
@@ -108,7 +120,7 @@ public class NewAccountActivity extends AppCompatActivity {
                 // TODO ensure password meets minimum security
                 final int passwordLength = newPasswordText.length();
                 if (passwordLength < 12) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Password too short (12 character minimum)");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Password must be at least 12 characters");
                     return;
                 }
                 if (passwordLength != confirmPasswordText.length()) {
@@ -133,6 +145,7 @@ public class NewAccountActivity extends AppCompatActivity {
                 }
 
                 // Legal
+                // TODO mine legal responses into blockchain and check server side
                 if (!policyCheck.isChecked()) {
                     SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "You must read, understand, and agree to the Privacy Policy");
                     return;
@@ -143,7 +156,7 @@ public class NewAccountActivity extends AppCompatActivity {
                     return;
                 }
 
-                createAccountFab.setVisibility(View.INVISIBLE);
+                createAccountFab.hide();
 
                 progressView = View.inflate(NewAccountActivity.this, R.layout.dialog_progress, null);
                 progressBar = progressView.findViewById(R.id.progress);
@@ -171,8 +184,8 @@ public class NewAccountActivity extends AppCompatActivity {
                                                 @Override
                                                 public void run() {
                                                     try {
-                                                        SpaceUtils.subscribe(alias, email, token.getId());
-                                                    } catch (Exception e) {
+                                                        SpaceUtils.register(alias, email, token.getId());
+                                                    } catch (IOException e) {
                                                         e.printStackTrace();
                                                     }
                                                 }
@@ -190,7 +203,7 @@ public class NewAccountActivity extends AppCompatActivity {
                             setProgressBar(5);
                             SpaceAndroidUtils.initialize(alias, keyPair);
                             setProgressBar(6);
-                            // TODO show user the generated key pair, explain public vs private key, and provide options to backup their private key
+                            // TODO show user the generated key pair, explain public vs private key, and provide options to backup keys
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -222,7 +235,7 @@ public class NewAccountActivity extends AppCompatActivity {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    createAccountFab.setVisibility(View.VISIBLE);
+                                    createAccountFab.show();
                                     if (dialog != null && dialog.isShowing()) {
                                         dialog.dismiss();
                                     }
@@ -237,13 +250,6 @@ public class NewAccountActivity extends AppCompatActivity {
     }
 
     private void setProgressBar(final int v) {
-        if (v > 1) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {

@@ -33,7 +33,7 @@ limitations under the License.
         android:background="@android:color/transparent"
         android:contentDescription="@string/space_logo"
         android:padding="5dp"
-        android:tint="@color/textPrimary"
+        android:tint="@color/text_primary"
         app:srcCompat="@drawable/space_logo" />
 
     <View
@@ -71,7 +71,7 @@ limitations under the License.
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
             android:text="@string/new_account"
-            android:textColor="@color/textPrimary" />
+            android:textColor="@color/text_primary" />
 
         <Button
             android:id="@+id/access_import_account"
@@ -79,7 +79,7 @@ limitations under the License.
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
             android:text="@string/import_account"
-            android:textColor="@color/textPrimary" />
+            android:textColor="@color/text_primary" />
 
     </LinearLayout>
 
@@ -97,7 +97,7 @@ limitations under the License.
         android:background="@android:color/transparent"
         android:contentDescription="@string/aletheia_ware_llc_logo"
         android:padding="5dp"
-        android:tint="@color/textPrimary"
+        android:tint="@color/text_primary"
         app:srcCompat="@drawable/aletheia_ware_llc_logo" />
 
 </LinearLayout>

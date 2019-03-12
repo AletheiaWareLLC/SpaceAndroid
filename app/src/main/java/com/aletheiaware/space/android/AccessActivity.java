@@ -16,7 +16,6 @@
 
 package com.aletheiaware.space.android;
 
-import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -31,6 +30,7 @@ import android.widget.Button;
 
 import com.aletheiaware.bc.BCProto.KeyShare;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.space.android.utils.BiometricUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 
@@ -90,6 +90,7 @@ public class AccessActivity extends AppCompatActivity {
                 }.create();
             }
         });
+        // TODO add button to import backed up keys, either by OCR, or copy/paste.
         Button createAccountButton = findViewById(R.id.access_new_account);
         createAccountButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -125,30 +126,14 @@ public class AccessActivity extends AppCompatActivity {
                 unlockAccountRecycler.setVisibility(View.VISIBLE);
                 unlockAccountSeparator.setVisibility(View.VISIBLE);
                 unlockAccountRecycler.setLayoutManager(new LinearLayoutManager(this));
-                final AccountAdapter adapter = new AccountAdapter(this, ks){
+                final AccountAdapter adapter = new AccountAdapter(this, ks) {
                     @Override
                     public void unlockAccount(final String alias) {
-                        new UnlockDialog(AccessActivity.this, alias) {
-                            @Override
-                            public void onUnlock(DialogInterface dialog, char[] password) {
-                                dialog.dismiss();
-                                try {
-                                    // Use password to decrypt key
-                                    KeyPair keyPair = BCUtils.getRSAKeyPair(getFilesDir(), alias, password);
-                                    SpaceAndroidUtils.initialize(alias, keyPair);
-                                    // Sign In successful, exit
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            setResult(RESULT_OK);
-                                            finish();
-                                        }
-                                    });
-                                } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | InvalidKeySpecException | InvalidParameterSpecException | NoSuchAlgorithmException | NoSuchPaddingException e) {
-                                    SpaceAndroidUtils.showErrorDialog(AccessActivity.this, R.string.error_unlock_account, e);
-                                }
-                            }
-                        }.create();
+                        if (BiometricUtils.isBiometricUnlockAvailable(AccessActivity.this) && BiometricUtils.isBiometricUnlockEnabled(AccessActivity.this, alias)) {
+                            biometricUnlock(alias);
+                        } else {
+                            passwordUnlock(alias);
+                        }
                     }
 
                     @Override
@@ -172,8 +157,58 @@ public class AccessActivity extends AppCompatActivity {
         }
     }
 
+    private void biometricUnlock(final String alias) {
+        new BiometricUnlockDialog(AccessActivity.this, alias) {
+            @Override
+            public void onUnlock(char[] password) {
+                try {
+                    unlock(alias, password);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    // Fall back to password unlock
+                    passwordUnlock(alias);
+                }
+            }
+
+            @Override
+            public void onError(Exception e) {
+                e.printStackTrace();
+                // Fall back to password unlock
+                passwordUnlock(alias);
+            }
+        }.create();
+    }
+
+    private void passwordUnlock(final String alias) {
+        new PasswordUnlockDialog(AccessActivity.this, alias) {
+            @Override
+            public void onUnlock(DialogInterface dialog, char[] password) {
+                dialog.dismiss();
+                try {
+                    unlock(alias, password);
+                } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | InvalidKeySpecException | InvalidParameterSpecException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                    SpaceAndroidUtils.showErrorDialog(AccessActivity.this, R.string.error_unlock_account, e);
+                }
+            }
+        }.create();
+    }
+
     @Override
     public void onPause() {
         super.onPause();
+    }
+
+    private void unlock(String alias, char[] password) throws BadPaddingException, IOException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException, InvalidKeySpecException, InvalidParameterSpecException, NoSuchAlgorithmException, NoSuchPaddingException {
+        // Use password to decrypt key
+        KeyPair keyPair = BCUtils.getRSAKeyPair(getFilesDir(), alias, password);
+        SpaceAndroidUtils.initialize(alias, keyPair);
+        // Unlock successful, exit
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                setResult(RESULT_OK);
+                finish();
+            }
+        });
     }
 }

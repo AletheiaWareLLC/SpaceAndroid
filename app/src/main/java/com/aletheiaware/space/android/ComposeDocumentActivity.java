@@ -39,16 +39,14 @@ import com.google.protobuf.ByteString;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
 
-public class NewRecordActivity extends AppCompatActivity {
+public class ComposeDocumentActivity extends AppCompatActivity {
 
     private EditText nameEditText;
     private Spinner typeSpinner;
     private TextView sizeTextView;
     private EditText contentEditText;
+    private FloatingActionButton composeFab;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -56,26 +54,26 @@ public class NewRecordActivity extends AppCompatActivity {
         SpaceAndroidUtils.createNotificationChannels(this);
 
         // Setup UI
-        setContentView(R.layout.activity_new_record);
+        setContentView(R.layout.activity_compose_document);
 
         // Toolbar
-        Toolbar toolbar = findViewById(R.id.new_record_toolbar);
+        Toolbar toolbar = findViewById(R.id.compose_document_toolbar);
         setSupportActionBar(toolbar);
 
         // Name EditText
-        nameEditText = findViewById(R.id.new_record_name);
+        nameEditText = findViewById(R.id.compose_document_name);
         // Precomplete EditText with generated name
-        String generatedName = "Record" + System.nanoTime() + ".txt";
+        String generatedName = "Document" + System.currentTimeMillis();
         nameEditText.setText(generatedName);
 
         // Type Spinner
-        typeSpinner = findViewById(R.id.new_record_type);
+        typeSpinner = findViewById(R.id.compose_document_type);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.mime_types, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         typeSpinner.setAdapter(adapter);
 
         // Content EditText
-        contentEditText = findViewById(R.id.new_record_content);
+        contentEditText = findViewById(R.id.compose_document_content);
         contentEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -94,19 +92,19 @@ public class NewRecordActivity extends AppCompatActivity {
         });
 
         // Size TextView
-        sizeTextView = findViewById(R.id.new_record_size);
+        sizeTextView = findViewById(R.id.compose_document_size);
         sizeTextView.setText(BCUtils.sizeToString(0));
 
         // FloatingActionButton
-        FloatingActionButton fab = findViewById(R.id.new_record_fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        composeFab = findViewById(R.id.compose_document_fab);
+        composeFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // TODO disable fab, nameEditText, typeSpinner, and contentEditText until mining fails (if mining succeeds, activity will finish)
-                //fab.setEnabled(false);
-                //nameEditText.setEnabled(false);
-                //typeSpinner.setEnabled(false);
-                //contentEditText.setEnabled(false);
+                composeFab.hide();
+                composeFab.setEnabled(false);
+                nameEditText.setEnabled(false);
+                typeSpinner.setEnabled(false);
+                contentEditText.setEnabled(false);
                 String name = nameEditText.getText().toString();
                 String type = typeSpinner.getSelectedItem().toString();
                 String text = contentEditText.getText().toString();
@@ -115,7 +113,7 @@ public class NewRecordActivity extends AppCompatActivity {
                         .setData(ByteString.copyFromUtf8(text.substring(0, Math.min(text.length(), SpaceUtils.PREVIEW_TEXT_LENGTH))))
                         .build();
                 ByteArrayInputStream in = new ByteArrayInputStream(text.getBytes(Charset.defaultCharset()));
-                SpaceAndroidUtils.mine(NewRecordActivity.this, name, type, preview, in);
+                SpaceAndroidUtils.mine(ComposeDocumentActivity.this, name, type, preview, in);
             }
         });
     }
@@ -128,6 +126,7 @@ public class NewRecordActivity extends AppCompatActivity {
             if (intent != null) {
                 Log.d(SpaceUtils.TAG, intent.toString());
             }
+            composeFab.show();
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
             startActivityForResult(intent, SpaceAndroidUtils.ACCESS_ACTIVITY);
@@ -149,7 +148,7 @@ public class NewRecordActivity extends AppCompatActivity {
                         break;
                 }
                 break;
-            case SpaceAndroidUtils.PAYMENT_ACTIVITY:
+            case SpaceAndroidUtils.STRIPE_ACTIVITY:
                 switch (resultCode) {
                     case RESULT_OK:
                         final String name = nameEditText.getText().toString();
@@ -171,15 +170,9 @@ public class NewRecordActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 try {
-                                    SpaceUtils.subscribe(alias, email, paymentId);
-                                    SpaceAndroidUtils.mine(NewRecordActivity.this, name, type, preview, in);
+                                    SpaceUtils.register(alias, email, paymentId);
+                                    SpaceAndroidUtils.mine(ComposeDocumentActivity.this, name, type, preview, in);
                                 } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (NoSuchAlgorithmException e) {
-                                    e.printStackTrace();
-                                } catch (InvalidKeyException e) {
-                                    e.printStackTrace();
-                                } catch (SignatureException e) {
                                     e.printStackTrace();
                                 }
                             }

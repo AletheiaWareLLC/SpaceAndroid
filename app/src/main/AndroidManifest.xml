@@ -18,13 +18,17 @@ limitations under the License.
     xmlns:tools="http://schemas.android.com/tools"
     package="com.aletheiaware.space.android">
 
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.fingerprint"
+        android:required="false" />
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <!-- TODO add tagging and searching -->
-    <!-- TODO add sharing and receiving -->
-    <!-- TODO offer automatic backup service -->
 
     <application
         android:allowBackup="true"
@@ -64,8 +68,8 @@ limitations under the License.
             android:label="@string/title_activity_payment"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".NewRecordActivity"
-            android:label="@string/title_activity_new_record"
+            android:name=".ComposeDocumentActivity"
+            android:label="@string/title_activity_compose_document"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".UploadActivity"
@@ -79,6 +83,11 @@ limitations under the License.
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
+
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="com.aletheiaware.space.android.fileprovider"

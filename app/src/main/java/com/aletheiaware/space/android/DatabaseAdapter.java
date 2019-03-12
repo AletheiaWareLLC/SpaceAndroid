@@ -1,11 +1,29 @@
+/*
+ * Copyright 2019 Aletheia Ware LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.aletheiaware.space.android;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,8 +31,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.aletheiaware.bc.BC;
-import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.utils.SpaceUtils;
@@ -40,11 +56,10 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
     }
 
     public void addFile(ByteString recordHash, long timestamp, Meta meta) {
-        Log.d(SpaceUtils.TAG, "Adding file: " + meta);
         if (metas.put(recordHash, meta) == null) {
             sorted.add(recordHash);// Only add if new
             timestamps.put(recordHash, timestamp);
-            SpaceUtils.sort(sorted, timestamps);
+            sort();
         }
         activity.runOnUiThread(new Runnable() {
             public void run() {
@@ -53,8 +68,17 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
         });
     }
 
+    public void sort() {
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(activity);
+        String key = activity.getString(R.string.preference_sort_key);
+        // 1 - chronological
+        // 2 - reverse-chronological
+        String value = sharedPrefs.getString(key, "2");
+        boolean chronological = "1".equals(value);
+        SpaceUtils.sort(sorted, timestamps, chronological);
+    }
+
     public void addPreview(ByteString recordHash, Preview preview) {
-        Log.d(SpaceUtils.TAG, "Adding preview: " + preview);
         previews.put(recordHash, preview);
         activity.runOnUiThread(new Runnable() {
             public void run() {
@@ -116,14 +140,12 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
         private ImageView itemImage;
         private TextView itemText;
         private TextView itemTitle;
-        private TextView itemSize;
 
         ViewHolder(LinearLayout view) {
             super(view);
             itemImage = view.findViewById(R.id.list_item_image_view);
             itemText = view.findViewById(R.id.list_item_text_view);
             itemTitle = view.findViewById(R.id.list_item_title);
-            itemSize = view.findViewById(R.id.list_item_size);
         }
 
         void set(ByteString hash, Meta meta, Preview preview) {
@@ -165,21 +187,20 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
                 }
             }
             itemTitle.setText(meta.getName());
-            itemSize.setText(BCUtils.sizeToString(meta.getSize()));
         }
 
         private void setDefaultTextPreview() {
-            itemText.setText("Text");
+            itemText.setText(itemText.getContext().getString(R.string.default_text_preview));
         }
 
         private void setDefaultImagePreview() {
             itemImage.setBackgroundResource(R.color.black);
-            itemImage.setImageDrawable(itemImage.getContext().getDrawable(R.drawable.bc_image));
+            itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_image));
         }
 
         private void setDefaultVideoPreview() {
             itemImage.setBackgroundResource(R.color.black);
-            itemImage.setImageDrawable(itemImage.getContext().getDrawable(R.drawable.bc_video));
+            itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_video));
         }
 
         ByteString getHash() {

@@ -17,17 +17,15 @@
 package com.aletheiaware.space.android;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.MediaController;
@@ -44,31 +42,14 @@ import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.URI;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 public class DetailActivity extends AppCompatActivity {
 
@@ -82,7 +63,6 @@ public class DetailActivity extends AppCompatActivity {
     private TextView typeTextView;
     private TextView sizeTextView;
     private TextView timestampTextView;
-    private FloatingActionButton fab;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -115,20 +95,6 @@ public class DetailActivity extends AppCompatActivity {
 
         // Timestamp TextView
         timestampTextView = findViewById(R.id.detail_timestamp);
-
-        // FloatingActionButton
-        fab = findViewById(R.id.detail_fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
-                intent.setType(meta.getType());
-                intent.putExtra(Intent.EXTRA_TITLE, meta.getName());
-                startActivityForResult(intent, SpaceAndroidUtils.DOWNLOAD_ACTIVITY);
-            }
-        });
-        fab.setVisibility(View.GONE);
     }
 
     @Override
@@ -158,7 +124,7 @@ public class DetailActivity extends AppCompatActivity {
             public void run() {
                 try {
                     final long[] timestamp = new long[1];
-                    InetAddress address = InetAddress.getByName(SpaceUtils.SPACE_HOST);
+                    InetAddress address = SpaceAndroidUtils.getHost();
                     BC.Channel metas = new BC.Channel(SpaceUtils.META_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
                     BC.Channel files = new BC.Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
                     final Meta.Builder metaBuilder = Meta.newBuilder();
@@ -176,7 +142,9 @@ public class DetailActivity extends AppCompatActivity {
                         }
                     });
                     meta = metaBuilder.build();
-                    // TODO if meta has preview, show it
+                    // TODO show previews, if any
+                    // TODO show shares, if any
+                    // TODO show tags, if any
                     String type = meta.getType();
                     if (SpaceUtils.isVideo(type)) {
                         Log.d(SpaceUtils.TAG, "Setting Video");
@@ -291,9 +259,6 @@ public class DetailActivity extends AppCompatActivity {
                                 sizeTextView.setText(BCUtils.sizeToString(meta.getSize()));
                             }
                             timestampTextView.setText(BCUtils.timeToString(timestamp[0]));
-
-                            // TODO only show FAB when file data has been mined
-                            fab.setVisibility(View.VISIBLE);
                         }
                     });
                 } catch (UnknownHostException e) {
@@ -313,7 +278,7 @@ public class DetailActivity extends AppCompatActivity {
         try {
             String alias = SpaceAndroidUtils.getAlias();
             KeyPair keys = SpaceAndroidUtils.getKeyPair();
-            InetAddress address = InetAddress.getByName(SpaceUtils.SPACE_HOST);
+            InetAddress address = SpaceAndroidUtils.getHost();
             BC.Channel files = new BC.Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
             output = getContentResolver().openOutputStream(uri);
 
@@ -380,5 +345,46 @@ public class DetailActivity extends AppCompatActivity {
             default:
                 super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_detail, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle presses on the action bar items
+        switch (item.getItemId()) {
+            case R.id.menu_download:
+                download();
+                return true;
+            case R.id.menu_share:
+                share();
+                return true;
+            case R.id.menu_tag:
+                tag();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void download() {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType(meta.getType());
+        intent.putExtra(Intent.EXTRA_TITLE, meta.getName());
+        startActivityForResult(intent, SpaceAndroidUtils.DOWNLOAD_ACTIVITY);
+    }
+
+    private void share() {
+        // TODO
+    }
+
+    private void tag() {
+        // TODO
     }
 }

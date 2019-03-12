@@ -26,7 +26,8 @@ limitations under the License.
         android:layout_margin="@dimen/view_margin"
         android:labelFor="@id/export_alias_text"
         android:text="@string/export_account_alias"
-        android:textColor="@color/textSecondary" />
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/text_secondary_size"/>
 
     <TextView
         android:id="@+id/export_alias_text"
@@ -34,7 +35,8 @@ limitations under the License.
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
         android:gravity="center"
-        android:textColor="@color/textPrimary" />
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_primary_size" />
 
     <TextView
         android:layout_width="match_parent"
@@ -42,7 +44,8 @@ limitations under the License.
         android:layout_margin="@dimen/view_margin"
         android:labelFor="@id/export_access_code_text"
         android:text="@string/export_account_access_code"
-        android:textColor="@color/textSecondary" />
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/text_secondary_size"/>
 
     <TextView
         android:id="@+id/export_access_code_text"
@@ -50,13 +53,15 @@ limitations under the License.
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
         android:gravity="center"
-        android:textColor="@color/textPrimary" />
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_primary_size" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
         android:text="@string/export_account_label"
-        android:textColor="@color/textSecondary" />
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/text_secondary_size"/>
 
 </LinearLayout>

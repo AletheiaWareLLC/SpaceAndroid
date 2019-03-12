@@ -17,7 +17,7 @@ limitations under the License.
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:padding="@dimen/activity_padding">
 
     <ImageView android:id="@+id/list_item_image_view"
@@ -36,24 +36,14 @@ limitations under the License.
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
         android:textColor="@color/text"
+        android:textSize="@dimen/text_primary_size"
         android:visibility="gone" />
 
-    <LinearLayout
+    <TextView android:id="@+id/list_item_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <TextView android:id="@+id/list_item_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:textColor="@color/textPrimary" />
-
-        <TextView android:id="@+id/list_item_size"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:textColor="@color/textSecondary" />
-    </LinearLayout>
+        android:layout_margin="@dimen/view_margin"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_primary_size"/>
 
 </LinearLayout>

@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,17 +40,24 @@ public class StripeActivity extends AppCompatActivity {
 
     private EditText emailText;
     private CardInputWidget cardWidget;
+    private CheckBox policyCheck;
+    private CheckBox termsCheck;
+    private FloatingActionButton stripeFab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Setup UI
         setContentView(R.layout.activity_stripe);
         TextView amountLabel = findViewById(R.id.stripe_amount_label);
         TextView amountText = findViewById(R.id.stripe_amount_text);
         emailText = findViewById(R.id.stripe_email_text);
         cardWidget = findViewById(R.id.stripe_card_widget);
-        FloatingActionButton fab = findViewById(R.id.stripe_fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        policyCheck = findViewById(R.id.stripe_privacy_policy_check);
+        termsCheck = findViewById(R.id.stripe_terms_of_service_check);
+        stripeFab = findViewById(R.id.stripe_fab);
+        stripeFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 pay();
@@ -66,8 +74,35 @@ public class StripeActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        stripeFab.show();
+    }
+
     public void pay() {
+        // Email
         final String email = emailText.getText().toString();
+        // TODO ensure email is valid
+        if (email.isEmpty()) {
+            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, "Invalid email");
+            return;
+        }
+
+        // Legal
+        // TODO mine legal responses into blockchain and check server side
+        if (!policyCheck.isChecked()) {
+            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, "You must read, understand, and agree to the Privacy Policy");
+            return;
+        }
+
+        if (!termsCheck.isChecked()) {
+            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, "You must read, understand, and agree to the Terms of Service");
+            return;
+        }
+
+        stripeFab.hide();
+
         Card card = cardWidget.getCard();
         if (card != null) {
             card.setName(email);

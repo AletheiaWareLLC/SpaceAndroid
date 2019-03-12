@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-Copyright 2018 Stuart Scott
+Copyright 2018 Aletheia Ware LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,4 +18,6 @@ limitations under the License.
     <dimen name="activity_padding">10dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="view_margin">10dp</dimen>
+    <dimen name="text_primary_size">20sp</dimen>
+    <dimen name="text_secondary_size">16sp</dimen>
 </resources>

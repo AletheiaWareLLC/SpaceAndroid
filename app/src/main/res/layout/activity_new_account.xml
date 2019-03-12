@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+<?xml version="1.0" encoding="utf-8"?>
+<!--
 Copyright 2018 Aletheia Ware LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,7 +58,8 @@ limitations under the License.
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/view_margin"
                 android:text="@string/new_account_step_1"
-                android:textColor="@color/textPrimary" />
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_primary_size" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -65,7 +67,8 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:labelFor="@id/new_account_alias_text"
                 android:text="@string/new_account_alias"
-                android:textColor="@color/textSecondary" />
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_secondary_size" />
 
             <EditText
                 android:id="@+id/new_account_alias_text"
@@ -81,7 +84,8 @@ limitations under the License.
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/view_margin"
                 android:text="@string/new_account_step_2"
-                android:textColor="@color/textPrimary" />
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_primary_size" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -89,7 +93,8 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:labelFor="@id/new_account_email_text"
                 android:text="@string/new_account_email"
-                android:textColor="@color/textSecondary" />
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_secondary_size" />
 
             <EditText
                 android:id="@+id/new_account_email_text"
@@ -105,7 +110,8 @@ limitations under the License.
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/view_margin"
                 android:text="@string/new_account_step_3"
-                android:textColor="@color/textPrimary" />
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_primary_size" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -113,7 +119,8 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:labelFor="@id/new_account_new_password_text"
                 android:text="@string/new_account_new_password"
-                android:textColor="@color/textSecondary" />
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_secondary_size" />
 
             <EditText
                 android:id="@+id/new_account_new_password_text"
@@ -130,7 +137,8 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:labelFor="@id/new_account_confirm_password_text"
                 android:text="@string/new_account_confirm_password"
-                android:textColor="@color/textSecondary" />
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_secondary_size" />
 
             <EditText
                 android:id="@+id/new_account_confirm_password_text"
@@ -139,14 +147,16 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:gravity="center"
                 android:imeOptions="actionDone"
-                android:inputType="textPassword" />
+                android:inputType="textPassword"
+                android:textSize="@dimen/text_primary_size" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/view_margin"
                 android:text="@string/new_account_step_4"
-                android:textColor="@color/textPrimary" />
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_primary_size" />
 
             <com.stripe.android.view.CardInputWidget
                 android:id="@+id/new_account_card_widget"
@@ -159,7 +169,8 @@ limitations under the License.
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/view_margin"
                 android:text="@string/new_account_step_5"
-                android:textColor="@color/textPrimary" />
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_primary_size" />
 
             <CheckBox
                 android:id="@+id/new_account_privacy_policy_check"
@@ -168,7 +179,7 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:autoLink="web"
                 android:text="@string/legalese_privacy_policy"
-                android:textColor="@color/textSecondary" />
+                android:textColor="@color/text_secondary" />
 
             <CheckBox
                 android:id="@+id/new_account_terms_of_service_check"
@@ -177,7 +188,7 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:autoLink="web"
                 android:text="@string/legalese_terms_of_service"
-                android:textColor="@color/textSecondary" />
+                android:textColor="@color/text_secondary" />
         </LinearLayout>
 
     </android.support.v4.widget.NestedScrollView>

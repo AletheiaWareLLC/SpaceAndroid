@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-Copyright 2018 Aletheia Ware LLC
+Copyright 2019 Aletheia Ware LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,21 +17,21 @@ limitations under the License.
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/menu_refresh"
-        android:icon="@drawable/refresh"
+        android:id="@+id/menu_download"
+        android:icon="@drawable/cloud_download"
         app:showAsAction="ifRoom"
-        android:title="@string/menu_refresh">
+        android:title="@string/menu_download">
     </item>
     <item
-        android:id="@+id/menu_account"
-        android:icon="@drawable/account"
-        app:showAsAction="ifRoom|withText"
-        android:title="@string/menu_account">
+        android:id="@+id/menu_share"
+        android:icon="@drawable/share"
+        app:showAsAction="ifRoom"
+        android:title="@string/menu_share">
     </item>
     <item
-        android:id="@+id/menu_settings"
-        android:icon="@drawable/settings"
-        app:showAsAction="never"
-        android:title="@string/menu_settings">
+        android:id="@+id/menu_tag"
+        android:icon="@drawable/tag"
+        app:showAsAction="ifRoom"
+        android:title="@string/menu_tag">
     </item>
 </menu>

@@ -23,12 +23,12 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
-public abstract class UnlockDialog {
+public abstract class PasswordUnlockDialog {
 
     private final Activity activity;
     private final String alias;
 
-    public UnlockDialog(Activity activity, String alias) {
+    public PasswordUnlockDialog(Activity activity, String alias) {
         this.activity = activity;
         this.alias = alias;
     }

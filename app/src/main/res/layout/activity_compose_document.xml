@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+<?xml version="1.0" encoding="utf-8"?>
+<!--
 Copyright 2018 Aletheia Ware LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,17 +21,17 @@ limitations under the License.
     android:layout_height="match_parent"
     android:background="@android:color/background_dark"
     android:fitsSystemWindows="false"
-    tools:context=".NewRecordActivity">
+    tools:context=".ComposeDocumentActivity">
 
     <android.support.design.widget.AppBarLayout
-        android:id="@+id/new_record_appbar"
+        android:id="@+id/compose_document_appbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/primary"
         android:theme="@style/AppBarOverlay">
 
         <android.support.v7.widget.Toolbar
-            android:id="@+id/new_record_toolbar"
+            android:id="@+id/compose_document_toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:theme="@style/ActionBarTheme"
@@ -40,7 +41,7 @@ limitations under the License.
     </android.support.design.widget.AppBarLayout>
 
     <android.support.v4.widget.NestedScrollView
-        android:id="@+id/new_record_nested_scroll_view"
+        android:id="@+id/compose_document_nested_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fitsSystemWindows="false"
@@ -53,48 +54,53 @@ limitations under the License.
             android:padding="@dimen/activity_padding">
 
             <EditText
-                android:id="@+id/new_record_name"
+                android:id="@+id/compose_document_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/view_margin"
                 android:imeOptions="actionDone"
                 android:inputType="text|textNoSuggestions"
-                android:textColor="@color/textPrimary" />
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_primary_size" />
 
             <Spinner
-                android:id="@+id/new_record_type"
+                android:id="@+id/compose_document_type"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/view_margin"
-                android:textColor="@color/textPrimary" />
+                android:textColor="@color/text_primary" />
 
             <TextView
-                android:id="@+id/new_record_size"
+                android:id="@+id/compose_document_size"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/view_margin"
-                android:textColor="@color/textSecondary" />
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_secondary_size" />
 
             <EditText
-                android:id="@+id/new_record_content"
+                android:id="@+id/compose_document_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/view_margin"
-                android:inputType="text"
-                android:textColor="@color/text" />
+                android:inputType="text|textMultiLine"
+                android:lines="4"
+                android:scrollbars="vertical"
+                android:textColor="@color/text"
+                android:textSize="@dimen/text_primary_size" />
 
         </LinearLayout>
 
     </android.support.v4.widget.NestedScrollView>
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/new_record_fab"
+        android:id="@+id/compose_document_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end|bottom"
         android:layout_margin="@dimen/fab_margin"
         app:fabSize="normal"
-        app:layout_anchor="@id/new_record_nested_scroll_view"
+        app:layout_anchor="@id/compose_document_nested_scroll_view"
         app:layout_anchorGravity="bottom|end"
         app:srcCompat="@drawable/bc_mine" />
 

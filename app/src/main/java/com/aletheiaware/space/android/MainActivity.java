@@ -47,10 +47,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -59,14 +57,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Setup UI
         setContentView(R.layout.activity_main);
 
         // Toolbar
         Toolbar toolbar = findViewById(R.id.main_toolbar);
         toolbar.setTitle("");
         setSupportActionBar(toolbar);
-        //account
-        //refresh
 
         // CollapsingToolbar
         final CollapsingToolbarLayout collapsingToolbar = findViewById(R.id.main_collapsing_toolbar);
@@ -106,26 +104,23 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void loadPreview(final ByteString metaRecordHash) {
                 if (SpaceAndroidUtils.isInitialized()) {
-                    Log.d(SpaceUtils.TAG, "Loading Preview for " + new String(BCUtils.encodeBase64URL(metaRecordHash.toByteArray())));
                     new Thread() {
                         @Override
                         public void run() {
                             try {
                                 String alias = SpaceAndroidUtils.getAlias();
                                 KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                                InetAddress address = InetAddress.getByName(SpaceUtils.SPACE_HOST);
+                                InetAddress address = SpaceAndroidUtils.getHost();
                                 Channel previewChannel = new Channel(SpaceUtils.PREVIEW_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHash.toByteArray())), BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
                                 previewChannel.read(alias, keys, null, new RecordCallback() {
                                     @Override
                                     public void onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                        Log.d(SpaceUtils.TAG, "Preview Block " + new String(BCUtils.encodeBase64URL(blockHash.toByteArray())));
                                         Preview preview = null;
                                         for (Reference r : blockEntry.getRecord().getReferenceList()) {
                                             if (r.getRecordHash().equals(metaRecordHash)) {
                                                 try {
                                                     Preview p = Preview.newBuilder().mergeFrom(payload).build();
-                                                    Log.d(SpaceUtils.TAG, "Found Preview " + p);
-                                                    // TODO choose best preview
+                                                    // TODO choose best preview for screen size
                                                     if (preview == null) {
                                                         preview = p;
                                                     }
@@ -225,34 +220,6 @@ public class MainActivity extends AppCompatActivity {
                         break;
                 }
                 break;
-            case SpaceAndroidUtils.PAYMENT_ACTIVITY:
-                switch (resultCode) {
-                    case RESULT_OK:
-                        final String alias = SpaceAndroidUtils.getAlias();
-                        final String email = intent.getStringExtra(SpaceAndroidUtils.EMAIL_EXTRA);
-                        final String paymentId = intent.getStringExtra(SpaceAndroidUtils.STRIPE_TOKEN_EXTRA);
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                try {
-                                    SpaceUtils.subscribe(alias, email, paymentId);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (NoSuchAlgorithmException e) {
-                                    e.printStackTrace();
-                                } catch (SignatureException e) {
-                                    e.printStackTrace();
-                                } catch (InvalidKeyException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }.start();
-                        break;
-                    case RESULT_CANCELED:
-                        break;
-                    default:
-                        break;
-                }
             case SpaceAndroidUtils.NEW_RECORD_ACTIVITY:
                 break;
             case SpaceAndroidUtils.UPLOAD_ACTIVITY:
@@ -298,6 +265,17 @@ public class MainActivity extends AppCompatActivity {
                         break;
                 }
                 break;
+            case SpaceAndroidUtils.SETTINGS_ACTIVITY:
+                switch (resultCode) {
+                    case RESULT_OK:
+                        break;
+                    case RESULT_CANCELED:
+                        // TODO
+                        break;
+                    default:
+                        break;
+                }
+                break;
             default:
                 super.onActivityResult(requestCode, resultCode, intent);
                 break;
@@ -315,11 +293,14 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle presses on the action bar items
         switch (item.getItemId()) {
+            case R.id.menu_account:
+                account();
+                return true;
             case R.id.menu_refresh:
                 refresh();
                 return true;
-            case R.id.menu_account:
-                account();
+            case R.id.menu_settings:
+                settings();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -332,14 +313,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void refresh() {
+        adapter.sort();
+        adapter.notifyDataSetChanged();
         new Thread() {
             @Override
             public void run() {
                 try {
-                    InetAddress address = InetAddress.getByName(SpaceUtils.SPACE_HOST);
+                    InetAddress address = SpaceAndroidUtils.getHost();
                     String alias = SpaceAndroidUtils.getAlias();
                     Channel metas = new Channel(SpaceUtils.META_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
-                    metas.sync();
+                    try {
+                        metas.sync();
+                    } catch (IOException e) {
+                        /* Ignored */
+                        e.printStackTrace();
+                    }
                     KeyPair keys = SpaceAndroidUtils.getKeyPair();
                     metas.read(alias, keys, null, new RecordCallback() {
                         @Override
@@ -357,5 +345,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }.start();
+    }
+
+    private void settings() {
+        Intent i = new Intent(this, SettingsActivity.class);
+        startActivityForResult(i, SpaceAndroidUtils.SETTINGS_ACTIVITY);
     }
 }

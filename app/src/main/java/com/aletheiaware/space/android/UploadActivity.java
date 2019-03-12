@@ -43,9 +43,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
 
 public class UploadActivity extends AppCompatActivity {
 
@@ -58,7 +55,7 @@ public class UploadActivity extends AppCompatActivity {
 
     private Preview preview;
     private InputStream in;
-    private FloatingActionButton fab;
+    private FloatingActionButton uploadFab;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -91,13 +88,18 @@ public class UploadActivity extends AppCompatActivity {
         contentVideoView = findViewById(R.id.upload_video_view);
 
         // FloatingActionButton
-        fab = findViewById(R.id.upload_fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        uploadFab = findViewById(R.id.upload_fab);
+        uploadFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // TODO disable fab and nameEditText until mining fails (if mining succeeds, activity will finish)
-                //fab.setEnabled(false);
-                //nameEditText.setEnabled(false);
+                uploadFab.hide();
+                uploadFab.setEnabled(false);
+                nameEditText.setEnabled(false);
+                typeTextView.setEnabled(false);
+                sizeTextView.setEnabled(false);
+                contentTextView.setEnabled(false);
+                contentImageView.setEnabled(false);
+                contentVideoView.setEnabled(false);
                 String name = nameEditText.getText().toString();
                 String type = typeTextView.getText().toString();
                 if (in != null) {
@@ -144,7 +146,7 @@ public class UploadActivity extends AppCompatActivity {
 
                 if (SpaceUtils.isText(type)) {
                     // Precomplete EditText with generated name
-                    String generatedName = "Record" + System.nanoTime() + ".txt";
+                    String generatedName = "Document" + System.currentTimeMillis();
                     nameEditText.setText(generatedName);
                     String text = intent.getStringExtra(Intent.EXTRA_TEXT);
                     if (text == null) {
@@ -159,7 +161,7 @@ public class UploadActivity extends AppCompatActivity {
                     byte[] bytes = text.getBytes();
                     in = new ByteArrayInputStream(bytes);
                     sizeTextView.setText(BCUtils.sizeToString(bytes.length));
-                    fab.setVisibility(View.VISIBLE);
+                    uploadFab.show();
                 } else if (uri != null) {
                     nameEditText.setText(SpaceAndroidUtils.getName(this, uri));
                     try {
@@ -184,9 +186,11 @@ public class UploadActivity extends AppCompatActivity {
                             contentImageView.setVisibility(View.VISIBLE);
                             Bundle extras = intent.getExtras();
                             if (extras != null) {
+                                Log.d(SpaceUtils.TAG, "Getting preview from intent");
                                 bitmap = (Bitmap) extras.get(SpaceAndroidUtils.DATA_EXTRA);
                             }
                             if (bitmap == null) {
+                                Log.d(SpaceUtils.TAG, "Extracting thumbnail from image");
                                 try {
                                     Bitmap image = BitmapFactory.decodeStream(getContentResolver().openInputStream(uri));
                                     bitmap = ThumbnailUtils.extractThumbnail(image, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE);
@@ -198,17 +202,25 @@ public class UploadActivity extends AppCompatActivity {
                             // VideoView
                             contentVideoView.setVideoURI(uri);
                             contentVideoView.setVisibility(View.VISIBLE);
+                            MediaMetadataRetriever retriever = null;
                             try {
-                                MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                                retriever = new MediaMetadataRetriever();
                                 retriever.setDataSource(this, uri);
                                 bitmap = retriever.getFrameAtTime();
-                                retriever.release();
                             } catch (Exception e) {
                                 /* Ignored */
                                 e.printStackTrace();
+                            } finally {
+                                if (retriever != null) {
+                                    retriever.release();
+                                }
                             }
                         }
+                        // FIXME preview bitmap rotated 90 degrees
                         if (bitmap != null) {
+                            if (bitmap.getWidth() > SpaceUtils.PREVIEW_IMAGE_SIZE || bitmap.getHeight() > SpaceUtils.PREVIEW_IMAGE_SIZE) {
+                                bitmap = Bitmap.createScaledBitmap(bitmap, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE, false);
+                            }
                             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os);
                             preview = Preview.newBuilder()
                                     .setType(SpaceUtils.IMAGE_JPEG_TYPE)
@@ -217,7 +229,7 @@ public class UploadActivity extends AppCompatActivity {
                                     .setHeight(bitmap.getHeight())
                                     .build();
                         }
-                        fab.setVisibility(View.VISIBLE);
+                        uploadFab.show();
                     }
                 }
             }
@@ -242,7 +254,7 @@ public class UploadActivity extends AppCompatActivity {
                         break;
                 }
                 break;
-            case SpaceAndroidUtils.PAYMENT_ACTIVITY:
+            case SpaceAndroidUtils.STRIPE_ACTIVITY:
                 switch (resultCode) {
                     case RESULT_OK:
                         final String name = nameEditText.getText().toString();
@@ -258,15 +270,9 @@ public class UploadActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 try {
-                                    SpaceUtils.subscribe(alias, email, paymentId);
+                                    SpaceUtils.register(alias, email, paymentId);
                                     SpaceAndroidUtils.mine(UploadActivity.this, name, type, preview, in);
                                 } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (NoSuchAlgorithmException e) {
-                                    e.printStackTrace();
-                                } catch (InvalidKeyException e) {
-                                    e.printStackTrace();
-                                } catch (SignatureException e) {
                                     e.printStackTrace();
                                 }
                             }
