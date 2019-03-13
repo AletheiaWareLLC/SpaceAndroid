@@ -27,6 +27,7 @@ public abstract class ExportAccountDialog {
     private final Activity activity;
     private final String alias;
     private final String accessCode;
+    private AlertDialog dialog;
 
     public ExportAccountDialog(Activity activity, String alias, String accessCode) {
         this.activity = activity;
@@ -49,6 +50,10 @@ public abstract class ExportAccountDialog {
                 dialog.dismiss();
             }
         });
-        final AlertDialog dialog = ab.show();
+        dialog = ab.show();
+    }
+
+    public AlertDialog getDialog() {
+        return dialog;
     }
 }

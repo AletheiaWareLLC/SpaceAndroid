@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -100,7 +101,8 @@ public class AccountActivity extends AppCompatActivity {
                             final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                             final InetAddress host = SpaceAndroidUtils.getHost();
                             final String customerId = FinanceUtils.getCustomerId(host, alias, keys);
-                            SpaceUtils.subscribe(alias, customerId);
+                            String subscriptionId = SpaceUtils.subscribe(alias, customerId);
+                            Log.d(SpaceUtils.TAG, "Subscription ID" + subscriptionId);
                             updateStripeInfo();
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -227,7 +229,8 @@ public class AccountActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 try {
-                                    SpaceUtils.register(alias, email, paymentId);
+                                    String customerId = SpaceUtils.register(alias, email, paymentId);
+                                    Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
                                     updateStripeInfo();
                                 } catch (IOException e) {
                                     e.printStackTrace();

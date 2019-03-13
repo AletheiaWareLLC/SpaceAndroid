@@ -17,8 +17,12 @@
 package com.aletheiaware.space.android;
 
 import android.content.Intent;
+import android.graphics.ImageDecoder;
+import android.graphics.drawable.AnimatedImageDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
@@ -32,29 +36,21 @@ import android.widget.MediaController;
 import android.widget.TextView;
 import android.widget.VideoView;
 
-import com.aletheiaware.bc.BC;
-import com.aletheiaware.bc.BCProto;
-import com.aletheiaware.bc.BCProto.Reference;
+import com.aletheiaware.bc.BC.Channel.RecordCallback;
+import com.aletheiaware.bc.BCProto.Block;
+import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.KeyPair;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DetailActivity extends AppCompatActivity {
 
-    private Meta meta;
-    private List<Reference> references = new ArrayList<>();
+    private MetaLoader loader;
 
     private ImageView contentImageView;
     private VideoView contentVideoView;
@@ -102,15 +98,22 @@ public class DetailActivity extends AppCompatActivity {
         super.onResume();
         if (SpaceAndroidUtils.isInitialized()) {
             byte[] metaRecordHash = null;
+            boolean shared = false;
             final Intent intent = getIntent();
             if (intent != null) {
                 Bundle extras = intent.getExtras();
                 if (extras != null) {
-                    metaRecordHash = extras.getByteArray(SpaceAndroidUtils.META_RECORD_HASH_EXTRA);
+                    metaRecordHash = extras.getByteArray(SpaceAndroidUtils.HASH_EXTRA);
+                    shared = extras.getBoolean(SpaceAndroidUtils.SHARED_EXTRA, false);
                 }
             }
             if (metaRecordHash != null) {
-                loadData(SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), metaRecordHash);
+                loader = new MetaLoader(this, metaRecordHash, shared) {
+                    @Override
+                    void onMetaLoaded() {
+                        loadUI();
+                    }
+                };
             }
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
@@ -118,197 +121,185 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
-    private void loadData(final String alias, final KeyPair keys, final byte[] hash) {
-        new Thread() {
+    private void loadUI() {
+        if (loader == null) {
+            return;
+        }
+        final Meta meta = loader.getMeta();
+        if (meta == null) {
+            return;
+        }
+        final String type = meta.getType();
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                nameTextView.setText(meta.getName());
+                typeTextView.setText(type);
+                sizeTextView.setText(BCUtils.sizeToString(meta.getSize()));
+                timestampTextView.setText(BCUtils.timeToString(loader.getTimestamp()));
+            }
+        });
+        if (SpaceUtils.isVideo(type)) {
+            Log.d(SpaceUtils.TAG, "Setting Video");
+            File videos = new File(getCacheDir(), "video");
+            if (!videos.exists() &&!videos.mkdirs()) {
+                Log.e(SpaceUtils.TAG, "Error making video directory");
+            }
+            File f = new File(videos, new String(BCUtils.encodeBase64URL(loader.getRecordHash())));
+            Log.d(SpaceUtils.TAG, "File");
+            Log.d(SpaceUtils.TAG, "Path: " + f.getAbsolutePath());
+            final Uri uri = FileProvider.getUriForFile(DetailActivity.this, getString(R.string.file_provider_authority), f);
+            if (!f.exists() || f.length() == 0) {
                 try {
-                    final long[] timestamp = new long[1];
-                    InetAddress address = SpaceAndroidUtils.getHost();
-                    BC.Channel metas = new BC.Channel(SpaceUtils.META_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
-                    BC.Channel files = new BC.Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
-                    final Meta.Builder metaBuilder = Meta.newBuilder();
-                    metas.read(alias, keys, hash, new BC.Channel.RecordCallback() {
+                    loader.writeFileToURI(uri);
+                } catch (IOException ex) {
+                    /* Ignored */
+                    ex.printStackTrace();
+                }
+            }
+            Log.d(SpaceUtils.TAG, "Length: " + f.length());
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    contentVideoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                         @Override
-                        public void onRecord(ByteString blockHash, BCProto.Block block, BCProto.BlockEntry blockEntry, byte[] key, byte[] payload) {
-                            timestamp[0] = blockEntry.getRecord().getTimestamp();
-                            references.addAll(blockEntry.getRecord().getReferenceList());
-                            try {
-                                metaBuilder.mergeFrom(payload);
-                            } catch (InvalidProtocolBufferException e) {
-                                SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_loading_metadata, e);
-                                finish();
+                        public void onCompletion(MediaPlayer mp) {
+                            Log.d(SpaceUtils.TAG, "onCompletion");
+                        }
+                    });
+                    contentVideoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                        @Override
+                        public boolean onError(MediaPlayer mp, int what, int extra) {
+                            Log.d(SpaceUtils.TAG, "onError " + what + " " + extra);
+                            return true;
+                        }
+                    });
+                    contentVideoView.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+                        @Override
+                        public boolean onInfo(MediaPlayer mp, int what, int extra) {
+                            Log.d(SpaceUtils.TAG, "onInfo " + what + " " + extra);
+                            return true;
+                        }
+                    });
+                    contentVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                        @Override
+                        public void onPrepared(MediaPlayer mp) {
+                            Log.d(SpaceUtils.TAG, "onPrepared");
+                        }
+                    });
+                    contentVideoView.setVisibility(View.VISIBLE);
+                    contentVideoView.requestFocus();
+                    final MediaController controller = new MediaController(DetailActivity.this);
+                    controller.setMediaPlayer(contentVideoView);
+                    controller.setAnchorView(contentVideoView);
+                    contentVideoView.setMediaController(controller);
+                    contentVideoView.setVideoURI(uri);
+                    contentVideoView.setZOrderOnTop(true);
+                    contentVideoView.start();
+                    contentVideoView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            if (controller.isShowing()) {
+                                controller.hide();
+                            } else {
+                                controller.show();
                             }
                         }
                     });
-                    meta = metaBuilder.build();
-                    // TODO show previews, if any
-                    // TODO show shares, if any
-                    // TODO show tags, if any
-                    String type = meta.getType();
-                    if (SpaceUtils.isVideo(type)) {
-                        Log.d(SpaceUtils.TAG, "Setting Video");
-                        File videos = new File(getCacheDir(), "video");
-                        videos.mkdirs();
-                        File f = new File(videos, new String(BCUtils.encodeBase64URL(hash)));
-                        Log.d(SpaceUtils.TAG, f.getAbsolutePath());
-                        final Uri uri = FileProvider.getUriForFile(DetailActivity.this, SpaceAndroidUtils.FILE_PROVIDER_PACKAGE, f);
-                        if (!f.exists() || f.length() == 0) {
-                            writeToUri(uri, references);
-                        }
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                contentVideoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                                    @Override
-                                    public void onCompletion(MediaPlayer mp) {
-                                        Log.d(SpaceUtils.TAG, "onCompletion");
-                                    }
-                                });
-                                contentVideoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                                    @Override
-                                    public boolean onError(MediaPlayer mp, int what, int extra) {
-                                        Log.d(SpaceUtils.TAG, "onError " + what + " " + extra);
-                                        return true;
-                                    }
-                                });
-                                contentVideoView.setOnInfoListener(new MediaPlayer.OnInfoListener() {
-                                    @Override
-                                    public boolean onInfo(MediaPlayer mp, int what, int extra) {
-                                        Log.d(SpaceUtils.TAG, "onInfo " + what + " " + extra);
-                                        return true;
-                                    }
-                                });
-                                contentVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                                    @Override
-                                    public void onPrepared(MediaPlayer mp) {
-                                        Log.d(SpaceUtils.TAG, "onPrepared");
-                                    }
-                                });
-                                contentVideoView.setVisibility(View.VISIBLE);
-                                contentVideoView.requestFocus();
-                                final MediaController controller = new MediaController(DetailActivity.this);
-                                controller.setMediaPlayer(contentVideoView);
-                                controller.setAnchorView(contentVideoView);
-                                contentVideoView.setMediaController(controller);
-                                contentVideoView.setVideoURI(uri);
-                                contentVideoView.setZOrderOnTop(true);
-                                contentVideoView.start();
-                                contentVideoView.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        if (controller.isShowing()) {
-                                            controller.hide();
-                                        } else {
-                                            controller.show();
-                                        }
-                                    }
-                                });
-                                contentVideoView.requestLayout();
-                                controller.show(3 * 1000);// Show for 3 seconds in ms
-                            }
-                        });
-                    } else if (SpaceUtils.isImage(type)) {
-                        Log.d(SpaceUtils.TAG, "Setting Image");
-                        File images = new File(getCacheDir(), "image");
-                        images.mkdirs();
-                        File f = new File(images, new String(BCUtils.encodeBase64URL(hash)));
-                        Log.d(SpaceUtils.TAG, f.getAbsolutePath());
-                        final Uri uri = FileProvider.getUriForFile(DetailActivity.this, SpaceAndroidUtils.FILE_PROVIDER_PACKAGE, f);
-                        if (!f.exists() || f.length() == 0) {
-                            writeToUri(uri, references);
-                        }
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                contentImageView.setVisibility(View.VISIBLE);
-                                contentImageView.setImageURI(uri);
-                                contentImageView.requestLayout();
-                            }
-                        });
-                    } else if (SpaceUtils.isText(type)) {
-                        Log.d(SpaceUtils.TAG, "Setting Text");
-                        final StringBuilder sb = new StringBuilder();
-                        for (Reference r : references) {
-                            files.read(alias, keys, r.getRecordHash().toByteArray(), new BC.Channel.RecordCallback() {
+                    contentVideoView.requestLayout();
+                    controller.show(3 * 1000);// Show for 3 seconds in ms
+                }
+            });
+        } else if (SpaceUtils.isImage(type)) {
+            Log.d(SpaceUtils.TAG, "Setting Image");
+            File images = new File(getCacheDir(), "image");
+            if (!images.exists() && !images.mkdirs()) {
+                Log.e(SpaceUtils.TAG, "Error making image directory");
+            }
+            File f = new File(images, new String(BCUtils.encodeBase64URL(loader.getRecordHash())));
+            Log.d(SpaceUtils.TAG, "File");
+            Log.d(SpaceUtils.TAG, "Path: " + f.getAbsolutePath());
+            final Uri uri = FileProvider.getUriForFile(DetailActivity.this, getString(R.string.file_provider_authority), f);
+            if (!f.exists() || f.length() == 0) {
+                try {
+                    loader.writeFileToURI(uri);
+                } catch (IOException ex) {
+                    /* Ignored */
+                    ex.printStackTrace();
+                }
+            }
+            Log.d(SpaceUtils.TAG, "Length: " + f.length());
+            Drawable[] drawables = { null };
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                try {
+                    ImageDecoder.Source source = ImageDecoder.createSource(getContentResolver(), uri);
+                    drawables[0] = ImageDecoder.decodeDrawable(source, new ImageDecoder.OnHeaderDecodedListener() {
+                        @Override
+                        public void onHeaderDecoded(ImageDecoder decoder, ImageDecoder.ImageInfo info, ImageDecoder.Source source) {
+                            decoder.setOnPartialImageListener(new ImageDecoder.OnPartialImageListener() {
                                 @Override
-                                public void onRecord(ByteString blockHash, BCProto.Block block, BCProto.BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                    if (payload != null && payload.length > 0) {
-                                        sb.append(new String(payload));
-                                    }
+                                public boolean onPartialImage(ImageDecoder.DecodeException e) {
+                                    e.printStackTrace();
+                                    return true;
                                 }
                             });
+                            Log.d(SpaceUtils.TAG, "Image Colour Space: " + info.getColorSpace());
+                            Log.d(SpaceUtils.TAG, "Image Is Animated: " + info.isAnimated());
+                            Log.d(SpaceUtils.TAG, "Image Mime Type: " + info.getMimeType());
+                            Log.d(SpaceUtils.TAG, "Image Size: " + info.getSize());
                         }
-                        final String text = sb.toString();
-                        Log.d(SpaceUtils.TAG, "Text: " + text);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                contentTextView.setText(text);
-                                contentTextView.setVisibility(View.VISIBLE);
-                                contentTextView.requestLayout();
+                    });
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            final Drawable drawable = drawables[0];
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    contentImageView.setVisibility(View.VISIBLE);
+                    if (drawable != null) {
+                        Log.d(SpaceUtils.TAG, "Setting Drawable:" + drawable);
+                        contentImageView.setImageDrawable(drawable);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            if (drawable instanceof AnimatedImageDrawable) {
+                                ((AnimatedImageDrawable) drawable).start();
                             }
-                        });
+                        }
+                    } else {
+                        Log.d(SpaceUtils.TAG, "Setting URI:" + uri);
+                        contentImageView.setImageURI(uri);
                     }
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (meta != null) {
-                                nameTextView.setText(meta.getName());
-                                typeTextView.setText(meta.getType());
-                                sizeTextView.setText(BCUtils.sizeToString(meta.getSize()));
-                            }
-                            timestampTextView.setText(BCUtils.timeToString(timestamp[0]));
+                    contentImageView.requestLayout();
+                }
+            });
+        } else if (SpaceUtils.isText(type)) {
+            Log.d(SpaceUtils.TAG, "Setting Text");
+            final StringBuilder sb = new StringBuilder();
+            try {
+                loader.readFile(new RecordCallback() {
+                    @Override
+                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                        if (payload != null && payload.length > 0) {
+                            sb.append(new String(payload));
                         }
-                    });
-                } catch (UnknownHostException e) {
-                    SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_loading_file, e);
-                    finish();
-                } catch (IOException e) {
-                    SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_loading_file, e);
-                    finish();
-                }
+                        return true;
+                    }
+                });
+            } catch (IOException ex) {
+                /* Ignored */
+                ex.printStackTrace();
             }
-        }.start();
-    }
-
-    private void writeToUri(Uri uri, List<Reference> references) {
-        System.out.println("Writing references: " + references);
-        OutputStream output = null;
-        try {
-            String alias = SpaceAndroidUtils.getAlias();
-            KeyPair keys = SpaceAndroidUtils.getKeyPair();
-            InetAddress address = SpaceAndroidUtils.getHost();
-            BC.Channel files = new BC.Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
-            output = getContentResolver().openOutputStream(uri);
-
-            if (output != null) {
-                final OutputStream out = output;
-                for (Reference r : references) {
-                    files.read(alias, keys, r.getRecordHash().toByteArray(), new BC.Channel.RecordCallback() {
-                        @Override
-                        public void onRecord(ByteString blockHash, BCProto.Block block, BCProto.BlockEntry blockEntry, byte[] key, byte[] payload) {
-                            if (payload != null && payload.length > 0) {
-                                try {
-                                    out.write(payload);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    });
+            final String text = sb.toString();
+            Log.d(SpaceUtils.TAG, "Text: " + text);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    contentTextView.setText(text);
+                    contentTextView.setVisibility(View.VISIBLE);
+                    contentTextView.requestLayout();
                 }
-            }
-        } catch (IOException e) {
-            SpaceAndroidUtils.showErrorDialog(DetailActivity.this, R.string.error_downloading, e);
-        } finally {
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException e) {
-                    /* Ignored */
-                }
-            }
+            });
         }
     }
 
@@ -335,11 +326,46 @@ public class DetailActivity extends AppCompatActivity {
                             new Thread() {
                                 @Override
                                 public void run() {
-                                    writeToUri(uri, references);
+                                    try {
+                                        loader.writeFileToURI(uri);
+                                    } catch (IOException ex) {
+                                        /* Ignored */
+                                        ex.printStackTrace();
+                                    }
                                 }
                             }.start();
                         }
                     }
+                }
+                break;
+            case SpaceAndroidUtils.PREVIEW_ACTIVITY:
+                switch (resultCode) {
+                    case RESULT_OK:
+                        break;
+                    case RESULT_CANCELED:
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case SpaceAndroidUtils.SHARE_ACTIVITY:
+                switch (resultCode) {
+                    case RESULT_OK:
+                        break;
+                    case RESULT_CANCELED:
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case SpaceAndroidUtils.TAG_ACTIVITY:
+                switch (resultCode) {
+                    case RESULT_OK:
+                        break;
+                    case RESULT_CANCELED:
+                        break;
+                    default:
+                        break;
                 }
                 break;
             default:
@@ -373,18 +399,27 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void download() {
-        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType(meta.getType());
-        intent.putExtra(Intent.EXTRA_TITLE, meta.getName());
-        startActivityForResult(intent, SpaceAndroidUtils.DOWNLOAD_ACTIVITY);
+        Meta meta = loader.getMeta();
+        if (meta != null) {
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType(meta.getType());
+            intent.putExtra(Intent.EXTRA_TITLE, meta.getName());
+            startActivityForResult(intent, SpaceAndroidUtils.DOWNLOAD_ACTIVITY);
+        }
     }
 
     private void share() {
-        // TODO
+        Intent i = new Intent(DetailActivity.this, ShareActivity.class);
+        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, loader.getRecordHash());
+        i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, loader.isShared());
+        startActivityForResult(i, SpaceAndroidUtils.SHARE_ACTIVITY);
     }
 
     private void tag() {
-        // TODO
+        Intent i = new Intent(DetailActivity.this, TagActivity.class);
+        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, loader.getRecordHash());
+        i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, loader.isShared());
+        startActivityForResult(i, SpaceAndroidUtils.TAG_ACTIVITY);
     }
 }

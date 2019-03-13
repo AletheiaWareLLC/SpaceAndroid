@@ -173,21 +173,21 @@ limitations under the License.
                 android:textSize="@dimen/text_primary_size" />
 
             <CheckBox
-                android:id="@+id/new_account_privacy_policy_check"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:autoLink="web"
-                android:text="@string/legalese_privacy_policy"
-                android:textColor="@color/text_secondary" />
-
-            <CheckBox
                 android:id="@+id/new_account_terms_of_service_check"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/view_margin"
                 android:autoLink="web"
                 android:text="@string/legalese_terms_of_service"
+                android:textColor="@color/text_secondary" />
+
+            <CheckBox
+                android:id="@+id/new_account_privacy_policy_check"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/view_margin"
+                android:autoLink="web"
+                android:text="@string/legalese_privacy_policy"
                 android:textColor="@color/text_secondary" />
         </LinearLayout>
 

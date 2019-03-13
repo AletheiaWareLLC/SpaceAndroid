@@ -24,6 +24,7 @@ import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.media.ExifInterface;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -35,6 +36,7 @@ import android.widget.VideoView;
 
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
+import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -60,7 +62,7 @@ public class UploadActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SpaceAndroidUtils.createNotificationChannels(this);
+        MinerUtils.createNotificationChannels(this);
 
         // Setup UI
         setContentView(R.layout.activity_upload);
@@ -103,7 +105,7 @@ public class UploadActivity extends AppCompatActivity {
                 String name = nameEditText.getText().toString();
                 String type = typeTextView.getText().toString();
                 if (in != null) {
-                    SpaceAndroidUtils.mine(UploadActivity.this, name, type, preview, in);
+                    SpaceAndroidUtils.mineFile(UploadActivity.this, name, type, preview, in);
                 }
             }
         });
@@ -170,7 +172,7 @@ public class UploadActivity extends AppCompatActivity {
                         SpaceAndroidUtils.showErrorDialog(this, R.string.error_reading_uri, e);
                     }
                     if (in == null) {
-                        contentTextView.setText("No Data");
+                        contentTextView.setText(getString(R.string.no_data));
                         contentTextView.setVisibility(View.VISIBLE);
                     } else {
                         try {
@@ -191,11 +193,22 @@ public class UploadActivity extends AppCompatActivity {
                             }
                             if (bitmap == null) {
                                 Log.d(SpaceUtils.TAG, "Extracting thumbnail from image");
-                                try {
-                                    Bitmap image = BitmapFactory.decodeStream(getContentResolver().openInputStream(uri));
+                                try (InputStream in = getContentResolver().openInputStream(uri)) {
+                                    Bitmap image = BitmapFactory.decodeStream(in);
                                     bitmap = ThumbnailUtils.extractThumbnail(image, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE);
                                 } catch (IOException e) {
                                     e.printStackTrace();
+                                }
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                                    try (InputStream in = getContentResolver().openInputStream(uri)) {
+                                        if (in != null) {
+                                            ExifInterface exif = new ExifInterface(in);
+                                            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+                                            bitmap = SpaceAndroidUtils.rotateBitmap(bitmap, orientation);
+                                        }
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                             }
                         } else if (SpaceUtils.isVideo(type)) {
@@ -216,7 +229,6 @@ public class UploadActivity extends AppCompatActivity {
                                 }
                             }
                         }
-                        // FIXME preview bitmap rotated 90 degrees
                         if (bitmap != null) {
                             if (bitmap.getWidth() > SpaceUtils.PREVIEW_IMAGE_SIZE || bitmap.getHeight() > SpaceUtils.PREVIEW_IMAGE_SIZE) {
                                 bitmap = Bitmap.createScaledBitmap(bitmap, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE, false);
@@ -270,8 +282,11 @@ public class UploadActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 try {
-                                    SpaceUtils.register(alias, email, paymentId);
-                                    SpaceAndroidUtils.mine(UploadActivity.this, name, type, preview, in);
+                                    String customerId = SpaceUtils.register(alias, email, paymentId);
+                                    Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
+                                    if (customerId != null && !customerId.isEmpty()) {
+                                        SpaceAndroidUtils.mineFile(UploadActivity.this, name, type, preview, in);
+                                    }
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }

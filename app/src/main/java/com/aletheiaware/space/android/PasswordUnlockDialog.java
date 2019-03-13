@@ -27,6 +27,7 @@ public abstract class PasswordUnlockDialog {
 
     private final Activity activity;
     private final String alias;
+    private AlertDialog dialog;
 
     public PasswordUnlockDialog(Activity activity, String alias) {
         this.activity = activity;
@@ -52,8 +53,12 @@ public abstract class PasswordUnlockDialog {
                 onUnlock(dialog, password);
             }
         });
-        final AlertDialog dialog = ab.show();
+        dialog = ab.show();
     }
 
     public abstract void onUnlock(DialogInterface dialog, char[] password);
+
+    public AlertDialog getDialog() {
+        return dialog;
+    }
 }

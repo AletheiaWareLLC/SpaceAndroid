@@ -40,15 +40,24 @@ import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Preview;
+import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -108,32 +117,103 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             try {
-                                String alias = SpaceAndroidUtils.getAlias();
-                                KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                                InetAddress address = SpaceAndroidUtils.getHost();
-                                Channel previewChannel = new Channel(SpaceUtils.PREVIEW_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHash.toByteArray())), BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
-                                previewChannel.read(alias, keys, null, new RecordCallback() {
-                                    @Override
-                                    public void onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                        Preview preview = null;
-                                        for (Reference r : blockEntry.getRecord().getReferenceList()) {
-                                            if (r.getRecordHash().equals(metaRecordHash)) {
-                                                try {
-                                                    Preview p = Preview.newBuilder().mergeFrom(payload).build();
-                                                    // TODO choose best preview for screen size
-                                                    if (preview == null) {
-                                                        preview = p;
+                                final String alias = SpaceAndroidUtils.getAlias();
+                                final KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                                final InetAddress host = SpaceAndroidUtils.getHost();
+                                final byte[] metaRecordHashBytes = metaRecordHash.toByteArray();
+                                final Channel previews = new Channel(SpaceUtils.PREVIEW_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, getCacheDir(), host);
+                                try {
+                                    previews.sync();
+                                } catch (IOException | NoSuchAlgorithmException e) {
+                                    /* Ignored */
+                                    e.printStackTrace();
+                                }
+                                if (isShared(metaRecordHash)) {
+                                    final Channel shares = new Channel(SpaceUtils.SHARE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), host);
+                                    try {
+                                        shares.sync();
+                                    } catch (IOException | NoSuchAlgorithmException e) {
+                                        /* Ignored */
+                                        e.printStackTrace();
+                                    }
+                                    shares.read(alias, keys, null, new RecordCallback() {
+                                        @Override
+                                        public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                            try {
+                                                Share share = Share.newBuilder().mergeFrom(payload).build();
+                                                Reference sharedMetaReference = share.getMetaReference();
+                                                if (Arrays.equals(sharedMetaReference.getRecordHash().toByteArray(), metaRecordHashBytes)) {
+                                                    int count = Math.min(share.getPreviewKeyCount(), share.getPreviewReferenceCount());
+                                                    Preview preview = null;
+                                                    for (int i = 0; i < count; i++) {
+                                                        try {
+                                                            Block b = BCUtils.getBlock(host, share.getPreviewReference(i));
+                                                            if (b != null) {
+                                                                for (BlockEntry e : b.getEntryList()) {
+                                                                    try {
+                                                                        byte[] previewKey = share.getPreviewKey(i).toByteArray();
+                                                                        byte[] decryptedPayload = BCUtils.decryptAES(previewKey, e.getRecord().getPayload().toByteArray());
+                                                                        Preview p = Preview.newBuilder().mergeFrom(decryptedPayload).build();
+                                                                        // TODO choose best preview for screen size
+                                                                        if (preview == null) {
+                                                                            preview = p;
+                                                                        }
+                                                                    } catch (InvalidProtocolBufferException ex) {
+                                                                        ex.printStackTrace();
+                                                                    } catch (NoSuchPaddingException ex) {
+                                                                        ex.printStackTrace();
+                                                                    } catch (NoSuchAlgorithmException ex) {
+                                                                        ex.printStackTrace();
+                                                                    } catch (InvalidKeyException ex) {
+                                                                        ex.printStackTrace();
+                                                                    } catch (InvalidAlgorithmParameterException ex) {
+                                                                        ex.printStackTrace();
+                                                                    } catch (IllegalBlockSizeException ex) {
+                                                                        ex.printStackTrace();
+                                                                    } catch (BadPaddingException ex) {
+                                                                        ex.printStackTrace();
+                                                                    }
+                                                                }
+                                                            }
+                                                        } catch (IOException e) {
+                                                            e.printStackTrace();
+                                                        }
                                                     }
-                                                } catch (InvalidProtocolBufferException e) {
-                                                    e.printStackTrace();
+                                                    if (preview != null) {
+                                                        addPreview(metaRecordHash, preview);
+                                                    }
+                                                }
+                                            } catch (InvalidProtocolBufferException e) {
+                                                e.printStackTrace();
+                                            }
+                                            return true;
+                                        }
+                                    });
+                                } else {
+                                    previews.read(alias, keys, null, new RecordCallback() {
+                                        @Override
+                                        public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                            Preview preview = null;
+                                            for (Reference r : blockEntry.getRecord().getReferenceList()) {
+                                                if (r.getRecordHash().equals(metaRecordHash)) {
+                                                    try {
+                                                        Preview p = Preview.newBuilder().mergeFrom(payload).build();
+                                                        // TODO choose best preview for screen size
+                                                        if (preview == null) {
+                                                            preview = p;
+                                                        }
+                                                    } catch (InvalidProtocolBufferException e) {
+                                                        e.printStackTrace();
+                                                    }
                                                 }
                                             }
+                                            if (preview != null) {
+                                                addPreview(metaRecordHash, preview);
+                                            }
+                                            return true;
                                         }
-                                        if (preview != null) {
-                                            addPreview(metaRecordHash, preview);
-                                        }
-                                    }
-                                });
+                                    });
+                                }
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -143,10 +223,11 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onSelection(ByteString metaRecordHash, Meta meta) {
+            public void onSelection(ByteString hash, Meta meta) {
                 Intent i = new Intent(MainActivity.this, DetailActivity.class);
-                i.putExtra(SpaceAndroidUtils.META_RECORD_HASH_EXTRA, metaRecordHash.toByteArray());
+                i.putExtra(SpaceAndroidUtils.HASH_EXTRA, hash.toByteArray());
                 i.putExtra(SpaceAndroidUtils.META_EXTRA, meta.toByteArray());
+                i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, isShared(hash));
                 startActivityForResult(i, SpaceAndroidUtils.DETAIL_ACTIVITY);
             }
         };
@@ -158,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         if (SpaceAndroidUtils.isInitialized()) {
-            refresh();
+            // TODO refresh();
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
             startActivityForResult(intent, SpaceAndroidUtils.ACCESS_ACTIVITY);
@@ -176,6 +257,7 @@ public class MainActivity extends AppCompatActivity {
             case SpaceAndroidUtils.ACCESS_ACTIVITY:
                 switch (resultCode) {
                     case RESULT_OK:
+                        refresh();
                         break;
                     case RESULT_CANCELED:
                         setResult(RESULT_CANCELED);
@@ -186,17 +268,10 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             case SpaceAndroidUtils.ACCOUNT_ACTIVITY:
-                switch (resultCode) {
-                    case RESULT_OK:
-                        break;
-                    case RESULT_CANCELED:
-                        // TODO
-                        break;
-                    default:
-                        break;
-                }
+                refresh();
                 break;
             case SpaceAndroidUtils.DETAIL_ACTIVITY:
+                refresh();
                 break;
             case SpaceAndroidUtils.OPEN_ACTIVITY:
                 Log.d(SpaceUtils.TAG, "OPEN_ACTIVITY");
@@ -220,15 +295,17 @@ public class MainActivity extends AppCompatActivity {
                         break;
                 }
                 break;
-            case SpaceAndroidUtils.NEW_RECORD_ACTIVITY:
+            case SpaceAndroidUtils.COMPOSE_ACTIVITY:
+                refresh();
                 break;
             case SpaceAndroidUtils.UPLOAD_ACTIVITY:
+                refresh();
                 break;
-            case SpaceAndroidUtils.IMAGE_CAPTURE_ACTIVITY:
-                Log.d(SpaceUtils.TAG, "IMAGE_CAPTURE_ACTIVITY");
+            case SpaceAndroidUtils.CAPTURE_IMAGE_ACTIVITY:
+                Log.d(SpaceUtils.TAG, "CAPTURE_IMAGE_ACTIVITY");
                 // fallthrough
-            case SpaceAndroidUtils.VIDEO_CAPTURE_ACTIVITY:
-                Log.d(SpaceUtils.TAG, "VIDEO_CAPTURE_ACTIVITY");
+            case SpaceAndroidUtils.CAPTURE_VIDEO_ACTIVITY:
+                Log.d(SpaceUtils.TAG, "CAPTURE_VIDEO_ACTIVITY");
                 switch (resultCode) {
                     case RESULT_OK:
                         Log.d(SpaceUtils.TAG, "Intent:" + intent);
@@ -275,6 +352,7 @@ public class MainActivity extends AppCompatActivity {
                     default:
                         break;
                 }
+                refresh();
                 break;
             default:
                 super.onActivityResult(requestCode, resultCode, intent);
@@ -293,11 +371,11 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle presses on the action bar items
         switch (item.getItemId()) {
-            case R.id.menu_account:
-                account();
-                return true;
             case R.id.menu_refresh:
                 refresh();
+                return true;
+            case R.id.menu_account:
+                account();
                 return true;
             case R.id.menu_settings:
                 settings();
@@ -307,44 +385,60 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void account() {
-        Intent i = new Intent(this, AccountActivity.class);
-        startActivityForResult(i, SpaceAndroidUtils.ACCOUNT_ACTIVITY);
-    }
-
     private void refresh() {
         adapter.sort();
         adapter.notifyDataSetChanged();
+        // TODO start refresh menu animate
         new Thread() {
             @Override
             public void run() {
                 try {
-                    InetAddress address = SpaceAndroidUtils.getHost();
-                    String alias = SpaceAndroidUtils.getAlias();
-                    Channel metas = new Channel(SpaceUtils.META_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), address);
-                    try {
-                        metas.sync();
-                    } catch (IOException e) {
-                        /* Ignored */
-                        e.printStackTrace();
-                    }
-                    KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                    metas.read(alias, keys, null, new RecordCallback() {
+                    final InetAddress address = SpaceAndroidUtils.getHost();
+                    final File cache = getCacheDir();
+                    final String alias = SpaceAndroidUtils.getAlias();
+                    final KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                    SpaceUtils.readMetas(address, cache, alias, keys, null, new RecordCallback() {
                         @Override
-                        public void onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                        public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                             try {
                                 Meta meta = Meta.newBuilder().mergeFrom(payload).build();
-                                adapter.addFile(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta);
+                                Log.d(SpaceUtils.TAG, "Meta: " + meta);
+                                adapter.addFile(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, false);
                             } catch (InvalidProtocolBufferException e) {
                                 e.printStackTrace();
                             }
+                            return true;
                         }
                     });
-                } catch (IOException | NoSuchAlgorithmException e) {
+                    SpaceUtils.readShares(address, cache, alias, keys, null, null, new RecordCallback() {
+                        @Override
+                        public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                            try {
+                                Meta meta = Meta.newBuilder().mergeFrom(payload).build();
+                                Log.d(SpaceUtils.TAG, "Shared Meta: " + meta);
+                                adapter.addFile(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, true);
+                            } catch (InvalidProtocolBufferException e) {
+                                e.printStackTrace();
+                            }
+                            return true;
+                        }
+                    }, null);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // TODO stop refresh menu animate
+                        }
+                    });
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }.start();
+    }
+
+    private void account() {
+        Intent i = new Intent(this, AccountActivity.class);
+        startActivityForResult(i, SpaceAndroidUtils.ACCOUNT_ACTIVITY);
     }
 
     private void settings() {

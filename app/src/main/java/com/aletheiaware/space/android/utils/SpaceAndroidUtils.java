@@ -17,9 +17,6 @@
 package com.aletheiaware.space.android.utils;
 
 import android.app.Activity;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -28,35 +25,30 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
+import android.support.media.ExifInterface;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
 
-import com.aletheiaware.bc.BC;
 import com.aletheiaware.bc.BC.Channel;
 import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BC.Node;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
-import com.aletheiaware.bc.BCProto.Record;
-import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.finance.FinanceProto.Customer;
 import com.aletheiaware.finance.utils.FinanceUtils;
-import com.aletheiaware.space.SpaceProto.Meta;
-import com.aletheiaware.space.SpaceProto.Preview;
+import com.aletheiaware.space.SpaceProto;
+import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.ComposeDocumentActivity;
-import com.aletheiaware.space.android.MainActivity;
 import com.aletheiaware.space.android.R;
-import com.aletheiaware.space.android.StripeActivity;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -68,52 +60,35 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.SignatureException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 public class SpaceAndroidUtils {
 
     public static final int ACCESS_ACTIVITY = 100;
     public static final int ACCOUNT_ACTIVITY = 101;
-    public static final int NEW_RECORD_ACTIVITY = 102;
-    public static final int DETAIL_ACTIVITY = 103;
-    public static final int UPLOAD_ACTIVITY = 104;
-    public static final int DOWNLOAD_ACTIVITY = 105;
-    public static final int OPEN_ACTIVITY = 106;
-    public static final int STRIPE_ACTIVITY = 107;
-    public static final int IMAGE_CAPTURE_ACTIVITY = 108;
-    public static final int VIDEO_CAPTURE_ACTIVITY = 109;
-    public static final int SETTINGS_ACTIVITY = 110;
+    public static final int CAPTURE_IMAGE_ACTIVITY = 102;
+    public static final int CAPTURE_VIDEO_ACTIVITY = 103;
+    public static final int COMPOSE_ACTIVITY = 104;
+    public static final int DETAIL_ACTIVITY = 105;
+    public static final int DOWNLOAD_ACTIVITY = 106;
+    public static final int OPEN_ACTIVITY = 107;
+    public static final int PREVIEW_ACTIVITY = 108;
+    public static final int SETTINGS_ACTIVITY = 109;
+    public static final int SHARE_ACTIVITY = 110;
+    public static final int STRIPE_ACTIVITY = 111;
+    public static final int TAG_ACTIVITY = 112;
+    public static final int UPLOAD_ACTIVITY = 113;
 
     public static final String DATA_EXTRA = "data";
     public static final String EMAIL_EXTRA = "email";
+    public static final String HASH_EXTRA = "hash";
     public static final String META_EXTRA = "meta";
-    public static final String META_RECORD_HASH_EXTRA = "meta-record-hash";
+    public static final String SHARED_EXTRA = "shared";
     public static final String STRIPE_AMOUNT_EXTRA = "stripe-amount";
     public static final String STRIPE_TOKEN_EXTRA = "stripe-token";
-
-    public static final String FILE_PROVIDER_PACKAGE = "com.aletheiaware.space.android.fileprovider";
-
-    private static final String LOCAL_CHANNEL_ID = "Local Mining Channel";
-    private static final String REMOTE_CHANNEL_ID = "Remote Mining Channel";
-    private static final int LOCAL_NOTIFICATION_ID = 1;
-    private static final int REMOTE_NOTIFICATION_ID = 2;
-    private static final int NOTIFICATION_TIMEOUT = 2 * 60 * 1000;// 2 minutes
 
     private static String alias = null;
     private static KeyPair keyPair = null;
@@ -148,6 +123,7 @@ public class SpaceAndroidUtils {
             return InetAddress.getByName(SpaceUtils.SPACE_HOST);
         } catch (Exception e) {
             /* Ignored */
+            e.printStackTrace();
         }
         return null;
     }
@@ -180,7 +156,7 @@ public class SpaceAndroidUtils {
                                 if (parent.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
                                     takePicture(parent);
                                 } else {
-                                    showErrorDialog(parent, R.string.error_no_camera, null);
+                                    showErrorDialog(parent, R.string.error_no_camera, new Exception("Device missing camera feature"));
                                 }
                                 break;
                             case 3:
@@ -188,7 +164,7 @@ public class SpaceAndroidUtils {
                                 if (parent.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
                                     recordVideo(parent);
                                 } else {
-                                    showErrorDialog(parent, R.string.error_no_camera, null);
+                                    showErrorDialog(parent, R.string.error_no_camera, new Exception("Device missing camera feature"));
                                 }
                                 break;
                         }
@@ -205,7 +181,7 @@ public class SpaceAndroidUtils {
 
     private static void newRecord(final Activity parent) {
         Intent i = new Intent(parent, ComposeDocumentActivity.class);
-        parent.startActivityForResult(i, SpaceAndroidUtils.NEW_RECORD_ACTIVITY);
+        parent.startActivityForResult(i, SpaceAndroidUtils.COMPOSE_ACTIVITY);
     }
 
     private static void uploadFile(final Activity parent) {
@@ -218,277 +194,51 @@ public class SpaceAndroidUtils {
     private static void takePicture(Activity parent) {
         Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         File images = new File(parent.getCacheDir(), "image");
-        images.mkdirs();
+        if (!images.exists() &&!images.mkdirs()) {
+            Log.e(SpaceUtils.TAG, "Error making image directory");
+        }
         File file = new File(images, "image" + System.currentTimeMillis());
         Log.d(SpaceUtils.TAG, file.getAbsolutePath());
-        tempURI = FileProvider.getUriForFile(parent, FILE_PROVIDER_PACKAGE, file);
+        tempURI = FileProvider.getUriForFile(parent, parent.getString(R.string.file_provider_authority), file);
         Log.d(SpaceUtils.TAG, tempURI.toString());
         tempURIType = SpaceUtils.DEFAULT_IMAGE_TYPE;
         i.putExtra(MediaStore.EXTRA_OUTPUT, tempURI);
-        parent.startActivityForResult(i, SpaceAndroidUtils.IMAGE_CAPTURE_ACTIVITY);
+        parent.startActivityForResult(i, SpaceAndroidUtils.CAPTURE_IMAGE_ACTIVITY);
     }
 
     private static void recordVideo(Activity parent) {
         Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
         File videos = new File(parent.getCacheDir(), "video");
-        videos.mkdirs();
+        if (!videos.exists() &&!videos.mkdirs()) {
+            Log.e(SpaceUtils.TAG, "Error making video directory");
+        }
         File file = new File(videos, "video" + System.currentTimeMillis());
         Log.d(SpaceUtils.TAG, file.getAbsolutePath());
-        tempURI = FileProvider.getUriForFile(parent, FILE_PROVIDER_PACKAGE, file);
+        tempURI = FileProvider.getUriForFile(parent, parent.getString(R.string.file_provider_authority), file);
         Log.d(SpaceUtils.TAG, tempURI.toString());
         tempURIType = SpaceUtils.DEFAULT_VIDEO_TYPE;
         i.putExtra(MediaStore.EXTRA_OUTPUT, tempURI);
-        parent.startActivityForResult(i, SpaceAndroidUtils.VIDEO_CAPTURE_ACTIVITY);
+        parent.startActivityForResult(i, SpaceAndroidUtils.CAPTURE_VIDEO_ACTIVITY);
     }
 
-    public static void mine(final Activity parent, final String name, final String type, final Preview preview, final InputStream in) {
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
-        String key = parent.getString(R.string.preference_miner_key);
-        // 1 - ask each time
-        // 2 - local
-        // 3 - remote
-        String value = sharedPrefs.getString(key, "1");
-        if (value == null) {
-            value = "1";
-        }
-        switch (value) {
-            case "1":
-                new AlertDialog.Builder(parent, R.style.AlertDialogTheme)
-                        .setTitle(R.string.title_dialog_select_miner)
-                        .setItems(R.array.miner_options, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                switch (which) {
-                                    case 0:
-                                        mineLocally(parent, name, type, preview, in);
-                                        break;
-                                    case 1:
-                                        mineRemotely(parent, name, type, preview, in);
-                                        break;
-                                }
-                            }
-                        })
-                        .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int id) {
-                                dialog.dismiss();
-                            }
-                        })
-                        .show();
-                break;
-            case "2":
-                mineLocally(parent, name, type, preview, in);
-                break;
-            case "3":
-                mineRemotely(parent, name, type, preview, in);
-                break;
-        }
-    }
-
-    public static void mineLocally(final Activity parent, final String name, final String type, final Preview preview, final InputStream in) {
-        Log.d(SpaceUtils.TAG, "Mine locally");
-        createLocalMiningNotification(parent, name);
-        new Thread() {
+    public static boolean isCustomer(File cache) throws IOException {
+        final Channel customers = new Channel(FinanceUtils.CUSTOMER_CHANNEL, BCUtils.THRESHOLD_STANDARD, cache, getHost());
+        final Customer.Builder cb = Customer.newBuilder();
+        customers.read(alias, keyPair, null, new RecordCallback() {
             @Override
-            public void run() {
+            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                 try {
-                    final InetAddress host = getHost();
-                    final BC.Channel metaChannel = new BC.Channel(SpaceUtils.META_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
-                    final BC.Channel fileChannel = new BC.Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
-                    final Map<String, PublicKey> acl = new HashMap<>();
-                    acl.put(alias, keyPair.getPublic());
-                    final List<Reference> metaReferences = new ArrayList<>();
-                    long size = BCUtils.createEntries(alias, keyPair, acl, new ArrayList<Reference>(), in, new BCUtils.RecordCallback() {
-                        @Override
-                        public void onRecord(Record record) {
-                            try {
-                                byte[] hash = BCUtils.getHash(record.toByteArray());
-                                ByteString recordHash = ByteString.copyFrom(hash);
-                                List<BlockEntry> entries = new ArrayList<>(1);
-                                entries.add(BlockEntry.newBuilder()
-                                        .setRecordHash(recordHash)
-                                        .setRecord(record)
-                                        .build());
-                                BCUtils.Pair<byte[], Block> result = node.mine(fileChannel, entries);
-                                ByteString blockHash = ByteString.copyFrom(result.a);
-                                Block block = result.b;
-                                metaReferences.add(Reference.newBuilder()
-                                        .setTimestamp(block.getTimestamp())
-                                        .setChannelName(fileChannel.name)
-                                        .setBlockHash(blockHash)
-                                        .setRecordHash(recordHash)
-                                        .build());
-                                Log.d(SpaceUtils.TAG, "Mined File " + new String(BCUtils.encodeBase64URL(result.a)));
-                            } catch (BadPaddingException e) {
-                                e.printStackTrace();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (NoSuchAlgorithmException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-                    final Meta meta = Meta.newBuilder()
-                            .setName(name)
-                            .setType(type)
-                            .setSize(size)
-                            .build();
-                    Log.d(SpaceUtils.TAG, "Meta " + meta);
-                    Record metaRecord = BCUtils.createRecord(alias, keyPair, acl, metaReferences, meta.toByteArray());
-                    byte[] metaRecordHashBytes = BCUtils.getHash(metaRecord.toByteArray());
-                    ByteString metaRecordHash = ByteString.copyFrom(metaRecordHashBytes);
-                    List<BlockEntry> metaEntries = new ArrayList<>();
-                    metaEntries.add(BlockEntry.newBuilder()
-                            .setRecordHash(metaRecordHash)
-                            .setRecord(metaRecord)
-                            .build());
-                    BCUtils.Pair<byte[], Block> metaResult = node.mine(metaChannel, metaEntries);
-                    Log.d(SpaceUtils.TAG, "Mined Meta " + new String(BCUtils.encodeBase64URL(metaResult.a)));
-                    if (preview != null) {
-                        Log.d(SpaceUtils.TAG, "Preview " + preview);
-                        final List<Reference> previewReferences = new ArrayList<>();
-                        previewReferences.add(Reference.newBuilder()
-                                .setTimestamp(metaResult.b.getTimestamp())
-                                .setChannelName(metaResult.b.getChannelName())
-                                .setBlockHash(ByteString.copyFrom(metaResult.a))
-                                .setRecordHash(metaRecordHash)
-                                .build());
-                        Record previewRecord = BCUtils.createRecord(alias, keyPair, acl, previewReferences, preview.toByteArray());
-                        ByteString previewRecordHash = ByteString.copyFrom(BCUtils.getHash(previewRecord.toByteArray()));
-                        List<BlockEntry> previewEntries = new ArrayList<>();
-                        previewEntries.add(BlockEntry.newBuilder()
-                                .setRecordHash(previewRecordHash)
-                                .setRecord(previewRecord)
-                                .build());
-                        final BC.Channel previewChannel = new BC.Channel(SpaceUtils.PREVIEW_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
-                        BCUtils.Pair<byte[], Block> previewResult = node.mine(previewChannel, previewEntries);
-                        Log.d(SpaceUtils.TAG, "Mined Preview " + new String(BCUtils.encodeBase64URL(previewResult.a)));
-                    }
-                } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_mining, e);
-                } finally {
-                    parent.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            NotificationManagerCompat.from(parent).cancel(LOCAL_NOTIFICATION_ID);
-                            parent.setResult(Activity.RESULT_OK);
-                            parent.finish();
-                        }
-                    });
+                    cb.mergeFrom(payload);
+                    return false;
+                } catch (InvalidProtocolBufferException e) {
+                    e.printStackTrace();
                 }
+                return true;
             }
-        }.start();
-    }
-
-    public static void mineRemotely(final Activity parent, final String name, final String type, final Preview preview, final InputStream in) {
-        Log.d(SpaceUtils.TAG, "Mine remotely");
-        createRemoteMiningNotification(parent, name);
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    final InetAddress host = getHost();
-                    final Channel customers = new Channel(FinanceUtils.CUSTOMER_CHANNEL, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
-                    final Customer.Builder cb = Customer.newBuilder();
-                    customers.read(alias, keyPair, null, new RecordCallback() {
-                        @Override
-                        public void onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                            cb.clear();
-                            try {
-                                cb.mergeFrom(payload);
-                            } catch (InvalidProtocolBufferException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-                    final Customer customer = cb.build();
-                    String customerId = customer.getCustomerId();
-                    if (customerId == null || customerId.isEmpty()) {
-                        parent.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Intent intent = new Intent(parent, StripeActivity.class);
-                                parent.startActivityForResult(intent, SpaceAndroidUtils.STRIPE_ACTIVITY);
-                            }
-                        });
-                    } else {
-                        final Map<String, PublicKey> acl = new HashMap<>();
-                        acl.put(alias, keyPair.getPublic());
-                        final List<Reference> metaReferences = new ArrayList<>();
-                        long size = BCUtils.createEntries(alias, keyPair, acl, new ArrayList<Reference>(), in, new BCUtils.RecordCallback() {
-                            @Override
-                            public void onRecord(Record record) {
-                                try {
-                                    Reference fileReference = null;
-                                    for (int i = 0; fileReference == null && i < 3; i++) {
-                                        fileReference = SpaceUtils.postRecord("file", record);
-                                    }
-                                    if (fileReference == null) {
-                                        // FIXME
-                                        System.err.println("Failed to post file record 3 times");
-                                        return;
-                                    }
-                                    metaReferences.add(fileReference);
-                                    Log.d(SpaceUtils.TAG, "Uploaded File " + new String(BCUtils.encodeBase64URL(fileReference.getRecordHash().toByteArray())));
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-                        final Meta meta = Meta.newBuilder()
-                                .setName(name)
-                                .setType(type)
-                                .setSize(size)
-                                .build();
-                        Log.d(SpaceUtils.TAG, "Meta " + meta);
-                        Record metaRecord = BCUtils.createRecord(alias, keyPair, acl, metaReferences, meta.toByteArray());
-                        Reference metaReference = null;
-                        for (int i = 0; metaReference == null && i < 3; i++) {
-                            metaReference = SpaceUtils.postRecord("meta", metaRecord);
-                        }
-                        if (metaReference == null) {
-                            // FIXME
-                            System.err.println("Failed to post meta record 3 times");
-                            return;
-                        }
-                        Log.d(SpaceUtils.TAG, "Uploaded Meta " + new String(BCUtils.encodeBase64URL(metaReference.getRecordHash().toByteArray())));
-                        if (preview != null) {
-                            Log.d(SpaceUtils.TAG, "Preview " + preview);
-                            final List<Reference> previewReferences = new ArrayList<>();
-                            previewReferences.add(Reference.newBuilder()
-                                    .setTimestamp(metaReference.getTimestamp())
-                                    .setChannelName(metaReference.getChannelName())
-                                    .setRecordHash(metaReference.getRecordHash())
-                                    .build());
-                            Record previewRecord = BCUtils.createRecord(alias, keyPair, acl, previewReferences, preview.toByteArray());
-                            Reference previewReference = null;
-                            for (int i = 0; previewReference == null && i < 3; i++) {
-                                previewReference = SpaceUtils.postRecord("preview", previewRecord);
-                            }
-                            if (previewReference == null) {
-                                // FIXME
-                                System.err.println("Failed to post preview record 3 times");
-                                return;
-                            }
-                            Log.d(SpaceUtils.TAG, "Uploaded Preview " + new String(BCUtils.encodeBase64URL(previewReference.getRecordHash().toByteArray())));
-                        }
-                    }
-                } catch (SocketException | SocketTimeoutException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_connection, e);
-                } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
-                } finally {
-                    parent.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            NotificationManagerCompat.from(parent).cancel(REMOTE_NOTIFICATION_ID);
-                            parent.setResult(Activity.RESULT_OK);
-                            parent.finish();
-                        }
-                    });
-                }
-            }
-        }.start();
+        });
+        final Customer customer = cb.build();
+        String customerId = customer.getCustomerId();
+        return customerId != null && !customerId.isEmpty();
     }
 
     public static byte[] createPreview(String type, byte[] data) {
@@ -532,56 +282,6 @@ public class SpaceAndroidUtils {
         return null;
     }
 
-    public static void createNotificationChannels(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel localChannel = new NotificationChannel(LOCAL_CHANNEL_ID, context.getString(R.string.notification_channel_name_local), NotificationManager.IMPORTANCE_HIGH);
-            localChannel.setDescription(context.getString(R.string.notification_channel_description_local));
-            NotificationChannel remoteChannel = new NotificationChannel(REMOTE_CHANNEL_ID, context.getString(R.string.notification_channel_name_remote), NotificationManager.IMPORTANCE_HIGH);
-            remoteChannel.setDescription(context.getString(R.string.notification_channel_description_remote));
-            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(localChannel);
-                notificationManager.createNotificationChannel(remoteChannel);
-            }
-        }
-    }
-
-    private static void createLocalMiningNotification(Context context, String name) {
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, LOCAL_CHANNEL_ID)
-                .setSmallIcon(R.drawable.bc_mine)
-                .setContentTitle(context.getString(R.string.title_notification_local))
-                .setContentText(name)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setProgress(0, 0, true)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                .setTimeoutAfter(NOTIFICATION_TIMEOUT);
-
-        NotificationManagerCompat.from(context).notify(LOCAL_NOTIFICATION_ID, builder.build());
-    }
-
-    private static void createRemoteMiningNotification(Context context, String name) {
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, REMOTE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.cloud_upload)
-                .setContentTitle(context.getString(R.string.title_notification_remote))
-                .setContentText(name)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setProgress(0, 0, true)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                .setTimeoutAfter(NOTIFICATION_TIMEOUT);
-
-        NotificationManagerCompat.from(context).notify(REMOTE_NOTIFICATION_ID, builder.build());
-    }
-
     public static String getName(Context context, Uri uri) {
         String name = null;
         Cursor cursor = context.getContentResolver().query(uri, null, null, null, null, null);
@@ -615,21 +315,15 @@ public class SpaceAndroidUtils {
     }
 
     public static void showErrorDialog(final Activity parent, final int resource, final Exception exception) {
-        if (exception != null) {
-            exception.printStackTrace();
-        }
+        exception.printStackTrace();
         parent.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 createErrorDialog(parent)
-                        .setNeutralButton(R.string.more_info, new DialogInterface.OnClickListener() {
+                        .setNeutralButton(R.string.error_report, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int id) {
-                                StringWriter sw = new StringWriter();
-                                if (exception != null) {
-                                    exception.printStackTrace(new PrintWriter(sw));
-                                }
-                                showErrorDialog(parent, sw.toString());
+                                report(parent, exception);
                             }
                         })
                         .setMessage(resource)
@@ -650,7 +344,7 @@ public class SpaceAndroidUtils {
     }
 
     private static AlertDialog.Builder createErrorDialog(Activity parent) {
-        return new AlertDialog.Builder(parent, R.style.AlertDialogTheme)
+        return new AlertDialog.Builder(parent.getApplicationContext(), R.style.AlertDialogTheme)
                 .setTitle(R.string.title_dialog_error)
                 .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
@@ -660,7 +354,59 @@ public class SpaceAndroidUtils {
                 });
     }
 
-    public static long calculateSize(File file) {
+    public static void report(Activity parent, Exception exception) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("======== Exception ========");
+        StringWriter sw = new StringWriter();
+        exception.printStackTrace(new PrintWriter(sw));
+        sb.append(sw.toString());
+        support(parent, sb);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static void support(Activity parent, StringBuilder content) {
+        content.append("======== App Info ========\n");
+        content.append("Build: ").append(BuildConfig.BUILD_TYPE).append("\n");
+        content.append("App ID: ").append(BuildConfig.APPLICATION_ID).append("\n");
+        content.append("Version: ").append(BuildConfig.VERSION_NAME).append("\n");
+        content.append("======== Device Info ========\n");
+        content.append("Board: ").append(Build.BOARD).append("\n");
+        content.append("Bootloader: ").append(Build.BOOTLOADER).append("\n");
+        content.append("Brand: ").append(Build.BRAND).append("\n");
+        content.append("Build ID: ").append(Build.ID).append("\n");
+        content.append("Device: ").append(Build.DEVICE).append("\n");
+        content.append("Display: ").append(Build.DISPLAY).append("\n");
+        content.append("Fingerprint: ").append(Build.FINGERPRINT).append("\n");
+        content.append("Hardware: ").append(Build.HARDWARE).append("\n");
+        content.append("Host: ").append(Build.HOST).append("\n");
+        content.append("Manufacturer: ").append(Build.MANUFACTURER).append("\n");
+        content.append("Model: ").append(Build.MODEL).append("\n");
+        content.append("Product: ").append(Build.PRODUCT).append("\n");
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            content.append("CPU ABI: ").append(Build.CPU_ABI).append("\n");
+            content.append("CPU ABI2: ").append(Build.CPU_ABI2).append("\n");
+        } else {
+            content.append("Supported ABIs: ").append(Arrays.toString(Build.SUPPORTED_ABIS)).append("\n");
+        }
+        content.append("Tags: ").append(Build.TAGS).append("\n");
+        content.append("Type: ").append(Build.TYPE).append("\n");
+        content.append("User: ").append(Build.USER).append("\n");
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
+        Map<String, ?> map = sharedPrefs.getAll();
+        content.append("======== Preferences ========\n");
+        for (String key : map.keySet()) {
+            content.append(key).append(":").append(map.get(key)).append("\n");
+        }
+        Log.d(SpaceUtils.TAG, content.toString());
+        Intent intent = new Intent(Intent.ACTION_SENDTO);
+        intent.setData(Uri.parse("mailto:"));
+        intent.putExtra(Intent.EXTRA_EMAIL, new String[]{parent.getString(R.string.support_email)});
+        intent.putExtra(Intent.EXTRA_SUBJECT, "SPACE Support");
+        intent.putExtra(Intent.EXTRA_TEXT, content.toString());
+        parent.startActivity(intent);
+    }
+
+    private static long calculateSize(File file) {
         if (file.isDirectory()) {
             long sum = 0L;
             for (File f : file.listFiles()) {
@@ -671,7 +417,7 @@ public class SpaceAndroidUtils {
         return file.length();
     }
 
-    public static boolean recursiveDelete(File file) {
+    private static boolean recursiveDelete(File file) {
         if (file.isDirectory()) {
             for (File f : file.listFiles()) {
                 if (!recursiveDelete(f)) {
@@ -702,5 +448,89 @@ public class SpaceAndroidUtils {
             }
         }
         return false;
+    }
+
+    public static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
+        Log.d(SpaceUtils.TAG, "Orientation: " + orientation);
+        Matrix matrix = new Matrix();
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                matrix.setScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                matrix.setRotate(180);
+                break;
+            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                matrix.setRotate(180);
+                matrix.setScale(1, -1);
+                break;
+            case ExifInterface.ORIENTATION_TRANSPOSE:
+                matrix.setRotate(90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.setRotate(90);
+                break;
+            case ExifInterface.ORIENTATION_TRANSVERSE:
+                matrix.setRotate(-90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                matrix.setRotate(-90);
+                break;
+            default:
+                return bitmap;
+        }
+        try {
+            Bitmap rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            bitmap.recycle();
+            return rotated;
+        } catch (OutOfMemoryError e) {
+            /* Ignored */
+            e.printStackTrace();
+        }
+        return bitmap;
+    }
+
+    public static void mineFile(final Activity parent, final String name, final String type, final SpaceProto.Preview preview, final InputStream in) {
+        MinerUtils.getMinerSelection(parent, new MinerUtils.MinerSelectionCallback() {
+            @Override
+            public void onMineLocally() {
+                MinerUtils.mineFileLocally(parent, name, type, preview, in);
+            }
+
+            @Override
+            public void onMineRemotely() {
+                MinerUtils.mineFileRemotely(parent, name, type, preview, in);
+            }
+        });
+    }
+
+    public static void mineShare(final Activity parent, final String recipient, final PublicKey recipientKey, final SpaceProto.Share share) {
+        MinerUtils.getMinerSelection(parent, new MinerUtils.MinerSelectionCallback() {
+            @Override
+            public void onMineLocally() {
+                MinerUtils.mineShareLocally(parent, recipient, recipientKey, share);
+            }
+
+            @Override
+            public void onMineRemotely() {
+                MinerUtils.mineShareRemotely(parent, recipient, recipientKey, share);
+            }
+        });
+    }
+
+    public static void mineTag(final Activity parent, final SpaceProto.Tag tag) {
+        MinerUtils.getMinerSelection(parent, new MinerUtils.MinerSelectionCallback() {
+            @Override
+            public void onMineLocally() {
+                MinerUtils.mineTagLocally(parent, tag);
+            }
+
+            @Override
+            public void onMineRemotely() {
+                MinerUtils.mineTagRemotely(parent, tag);
+            }
+        });
     }
 }

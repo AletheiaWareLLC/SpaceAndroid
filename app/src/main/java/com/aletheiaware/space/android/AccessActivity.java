@@ -116,44 +116,47 @@ public class AccessActivity extends AppCompatActivity {
             setResult(RESULT_OK);
             finish();
         } else {
-            // A key exists, show unlock option
-            final List<String> ks = BCUtils.listRSAKeyPairs(getFilesDir());
-            Log.d(SpaceUtils.TAG, "Keys: " + ks);
-            if (ks.isEmpty()) {
-                unlockAccountRecycler.setVisibility(View.GONE);
-                unlockAccountSeparator.setVisibility(View.GONE);
-            } else {
-                unlockAccountRecycler.setVisibility(View.VISIBLE);
-                unlockAccountSeparator.setVisibility(View.VISIBLE);
-                unlockAccountRecycler.setLayoutManager(new LinearLayoutManager(this));
-                final AccountAdapter adapter = new AccountAdapter(this, ks) {
-                    @Override
-                    public void unlockAccount(final String alias) {
-                        if (BiometricUtils.isBiometricUnlockAvailable(AccessActivity.this) && BiometricUtils.isBiometricUnlockEnabled(AccessActivity.this, alias)) {
-                            biometricUnlock(alias);
-                        } else {
-                            passwordUnlock(alias);
-                        }
-                    }
+            showAccountList();
+        }
+    }
 
-                    @Override
-                    public void deleteAccount(final String alias) {
-                        SpaceAndroidUtils.showDeleteAccountDialog(AccessActivity.this, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int id) {
-                                if (BCUtils.deleteRSAKeyPair(getFilesDir(), alias)) {
-                                    removeAlias(alias);
-                                    notifyDataSetChanged();
-                                    dialog.dismiss();
-                                    // TODO need to hide alias list UI if no more keys left
-                                }
-                            }
-                        });
+    private void showAccountList() {
+        // A key exists, show unlock option
+        final List<String> ks = BCUtils.listRSAKeyPairs(getFilesDir());
+        Log.d(SpaceUtils.TAG, "Keys: " + ks);
+        if (ks.isEmpty()) {
+            unlockAccountRecycler.setVisibility(View.GONE);
+            unlockAccountSeparator.setVisibility(View.GONE);
+        } else {
+            unlockAccountRecycler.setVisibility(View.VISIBLE);
+            unlockAccountSeparator.setVisibility(View.VISIBLE);
+            unlockAccountRecycler.setLayoutManager(new LinearLayoutManager(this));
+            final AccountAdapter adapter = new AccountAdapter(this, ks) {
+                @Override
+                public void unlockAccount(final String alias) {
+                    if (BiometricUtils.isBiometricUnlockAvailable(AccessActivity.this) && BiometricUtils.isBiometricUnlockEnabled(AccessActivity.this, alias)) {
+                        biometricUnlock(alias);
+                    } else {
+                        passwordUnlock(alias);
                     }
-                };
-                unlockAccountRecycler.setAdapter(adapter);
-                //unlockAccountList.requestLayout();
-            }
+                }
+
+                @Override
+                public void deleteAccount(final String alias) {
+                    SpaceAndroidUtils.showDeleteAccountDialog(AccessActivity.this, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int id) {
+                            if (BCUtils.deleteRSAKeyPair(getFilesDir(), alias)) {
+                                removeAlias(alias);
+                                notifyDataSetChanged();
+                                dialog.dismiss();
+                                showAccountList();
+                            }
+                        }
+                    });
+                }
+            };
+            unlockAccountRecycler.setAdapter(adapter);
         }
     }
 

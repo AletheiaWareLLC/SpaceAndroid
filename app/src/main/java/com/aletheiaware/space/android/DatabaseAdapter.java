@@ -38,16 +38,19 @@ import com.google.protobuf.ByteString;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapter.ViewHolder> {
 
     private final Activity activity;
     private final LayoutInflater inflater;
-    private final Map<ByteString, Long> timestamps = new HashMap<>();
     private final Map<ByteString, Meta> metas = new HashMap<>();
     private final Map<ByteString, Preview> previews = new HashMap<>();
+    private final Map<ByteString, Long> timestamps = new HashMap<>();
+    private final Set<ByteString> shared = new HashSet<>();
     private final List<ByteString> sorted = new ArrayList<>();
 
     DatabaseAdapter(Activity activity) {
@@ -55,10 +58,13 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
         this.inflater = activity.getLayoutInflater();
     }
 
-    public void addFile(ByteString recordHash, long timestamp, Meta meta) {
+    public void addFile(ByteString recordHash, long timestamp, Meta meta, boolean shared) {
         if (metas.put(recordHash, meta) == null) {
             sorted.add(recordHash);// Only add if new
             timestamps.put(recordHash, timestamp);
+            if (shared) {
+                this.shared.add(recordHash);
+            }
             sort();
         }
         activity.runOnUiThread(new Runnable() {
@@ -87,6 +93,10 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
         });
     }
 
+    public boolean isShared(ByteString hash) {
+        return shared.contains(hash);
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -96,7 +106,7 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
             @Override
             public void onClick(View v) {
                 ByteString hash = holder.getHash();
-                Meta meta = holder.getMeta();
+                Meta meta = metas.get(hash);
                 if (hash != null) {
                     onSelection(hash, meta);
                 }
@@ -116,7 +126,7 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
             if (preview == null) {
                 loadPreview(hash);
             }
-            holder.set(hash, meta, preview);
+            holder.set(hash, meta, preview, isShared(hash));
         }
     }
 
@@ -148,7 +158,7 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
             itemTitle = view.findViewById(R.id.list_item_title);
         }
 
-        void set(ByteString hash, Meta meta, Preview preview) {
+        void set(ByteString hash, Meta meta, Preview preview, boolean shared) {
             this.hash = hash;
             this.meta = meta;
             if (SpaceUtils.isText(meta.getType())) {
@@ -163,11 +173,11 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
                 itemImage.setVisibility(View.VISIBLE);
                 itemText.setVisibility(View.GONE);
                 if (preview == null) {
-                    setDefaultImagePreview();
+                    setDefaultImagePreview(shared);
                 } else {
                     Bitmap bitmap = BitmapFactory.decodeStream(preview.getData().newInput());
                     if (bitmap == null) {
-                        setDefaultImagePreview();
+                        setDefaultImagePreview(shared);
                     } else {
                         itemImage.setImageBitmap(bitmap);
                     }
@@ -176,31 +186,50 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
                 itemImage.setVisibility(View.VISIBLE);
                 itemText.setVisibility(View.GONE);
                 if (preview == null) {
-                    setDefaultVideoPreview();
+                    setDefaultVideoPreview(shared);
                 } else {
                     Bitmap bitmap = BitmapFactory.decodeStream(preview.getData().newInput());
                     if (bitmap == null) {
-                        setDefaultVideoPreview();
+                        setDefaultVideoPreview(shared);
                     } else {
                         itemImage.setImageBitmap(bitmap);
                     }
                 }
             }
             itemTitle.setText(meta.getName());
+            if (shared) {
+                itemView.setBackgroundResource(R.color.white);
+                itemImage.setBackgroundResource(R.color.white);
+                itemText.setBackgroundResource(R.color.white);
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.black));
+                itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.black));
+            } else {
+                itemView.setBackgroundResource(R.color.black);
+                itemImage.setBackgroundResource(R.color.black);
+                itemText.setBackgroundResource(R.color.black);
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.white));
+                itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.white));
+            }
         }
 
         private void setDefaultTextPreview() {
             itemText.setText(itemText.getContext().getString(R.string.default_text_preview));
         }
 
-        private void setDefaultImagePreview() {
-            itemImage.setBackgroundResource(R.color.black);
-            itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_image));
+        private void setDefaultImagePreview(boolean shared) {
+            if (shared) {
+                itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_image_shared));
+            } else {
+                itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_image));
+            }
         }
 
-        private void setDefaultVideoPreview() {
-            itemImage.setBackgroundResource(R.color.black);
-            itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_video));
+        private void setDefaultVideoPreview(boolean shared) {
+            if (shared) {
+                itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_video_shared));
+            } else {
+                itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_video));
+            }
         }
 
         ByteString getHash() {

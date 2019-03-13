@@ -16,12 +16,7 @@
 
 package com.aletheiaware.space.android;
 
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -31,23 +26,16 @@ import android.support.v7.preference.CheckBoxPreference;
 import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
-import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.android.utils.BiometricUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
-import com.aletheiaware.space.utils.SpaceUtils;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.NoSuchPaddingException;
 
@@ -128,15 +116,12 @@ public class SettingsActivity extends AppCompatActivity {
                     final FragmentActivity activity = getActivity();
                     final String alias = SpaceAndroidUtils.getAlias();
                     if ((Boolean) o) {
-                        final AtomicBoolean success = new AtomicBoolean(false);
-                        final CountDownLatch latch = new CountDownLatch(1);
                         new PasswordUnlockDialog(activity, alias) {
                             @Override
                             public void onUnlock(DialogInterface dialog, char[] password) {
                                 dialog.dismiss();
                                 try {
                                     BiometricUtils.enableBiometricUnlock(activity, alias, password);
-                                    success.set(true);
                                 } catch (InvalidAlgorithmParameterException e) {
                                     e.printStackTrace();
                                 } catch (InvalidKeyException e) {
@@ -147,12 +132,10 @@ public class SettingsActivity extends AppCompatActivity {
                                     e.printStackTrace();
                                 } catch (NoSuchProviderException e) {
                                     e.printStackTrace();
-                                } finally {
-                                    latch.countDown();
                                 }
                             }
                         }.create();
-                        return success.get();
+                        return true;
                     } else {
                         return BiometricUtils.disableBiometricUnlock(activity, alias);
                     }
@@ -168,7 +151,7 @@ public class SettingsActivity extends AppCompatActivity {
             supportPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
-                    support();
+                    SpaceAndroidUtils.support(getActivity(), new StringBuilder());
                     return true;
                 }
             });
@@ -191,52 +174,6 @@ public class SettingsActivity extends AppCompatActivity {
             biometricPreference.setChecked(BiometricUtils.isBiometricUnlockEnabled(activity, alias));
 
             appVersionPreference.setSummary(BuildConfig.BUILD_TYPE + "-" + BuildConfig.VERSION_NAME);
-        }
-
-        private void support() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("======== App Info ========\n");
-            sb.append("Build: ").append(BuildConfig.BUILD_TYPE).append("\n");
-            sb.append("App ID: ").append(BuildConfig.APPLICATION_ID).append("\n");
-            sb.append("Version: ").append(BuildConfig.VERSION_NAME).append("\n");
-            sb.append("======== Device Info ========\n");
-            sb.append("Board: ").append(Build.BOARD).append("\n");
-            sb.append("Bootloader: ").append(Build.BOOTLOADER).append("\n");
-            sb.append("Brand: ").append(Build.BRAND).append("\n");
-            sb.append("Build ID: ").append(Build.ID).append("\n");
-            sb.append("Device: ").append(Build.DEVICE).append("\n");
-            sb.append("Display: ").append(Build.DISPLAY).append("\n");
-            sb.append("Fingerprint: ").append(Build.FINGERPRINT).append("\n");
-            sb.append("Hardware: ").append(Build.HARDWARE).append("\n");
-            sb.append("Host: ").append(Build.HOST).append("\n");
-            sb.append("Manufacturer: ").append(Build.MANUFACTURER).append("\n");
-            sb.append("Model: ").append(Build.MODEL).append("\n");
-            sb.append("Product: ").append(Build.PRODUCT).append("\n");
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                sb.append("CPU ABI: ").append(Build.CPU_ABI).append("\n");
-                sb.append("CPU ABI2: ").append(Build.CPU_ABI2).append("\n");
-            } else {
-                sb.append("Supported ABIs: ").append(Arrays.toString(Build.SUPPORTED_ABIS)).append("\n");
-            }
-            sb.append("Tags: ").append(Build.TAGS).append("\n");
-            sb.append("Type: ").append(Build.TYPE).append("\n");
-            sb.append("User: ").append(Build.USER).append("\n");
-            Context context = getContext();
-            if (context != null) {
-                SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
-                Map<String, ?> map = sharedPrefs.getAll();
-                sb.append("======== Preferences ========\n");
-                for (String key : map.keySet()) {
-                    sb.append(key).append(":").append(map.get(key)).append("\n");
-                }
-            }
-            Log.d(SpaceUtils.TAG, sb.toString());
-            Intent intent = new Intent(Intent.ACTION_SENDTO);
-            intent.setData(Uri.parse("mailto:"));
-            intent.putExtra(Intent.EXTRA_EMAIL, new String[]{getString(R.string.support_email)});
-            intent.putExtra(Intent.EXTRA_SUBJECT, "SPACE Support");
-            intent.putExtra(Intent.EXTRA_TEXT, sb.toString());
-            startActivity(intent);
         }
     }
 }

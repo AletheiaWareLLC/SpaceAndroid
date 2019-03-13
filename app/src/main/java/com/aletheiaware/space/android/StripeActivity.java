@@ -40,8 +40,8 @@ public class StripeActivity extends AppCompatActivity {
 
     private EditText emailText;
     private CardInputWidget cardWidget;
-    private CheckBox policyCheck;
     private CheckBox termsCheck;
+    private CheckBox policyCheck;
     private FloatingActionButton stripeFab;
 
     @Override
@@ -54,8 +54,8 @@ public class StripeActivity extends AppCompatActivity {
         TextView amountText = findViewById(R.id.stripe_amount_text);
         emailText = findViewById(R.id.stripe_email_text);
         cardWidget = findViewById(R.id.stripe_card_widget);
-        policyCheck = findViewById(R.id.stripe_privacy_policy_check);
         termsCheck = findViewById(R.id.stripe_terms_of_service_check);
+        policyCheck = findViewById(R.id.stripe_privacy_policy_check);
         stripeFab = findViewById(R.id.stripe_fab);
         stripeFab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -90,18 +90,19 @@ public class StripeActivity extends AppCompatActivity {
         }
 
         // Legal
-        // TODO mine legal responses into blockchain and check server side
+        if (!termsCheck.isChecked()) {
+            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, "You must read, understand, and agree to the Terms of Service");
+            return;
+        }
         if (!policyCheck.isChecked()) {
             SpaceAndroidUtils.showErrorDialog(StripeActivity.this, "You must read, understand, and agree to the Privacy Policy");
             return;
         }
 
-        if (!termsCheck.isChecked()) {
-            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, "You must read, understand, and agree to the Terms of Service");
-            return;
-        }
-
         stripeFab.hide();
+
+        // TODO mine terms of service agreement into blockchain
+        // TODO mine privacy policy agreement into blockchain
 
         Card card = cardWidget.getCard();
         if (card != null) {

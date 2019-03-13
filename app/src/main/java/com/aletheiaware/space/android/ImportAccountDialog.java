@@ -25,6 +25,7 @@ import android.widget.EditText;
 public abstract class ImportAccountDialog {
 
     private final Activity activity;
+    private AlertDialog dialog;
 
     public ImportAccountDialog(Activity activity) {
         this.activity = activity;
@@ -46,8 +47,12 @@ public abstract class ImportAccountDialog {
                 onImport(dialog, aliasText.getText().toString(), accessCodeText.getText().toString());
             }
         });
-        final AlertDialog dialog = ab.show();
+        dialog = ab.show();
     }
 
     public abstract void onImport(DialogInterface dialog, String alias, String accessCode);
+
+    public AlertDialog getDialog() {
+        return dialog;
+    }
 }

@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -60,8 +61,8 @@ public class NewAccountActivity extends AppCompatActivity {
     private EditText newPasswordText;
     private EditText confirmPasswordText;
     private CardInputWidget cardWidget;
-    private CheckBox policyCheck;
     private CheckBox termsCheck;
+    private CheckBox policyCheck;
     private FloatingActionButton createAccountFab;
 
     private View progressView;
@@ -84,8 +85,8 @@ public class NewAccountActivity extends AppCompatActivity {
         newPasswordText = findViewById(R.id.new_account_new_password_text);
         confirmPasswordText = findViewById(R.id.new_account_confirm_password_text);
         cardWidget = findViewById(R.id.new_account_card_widget);
-        policyCheck = findViewById(R.id.new_account_privacy_policy_check);
         termsCheck = findViewById(R.id.new_account_terms_of_service_check);
+        policyCheck = findViewById(R.id.new_account_privacy_policy_check);
         createAccountFab = findViewById(R.id.new_account_fab);
         createAccountFab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -94,6 +95,8 @@ public class NewAccountActivity extends AppCompatActivity {
                 final String alias = aliasText.getText().toString();
                 // TODO ensure alias is valid
                 try {
+                    // TODO add textwatcher to aliasText, each change check if alias is unique and if not display aliasErrorText
+                    // TODO call to getHost must be outside UI thread
                     if (!AliasUtils.isUnique(SpaceAndroidUtils.getHost(), alias)) {
                         SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Alias already registered");
                         return;
@@ -145,14 +148,12 @@ public class NewAccountActivity extends AppCompatActivity {
                 }
 
                 // Legal
-                // TODO mine legal responses into blockchain and check server side
-                if (!policyCheck.isChecked()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "You must read, understand, and agree to the Privacy Policy");
-                    return;
-                }
-
                 if (!termsCheck.isChecked()) {
                     SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "You must read, understand, and agree to the Terms of Service");
+                    return;
+                }
+                if (!policyCheck.isChecked()) {
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "You must read, understand, and agree to the Privacy Policy");
                     return;
                 }
 
@@ -174,8 +175,12 @@ public class NewAccountActivity extends AppCompatActivity {
                             setProgressBar(2);
                             AliasUtils.registerAlias(alias, keyPair);
                             setProgressBar(3);
-                            Stripe stripe = new Stripe(NewAccountActivity.this, "pk_test_gvdQJ2CsMiwE0gARM6nGUbUb");
+                            // TODO mine terms of service agreement into blockchain
                             setProgressBar(4);
+                            // TODO mine privacy policy agreement into blockchain
+                            setProgressBar(5);
+                            Stripe stripe = new Stripe(NewAccountActivity.this, "pk_test_gvdQJ2CsMiwE0gARM6nGUbUb");
+                            setProgressBar(6);
                             stripe.createToken(
                                     card,
                                     new TokenCallback() {
@@ -184,7 +189,12 @@ public class NewAccountActivity extends AppCompatActivity {
                                                 @Override
                                                 public void run() {
                                                     try {
-                                                        SpaceUtils.register(alias, email, token.getId());
+                                                        String customerId = SpaceUtils.register(alias, email, token.getId());
+                                                        Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
+                                                        if (customerId != null && !customerId.isEmpty()) {
+                                                            String subscriptionId = SpaceUtils.subscribe(alias, customerId);
+                                                            Log.d(SpaceUtils.TAG, "Subscription ID: " + subscriptionId);
+                                                        }
                                                     } catch (IOException e) {
                                                         e.printStackTrace();
                                                     }
@@ -200,9 +210,9 @@ public class NewAccountActivity extends AppCompatActivity {
                                         }
                                     }
                             );
-                            setProgressBar(5);
+                            setProgressBar(7);
                             SpaceAndroidUtils.initialize(alias, keyPair);
-                            setProgressBar(6);
+                            setProgressBar(8);
                             // TODO show user the generated key pair, explain public vs private key, and provide options to backup keys
                             runOnUiThread(new Runnable() {
                                 @Override

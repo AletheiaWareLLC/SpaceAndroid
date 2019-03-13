@@ -20,17 +20,6 @@ limitations under the License.
     android:orientation="vertical"
     android:padding="@dimen/activity_padding">
 
-    <ImageView android:id="@+id/list_item_image_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/view_margin"
-        android:maxWidth="64dp"
-        android:maxHeight="64dp"
-        android:adjustViewBounds="true"
-        android:cropToPadding="true"
-        android:scaleType="centerInside"
-        android:visibility="gone" />
-
     <TextView android:id="@+id/list_item_text_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -39,11 +28,29 @@ limitations under the License.
         android:textSize="@dimen/text_primary_size"
         android:visibility="gone" />
 
-    <TextView android:id="@+id/list_item_title"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="@dimen/view_margin"
-        android:textColor="@color/text_primary"
-        android:textSize="@dimen/text_primary_size"/>
+        android:orientation="horizontal">
+
+        <ImageView android:id="@+id/list_item_image_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:maxWidth="128dp"
+            android:maxHeight="128dp"
+            android:adjustViewBounds="true"
+            android:cropToPadding="true"
+            android:scaleType="centerInside"
+            android:visibility="gone" />
+
+        <TextView android:id="@+id/list_item_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size"/>
+
+    </LinearLayout>
 
 </LinearLayout>

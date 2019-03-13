@@ -32,6 +32,7 @@ import android.widget.TextView;
 
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
+import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -51,7 +52,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SpaceAndroidUtils.createNotificationChannels(this);
+        MinerUtils.createNotificationChannels(this);
 
         // Setup UI
         setContentView(R.layout.activity_compose_document);
@@ -112,8 +113,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                         .setType(SpaceUtils.TEXT_PLAIN_TYPE)
                         .setData(ByteString.copyFromUtf8(text.substring(0, Math.min(text.length(), SpaceUtils.PREVIEW_TEXT_LENGTH))))
                         .build();
-                ByteArrayInputStream in = new ByteArrayInputStream(text.getBytes(Charset.defaultCharset()));
-                SpaceAndroidUtils.mine(ComposeDocumentActivity.this, name, type, preview, in);
+                SpaceAndroidUtils.mineFile(ComposeDocumentActivity.this, name, type, preview, new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())));
             }
         });
     }
@@ -170,8 +170,9 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 try {
-                                    SpaceUtils.register(alias, email, paymentId);
-                                    SpaceAndroidUtils.mine(ComposeDocumentActivity.this, name, type, preview, in);
+                                    String customerId = SpaceUtils.register(alias, email, paymentId);
+                                    Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
+                                    SpaceAndroidUtils.mineFile(ComposeDocumentActivity.this, name, type, preview, in);
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }

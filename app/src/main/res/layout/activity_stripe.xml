@@ -19,8 +19,10 @@ limitations under the License.
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:fitsSystemWindows="false"
-    android:background="@android:color/background_dark">
+    android:background="@android:color/background_dark"
+    tools:context=".StripeActivity">
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/stripe_appbar"
@@ -97,21 +99,21 @@ limitations under the License.
                     android:layout_margin="@dimen/view_margin" />
 
                 <CheckBox
-                    android:id="@+id/stripe_privacy_policy_check"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="@dimen/view_margin"
-                    android:autoLink="web"
-                    android:text="@string/legalese_privacy_policy"
-                    android:textColor="@color/text_secondary" />
-
-                <CheckBox
                     android:id="@+id/stripe_terms_of_service_check"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/view_margin"
                     android:autoLink="web"
                     android:text="@string/legalese_terms_of_service"
+                    android:textColor="@color/text_secondary" />
+
+                <CheckBox
+                    android:id="@+id/stripe_privacy_policy_check"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/view_margin"
+                    android:autoLink="web"
+                    android:text="@string/legalese_privacy_policy"
                     android:textColor="@color/text_secondary" />
 
             </LinearLayout>
