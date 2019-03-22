@@ -22,12 +22,12 @@ import android.content.DialogInterface;
 import android.view.View;
 import android.widget.EditText;
 
-public abstract class ImportAccountDialog {
+public abstract class ImportKeysDialog {
 
     private final Activity activity;
     private AlertDialog dialog;
 
-    public ImportAccountDialog(Activity activity) {
+    public ImportKeysDialog(Activity activity) {
         this.activity = activity;
     }
 
@@ -39,9 +39,9 @@ public abstract class ImportAccountDialog {
         final EditText accessCodeText = accessView.findViewById(R.id.import_access_code_text);
         accessCodeText.setFocusableInTouchMode(true);
         AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
-        ab.setTitle(R.string.import_account);
+        ab.setTitle(R.string.import_keys);
         ab.setView(accessView);
-        ab.setPositiveButton(R.string.import_account_action, new DialogInterface.OnClickListener() {
+        ab.setPositiveButton(R.string.import_keys_action, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 onImport(dialog, aliasText.getText().toString(), accessCodeText.getText().toString());

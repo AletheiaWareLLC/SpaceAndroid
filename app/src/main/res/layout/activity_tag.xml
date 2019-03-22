@@ -61,7 +61,7 @@ limitations under the License.
                 android:textColor="@color/text_primary"
                 android:textSize="@dimen/text_primary_size" />
 
-            <android.support.v7.widget.AppCompatAutoCompleteTextView
+            <AutoCompleteTextView
                 android:id="@+id/tag_value"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -24,25 +24,17 @@ limitations under the License.
     <string name="backdrop_description">Backdrop</string>
 
     <string name="access_new_label">New Account</string>
-    <string name="access_import_label">Import Account</string>
-    <string name="access_unlock_label">Unlock Account</string>
     <string name="access_biometric_unlock_title">Biometric Unlock</string>
-    <string name="access_biometric_unlock_description">Unlock your account using your fingerprint</string>
+    <string name="access_biometric_unlock_description">Unlock your keys with your fingerprint</string>
 
     <string name="account_alias">Alias</string>
     <string name="account_public_key">Public Key</string>
     <string name="account_customer">Customer</string>
-    <string name="account_not_registered">Account Not Registered</string>
+    <string name="account_not_registered">Keys Not Registered</string>
     <string name="account_subscription">Subscription</string>
-    <string name="account_not_subscribed">Account Not Subscribed</string>
-    <string name="account_register">Register Account</string>
-    <string name="account_subscribe">Subscribe Account</string>
-    <string name="account_switch">Switch Accounts</string>
-    <string name="account_export">Export Account</string>
-    <string name="account_delete">Delete Account</string>
-    <string name="account_switch_action">Switch</string>
-    <string name="account_export_action">Export</string>
-    <string name="account_delete_action">Delete</string>
+    <string name="account_not_subscribed">Keys Not Subscribed</string>
+    <string name="account_register">Register Keys</string>
+    <string name="account_subscribe">Subscribe Keys</string>
 
     <string name="new_account">New Account</string>
     <string name="new_account_action">New</string>
@@ -69,13 +61,32 @@ limitations under the License.
     <string name="error_loading_metadata">Failed to load metadata from intent</string>
     <string name="error_loading_file">Failed to load file</string>
     <string name="error_reading_uri">Failed to read URI</string>
-    <string name="error_unlock_account">Failed to unlock account</string>
+    <string name="error_unlock_keys">Failed to unlock keys</string>
     <string name="error_uploading">Failed to upload file</string>
     <string name="error_mining">Failed to mine file</string>
     <string name="error_no_camera">No camera found on this device</string>
+    <string name="error_alias_read_failed">Could not read Alias blockchain</string>
+    <string name="error_alias_invalid">Invalid alias</string>
+    <string name="error_alias_taken">Alias already registered</string>
+    <string name="error_email_invalid">Invalid email</string>
+    <string name="error_finance_read_failed">Could not read Finance blockchain</string>
+    <string name="error_password_short">Password must be at least 12 characters</string>
+    <string name="error_password_lengths_differ">Password and confirm password differ in length</string>
+    <string name="error_passwords_differ">Password and confirm password do not match</string>
+    <string name="error_stripe_invalid_payment">Invalid payment information</string>
+    <string name="error_terms_of_service_required">You must read, understand, and agree to the Terms of Service</string>
+    <string name="error_privacy_policy_required">You must read, understand, and agree to the Privacy Policy</string>
+    <string name="error_beta_test_agreement_required">You must read, understand, and agree to the Beta Test Agreement</string>
+    <string name="error_biometric_unlock">Failed to unlock keys with biometric unlock</string>
+    <string name="error_biometric_enroll">Failed to set up biometric unlock</string>
+    <string name="error_registering">Failed to register</string>
+    <string name="error_subscribing">Failed to subscribe</string>
+    <string name="error_meta_read_failed">Failed to read metadata</string>
+    <string name="error_shared_meta_read_failed">Failed to read shared metadata</string>
 
-    <string name="legalese_privacy_policy">I understand, and agree to Aletheia Ware LLC\'s Privacy Policy - https://aletheiaware.com/privacy-policy.html</string>
     <string name="legalese_terms_of_service">I understand, and agree to Aletheia Ware LLC\'s Terms of Service - https://aletheiaware.com/terms-of-service.html</string>
+    <string name="legalese_privacy_policy">I understand, and agree to Aletheia Ware LLC\'s Privacy Policy - https://aletheiaware.com/privacy-policy.html</string>
+    <string name="legalese_beta_test_agreement">I understand, and agree to Aletheia Ware LLC\'s Beta Test Agreement - https://aletheiaware.com/space-beta-test-agreement.html</string>
 
     <string name="menu_account">Account</string>
     <string name="menu_download">Download</string>
@@ -83,6 +94,8 @@ limitations under the License.
     <string name="menu_settings">Settings</string>
     <string name="menu_share">Share</string>
     <string name="menu_tag">Tag</string>
+
+    <string name="mime_type_text_plain">text/plain</string>
 
     <string name="notification_channel_name_local">Local Mining</string>
     <string name="notification_channel_name_remote">Remote Mining</string>
@@ -106,33 +119,36 @@ limitations under the License.
     <string name="title_activity_tag">Tag</string>
     <string name="title_activity_upload">Upload File</string>
     <string name="title_dialog_error">Error</string>
-    <string name="title_dialog_add_document">Add Document</string>
+    <string name="title_dialog_add_record">Add Record</string>
     <string name="title_dialog_select_miner">Select Miner</string>
     <string name="title_dialog_new_account">Creating Account</string>
     <string name="title_notification_local">Mining Locally</string>
     <string name="title_notification_remote">Mining Remotely</string>
 
-    <string name="unlock_account">Unlock Account</string>
-    <string name="unlock_account_action">Unlock</string>
-    <string name="unlock_account_alias">Alias</string>
-    <string name="unlock_account_password">Password</string>
-    <string name="unlock_account_label">Unlock your account by entering the password to decrypt your private key</string>
+    <string name="unlock_keys">Unlock Keys</string>
+    <string name="unlock_keys_action">Unlock</string>
+    <string name="unlock_keys_alias">Alias</string>
+    <string name="unlock_keys_password">Password</string>
+    <string name="unlock_keys_label">Unlock your keys by entering your password</string>
 
-    <string name="import_account">Import Account</string>
-    <string name="import_account_action">Import</string>
-    <string name="import_account_alias">Alias</string>
-    <string name="import_account_access_code">Access Code</string>
-    <string name="import_account_label">Import your account from another device.</string>
+    <string name="import_keys">Import Keys</string>
+    <string name="import_keys_action">Import</string>
+    <string name="import_keys_alias">Alias</string>
+    <string name="import_keys_access_code">Access Code</string>
+    <string name="import_keys_label">Import your keys from another device.</string>
 
-    <string name="export_account">Export Account</string>
-    <string name="export_account_action">Export</string>
-    <string name="export_account_alias">Alias</string>
-    <string name="export_account_access_code">Access Code</string>
-    <string name="export_account_label">Export your account to another device.</string>
+    <string name="export_keys">Export Keys</string>
+    <string name="export_keys_action">Export</string>
+    <string name="export_keys_alias">Alias</string>
+    <string name="export_keys_access_code">Access Code</string>
+    <string name="export_keys_label">Export your keys to another device.</string>
 
     <string name="delete_keys">Delete Keys</string>
     <string name="delete_keys_action">Delete</string>
-    <string name="delete_keys_legalese">Deleting your keys from this device will not delete your account, however it will remove this device\'s access to your account.</string>
+    <string name="delete_keys_legalese">Deleting your keys from this device will not delete your data from the blockchain, however it will remove this device\'s access to that data. Once deleted, keys are not recoverable.</string>
+
+    <string name="switch_keys">Switch Keys</string>
+    <string name="switch_keys_action">Switch</string>
 
     <string name="upload_image">The image to upload</string>
     <string name="upload_video">The video to upload</string>
@@ -174,7 +190,7 @@ limitations under the License.
     <string name="preference_security_title">Security</string>
     <string name="preference_biometric_key">biometric_preference</string>
     <string name="preference_biometric_title">Biometric Unlock</string>
-    <string name="preference_biometric_description">Unlock your account with your fingerprint</string>
+    <string name="preference_biometric_description">Unlock your keys with your fingerprint</string>
 
     <string name="preference_about_title">About</string>
     <string name="preference_app_version_key">app_version_preference</string>

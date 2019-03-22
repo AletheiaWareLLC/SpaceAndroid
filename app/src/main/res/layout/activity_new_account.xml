@@ -77,7 +77,8 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:gravity="center"
                 android:imeOptions="actionDone"
-                android:inputType="text" />
+                android:inputType="text"
+                android:textSize="@dimen/text_primary_size" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -103,7 +104,8 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:gravity="center"
                 android:imeOptions="actionDone"
-                android:inputType="textEmailAddress" />
+                android:inputType="textEmailAddress"
+                android:textSize="@dimen/text_primary_size" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -129,7 +131,8 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:gravity="center"
                 android:imeOptions="actionDone"
-                android:inputType="textPassword" />
+                android:inputType="textPassword"
+                android:textSize="@dimen/text_primary_size" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -179,7 +182,8 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:autoLink="web"
                 android:text="@string/legalese_terms_of_service"
-                android:textColor="@color/text_secondary" />
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_primary_size"/>
 
             <CheckBox
                 android:id="@+id/new_account_privacy_policy_check"
@@ -188,7 +192,18 @@ limitations under the License.
                 android:layout_margin="@dimen/view_margin"
                 android:autoLink="web"
                 android:text="@string/legalese_privacy_policy"
-                android:textColor="@color/text_secondary" />
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_primary_size"/>
+
+            <CheckBox
+                android:id="@+id/new_account_beta_test_agreement_check"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/view_margin"
+                android:autoLink="web"
+                android:text="@string/legalese_beta_test_agreement"
+                android:textColor="@color/text_primary"
+                android:textSize="@dimen/text_primary_size"/>
         </LinearLayout>
 
     </android.support.v4.widget.NestedScrollView>

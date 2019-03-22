@@ -26,9 +26,9 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import com.aletheiaware.alias.utils.AliasUtils;
+import com.aletheiaware.bc.BC.Channel;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
@@ -39,8 +39,6 @@ import com.stripe.android.model.Token;
 import com.stripe.android.view.CardInputWidget;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -63,15 +61,31 @@ public class NewAccountActivity extends AppCompatActivity {
     private CardInputWidget cardWidget;
     private CheckBox termsCheck;
     private CheckBox policyCheck;
+    private CheckBox betaCheck;
     private FloatingActionButton createAccountFab;
 
     private View progressView;
     private ProgressBar progressBar;
     private AlertDialog dialog;
 
+    private Channel aliases;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        new Thread() {
+            @Override
+            public void run() {
+                aliases = new Channel(AliasUtils.ALIAS_CHANNEL, BCUtils.THRESHOLD_STANDARD, getCacheDir(), SpaceAndroidUtils.getHost());
+                try {
+                    aliases.sync();
+                } catch (IOException | NoSuchAlgorithmException e) {
+                    /* Ignored */
+                    e.printStackTrace();
+                }
+            }
+        }.start();
 
         // Setup UI
         setContentView(R.layout.activity_new_account);
@@ -87,6 +101,7 @@ public class NewAccountActivity extends AppCompatActivity {
         cardWidget = findViewById(R.id.new_account_card_widget);
         termsCheck = findViewById(R.id.new_account_terms_of_service_check);
         policyCheck = findViewById(R.id.new_account_privacy_policy_check);
+        betaCheck = findViewById(R.id.new_account_beta_test_agreement_check);
         createAccountFab = findViewById(R.id.new_account_fab);
         createAccountFab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -96,18 +111,16 @@ public class NewAccountActivity extends AppCompatActivity {
                 // TODO ensure alias is valid
                 try {
                     // TODO add textwatcher to aliasText, each change check if alias is unique and if not display aliasErrorText
-                    // TODO call to getHost must be outside UI thread
-                    if (!AliasUtils.isUnique(SpaceAndroidUtils.getHost(), alias)) {
-                        SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Alias already registered");
+                    if (!AliasUtils.isUnique(aliases, alias)) {
+                        SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_alias_taken));
                         return;
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Could not read Alias blockchain");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, R.string.error_alias_read_failed, e);
                     return;
                 }
                 if (alias.isEmpty()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Invalid alias");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_alias_invalid));
                     return;
                 }
 
@@ -115,7 +128,7 @@ public class NewAccountActivity extends AppCompatActivity {
                 final String email = emailText.getText().toString();
                 // TODO ensure email is valid
                 if (email.isEmpty()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Invalid email");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_email_invalid));
                     return;
                 }
 
@@ -123,11 +136,11 @@ public class NewAccountActivity extends AppCompatActivity {
                 // TODO ensure password meets minimum security
                 final int passwordLength = newPasswordText.length();
                 if (passwordLength < 12) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Password must be at least 12 characters");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_password_short));
                     return;
                 }
                 if (passwordLength != confirmPasswordText.length()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Password and confirm password differ in length");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_password_lengths_differ));
                     return;
                 }
 
@@ -136,24 +149,28 @@ public class NewAccountActivity extends AppCompatActivity {
                 newPasswordText.getText().getChars(0, passwordLength, newPassword, 0);
                 confirmPasswordText.getText().getChars(0, passwordLength, confirmPassword, 0);
                 if (!Arrays.equals(newPassword, confirmPassword)) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Password and confirm password do not match");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_passwords_differ));
                     return;
                 }
 
                 // Payment
                 final Card card = cardWidget.getCard();
                 if (card == null || !card.validateCard()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "Invalid payment information");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_stripe_invalid_payment));
                     return;
                 }
 
                 // Legal
                 if (!termsCheck.isChecked()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "You must read, understand, and agree to the Terms of Service");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_terms_of_service_required));
                     return;
                 }
                 if (!policyCheck.isChecked()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, "You must read, understand, and agree to the Privacy Policy");
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_privacy_policy_required));
+                    return;
+                }
+                if (!betaCheck.isChecked()) {
+                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_beta_test_agreement_required));
                     return;
                 }
 
@@ -188,25 +205,27 @@ public class NewAccountActivity extends AppCompatActivity {
                                             new Thread() {
                                                 @Override
                                                 public void run() {
+                                                    String customerId = null;
                                                     try {
-                                                        String customerId = SpaceUtils.register(alias, email, token.getId());
-                                                        Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
-                                                        if (customerId != null && !customerId.isEmpty()) {
+                                                        customerId = SpaceUtils.register(alias, email, token.getId());
+                                                    } catch (IOException e) {
+                                                        SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, R.string.error_registering, e);
+                                                    }
+                                                    Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
+                                                    if (customerId != null && !customerId.isEmpty()) {
+                                                        try {
                                                             String subscriptionId = SpaceUtils.subscribe(alias, customerId);
                                                             Log.d(SpaceUtils.TAG, "Subscription ID: " + subscriptionId);
+                                                        } catch (IOException e) {
+                                                            SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, R.string.error_subscribing, e);
                                                         }
-                                                    } catch (IOException e) {
-                                                        e.printStackTrace();
                                                     }
                                                 }
                                             }.start();
                                         }
 
                                         public void onError(Exception error) {
-                                            error.printStackTrace();
-                                            StringWriter sw = new StringWriter();
-                                            error.printStackTrace(new PrintWriter(sw));
-                                            Toast.makeText(NewAccountActivity.this, sw.toString(), Toast.LENGTH_LONG).show();
+                                            SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, R.string.error_new_account, error);
                                         }
                                     }
                             );
@@ -221,26 +240,8 @@ public class NewAccountActivity extends AppCompatActivity {
                                     finish();
                                 }
                             });
-                        } catch (BadPaddingException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (IllegalBlockSizeException e) {
-                            e.printStackTrace();
-                        } catch (InvalidAlgorithmParameterException e) {
-                            e.printStackTrace();
-                        } catch (InvalidKeyException e) {
-                            e.printStackTrace();
-                        } catch (InvalidKeySpecException e) {
-                            e.printStackTrace();
-                        } catch (InvalidParameterSpecException e) {
-                            e.printStackTrace();
-                        } catch (NoSuchAlgorithmException e) {
-                            e.printStackTrace();
-                        } catch (NoSuchPaddingException e) {
-                            e.printStackTrace();
-                        } catch (SignatureException e) {
-                            e.printStackTrace();
+                        } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | InvalidKeySpecException | InvalidParameterSpecException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
+                            SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, R.string.error_new_account, e);
                         } finally {
                             runOnUiThread(new Runnable() {
                                 @Override

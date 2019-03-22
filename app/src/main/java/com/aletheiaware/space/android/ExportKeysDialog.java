@@ -22,14 +22,14 @@ import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.TextView;
 
-public abstract class ExportAccountDialog {
+public abstract class ExportKeysDialog {
 
     private final Activity activity;
     private final String alias;
     private final String accessCode;
     private AlertDialog dialog;
 
-    public ExportAccountDialog(Activity activity, String alias, String accessCode) {
+    public ExportKeysDialog(Activity activity, String alias, String accessCode) {
         this.activity = activity;
         this.alias = alias;
         this.accessCode = accessCode;
@@ -42,7 +42,7 @@ public abstract class ExportAccountDialog {
         final TextView accessCodeText = accessView.findViewById(R.id.export_access_code_text);
         accessCodeText.setText(accessCode);
         AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
-        ab.setTitle(R.string.export_account);
+        ab.setTitle(R.string.export_keys);
         ab.setView(accessView);
         ab.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override

@@ -20,10 +20,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.AppCompatAutoCompleteTextView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 
 import com.aletheiaware.alias.AliasProto.Alias;
@@ -52,7 +52,7 @@ public class ShareActivity extends AppCompatActivity {
     private AliasAdapter adapter;
     private MetaLoader loader;
     private TextView nameTextView;
-    private AppCompatAutoCompleteTextView aliasTextView;
+    private AutoCompleteTextView aliasTextView;
     private FloatingActionButton shareFab;
 
     @Override
@@ -124,6 +124,7 @@ public class ShareActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 final String recipient = aliasTextView.getText().toString();
+                Log.d(SpaceUtils.TAG, "Recipient: " + recipient);
                 if (!recipient.isEmpty()) {
                     final Alias r = adapter.get(recipient);
                     if (r != null) {
@@ -142,7 +143,7 @@ public class ShareActivity extends AppCompatActivity {
                                     final PublicKey recipientKey = AliasUtils.getPublicKey(aliases, recipient);
                                     final Share.Builder sb = Share.newBuilder();
                                     if (loader.isShared()) {
-                                        SpaceUtils.readShares(host, cache, alias, keys, null, loader.getRecordHash(), new RecordCallback() {
+                                        SpaceUtils.readShares(host, cache, alias, keys, null, loader.getMetaRecordHash(), new RecordCallback() {
                                             @Override
                                             public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                                                 sb.setMetaReference(Reference.newBuilder()
@@ -163,7 +164,7 @@ public class ShareActivity extends AppCompatActivity {
                                         // TODO sb.addAllPreviewKey(previewKeys);
                                     } else {
                                         final Channel files = new Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, cache, host);
-                                        SpaceUtils.readMetas(host, cache, alias, keys, loader.getRecordHash(), new RecordCallback() {
+                                        SpaceUtils.readMetas(host, cache, alias, keys, loader.getMetaRecordHash(), new RecordCallback() {
                                             @Override
                                             public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                                                 for (Reference r : blockEntry.getRecord().getReferenceList()) {

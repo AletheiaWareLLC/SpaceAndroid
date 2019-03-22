@@ -30,13 +30,13 @@ import com.google.protobuf.ByteString;
 
 import java.util.List;
 
-public abstract class AccountAdapter extends RecyclerView.Adapter<AccountAdapter.ViewHolder> {
+public abstract class KeysAdapter extends RecyclerView.Adapter<KeysAdapter.ViewHolder> {
 
     private final Activity activity;
     private final LayoutInflater inflater;
     private final List<String> accounts;
 
-    AccountAdapter(Activity activity, List<String> accounts) {
+    KeysAdapter(Activity activity, List<String> accounts) {
         this.activity = activity;
         this.inflater = activity.getLayoutInflater();
         this.accounts = accounts;
@@ -50,25 +50,25 @@ public abstract class AccountAdapter extends RecyclerView.Adapter<AccountAdapter
         accounts.remove(alias);
     }
 
-    public abstract void unlockAccount(final String alias);
+    public abstract void unlockKeys(final String alias);
 
-    public abstract void deleteAccount(final String alias);
+    public abstract void deleteKeys(final String alias);
 
     @NonNull
     @Override
-    public AccountAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public KeysAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         final TextView view = (TextView) inflater.inflate(R.layout.account_list_item, parent, false);
-        final AccountAdapter.ViewHolder holder = new AccountAdapter.ViewHolder(view);
+        final KeysAdapter.ViewHolder holder = new KeysAdapter.ViewHolder(view);
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                unlockAccount(holder.getAlias());
+                unlockKeys(holder.getAlias());
             }
         });
         view.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                deleteAccount(holder.getAlias());
+                deleteKeys(holder.getAlias());
                 return true;
             }
         });
@@ -76,7 +76,7 @@ public abstract class AccountAdapter extends RecyclerView.Adapter<AccountAdapter
     }
 
     @Override
-    public void onBindViewHolder(@NonNull AccountAdapter.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull KeysAdapter.ViewHolder holder, int position) {
         holder.setAlias(accounts.get(position));
     }
 

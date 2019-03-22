@@ -24,6 +24,7 @@ import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -31,16 +32,14 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 
-import com.aletheiaware.bc.BC.Channel;
 import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
-import com.aletheiaware.bc.BCProto.Reference;
-import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
-import com.aletheiaware.space.SpaceProto.Preview;
-import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -49,19 +48,13 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 public class MainActivity extends AppCompatActivity {
 
-    private DatabaseAdapter adapter;
+    private MetaAdapter adapter;
+
+    private Spinner sortSpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,9 +88,33 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // SortSpinner
+        sortSpinner = findViewById(R.id.main_sort);
+        ArrayAdapter<CharSequence> sortAdapter = ArrayAdapter.createFromResource(this, R.array.preference_sort_options, R.layout.sort_list_item);
+        sortAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        sortSpinner.setAdapter(sortAdapter);
+        sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                final String value = String.valueOf(position + 1);
+                new Thread() {
+                    @Override
+                    public void run() {
+                        SpaceAndroidUtils.setSortPreference(MainActivity.this, value);
+                        adapter.sort();
+                    }
+                }.start();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
         // RecyclerView
         RecyclerView recyclerView = findViewById(R.id.main_recycler);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.addItemDecoration(new DividerItemDecoration(this, layoutManager.getOrientation()));
 
         // Add FloatingActionButton
         FloatingActionButton addFab = findViewById(R.id.main_add_fab);
@@ -109,119 +126,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Adapter
-        adapter = new DatabaseAdapter(this) {
-            @Override
-            public void loadPreview(final ByteString metaRecordHash) {
-                if (SpaceAndroidUtils.isInitialized()) {
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            try {
-                                final String alias = SpaceAndroidUtils.getAlias();
-                                final KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                                final InetAddress host = SpaceAndroidUtils.getHost();
-                                final byte[] metaRecordHashBytes = metaRecordHash.toByteArray();
-                                final Channel previews = new Channel(SpaceUtils.PREVIEW_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, getCacheDir(), host);
-                                try {
-                                    previews.sync();
-                                } catch (IOException | NoSuchAlgorithmException e) {
-                                    /* Ignored */
-                                    e.printStackTrace();
-                                }
-                                if (isShared(metaRecordHash)) {
-                                    final Channel shares = new Channel(SpaceUtils.SHARE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, getCacheDir(), host);
-                                    try {
-                                        shares.sync();
-                                    } catch (IOException | NoSuchAlgorithmException e) {
-                                        /* Ignored */
-                                        e.printStackTrace();
-                                    }
-                                    shares.read(alias, keys, null, new RecordCallback() {
-                                        @Override
-                                        public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                            try {
-                                                Share share = Share.newBuilder().mergeFrom(payload).build();
-                                                Reference sharedMetaReference = share.getMetaReference();
-                                                if (Arrays.equals(sharedMetaReference.getRecordHash().toByteArray(), metaRecordHashBytes)) {
-                                                    int count = Math.min(share.getPreviewKeyCount(), share.getPreviewReferenceCount());
-                                                    Preview preview = null;
-                                                    for (int i = 0; i < count; i++) {
-                                                        try {
-                                                            Block b = BCUtils.getBlock(host, share.getPreviewReference(i));
-                                                            if (b != null) {
-                                                                for (BlockEntry e : b.getEntryList()) {
-                                                                    try {
-                                                                        byte[] previewKey = share.getPreviewKey(i).toByteArray();
-                                                                        byte[] decryptedPayload = BCUtils.decryptAES(previewKey, e.getRecord().getPayload().toByteArray());
-                                                                        Preview p = Preview.newBuilder().mergeFrom(decryptedPayload).build();
-                                                                        // TODO choose best preview for screen size
-                                                                        if (preview == null) {
-                                                                            preview = p;
-                                                                        }
-                                                                    } catch (InvalidProtocolBufferException ex) {
-                                                                        ex.printStackTrace();
-                                                                    } catch (NoSuchPaddingException ex) {
-                                                                        ex.printStackTrace();
-                                                                    } catch (NoSuchAlgorithmException ex) {
-                                                                        ex.printStackTrace();
-                                                                    } catch (InvalidKeyException ex) {
-                                                                        ex.printStackTrace();
-                                                                    } catch (InvalidAlgorithmParameterException ex) {
-                                                                        ex.printStackTrace();
-                                                                    } catch (IllegalBlockSizeException ex) {
-                                                                        ex.printStackTrace();
-                                                                    } catch (BadPaddingException ex) {
-                                                                        ex.printStackTrace();
-                                                                    }
-                                                                }
-                                                            }
-                                                        } catch (IOException e) {
-                                                            e.printStackTrace();
-                                                        }
-                                                    }
-                                                    if (preview != null) {
-                                                        addPreview(metaRecordHash, preview);
-                                                    }
-                                                }
-                                            } catch (InvalidProtocolBufferException e) {
-                                                e.printStackTrace();
-                                            }
-                                            return true;
-                                        }
-                                    });
-                                } else {
-                                    previews.read(alias, keys, null, new RecordCallback() {
-                                        @Override
-                                        public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                            Preview preview = null;
-                                            for (Reference r : blockEntry.getRecord().getReferenceList()) {
-                                                if (r.getRecordHash().equals(metaRecordHash)) {
-                                                    try {
-                                                        Preview p = Preview.newBuilder().mergeFrom(payload).build();
-                                                        // TODO choose best preview for screen size
-                                                        if (preview == null) {
-                                                            preview = p;
-                                                        }
-                                                    } catch (InvalidProtocolBufferException e) {
-                                                        e.printStackTrace();
-                                                    }
-                                                }
-                                            }
-                                            if (preview != null) {
-                                                addPreview(metaRecordHash, preview);
-                                            }
-                                            return true;
-                                        }
-                                    });
-                                }
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }.start();
-                }
-            }
-
+        adapter = new MetaAdapter(this) {
             @Override
             public void onSelection(ByteString hash, Meta meta) {
                 Intent i = new Intent(MainActivity.this, DetailActivity.class);
@@ -239,7 +144,17 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         if (SpaceAndroidUtils.isInitialized()) {
-            // TODO refresh();
+            if (adapter.isEmpty()) {
+                refresh();
+            }
+            switch (SpaceAndroidUtils.getSortPreference(this)) {
+                case "1":
+                    sortSpinner.setSelection(0);
+                    break;
+                case "2":
+                    sortSpinner.setSelection(1);
+                    break;
+            }
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
             startActivityForResult(intent, SpaceAndroidUtils.ACCESS_ACTIVITY);
@@ -386,52 +301,56 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void refresh() {
-        adapter.sort();
-        adapter.notifyDataSetChanged();
         // TODO start refresh menu animate
         new Thread() {
             @Override
             public void run() {
+                final InetAddress address = SpaceAndroidUtils.getHost();
+                final File cache = getCacheDir();
+                final String alias = SpaceAndroidUtils.getAlias();
+                final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                 try {
-                    final InetAddress address = SpaceAndroidUtils.getHost();
-                    final File cache = getCacheDir();
-                    final String alias = SpaceAndroidUtils.getAlias();
-                    final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                     SpaceUtils.readMetas(address, cache, alias, keys, null, new RecordCallback() {
                         @Override
                         public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                             try {
                                 Meta meta = Meta.newBuilder().mergeFrom(payload).build();
                                 Log.d(SpaceUtils.TAG, "Meta: " + meta);
-                                adapter.addFile(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, false);
+                                adapter.addMeta(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, false);
                             } catch (InvalidProtocolBufferException e) {
+                                /* Ignored */
                                 e.printStackTrace();
                             }
                             return true;
                         }
                     });
+                } catch (IOException e) {
+                    SpaceAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_meta_read_failed, e);
+                }
+                try {
                     SpaceUtils.readShares(address, cache, alias, keys, null, null, new RecordCallback() {
                         @Override
                         public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                             try {
                                 Meta meta = Meta.newBuilder().mergeFrom(payload).build();
                                 Log.d(SpaceUtils.TAG, "Shared Meta: " + meta);
-                                adapter.addFile(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, true);
+                                adapter.addMeta(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, true);
                             } catch (InvalidProtocolBufferException e) {
+                                /* Ignored */
                                 e.printStackTrace();
                             }
                             return true;
                         }
                     }, null);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            // TODO stop refresh menu animate
-                        }
-                    });
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    SpaceAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_shared_meta_read_failed, e);
                 }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // TODO stop refresh menu animate
+                    }
+                });
             }
         }.start();
     }

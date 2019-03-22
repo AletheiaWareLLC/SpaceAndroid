@@ -25,7 +25,7 @@ limitations under the License.
     android:padding="@dimen/activity_padding"
     tool:context=".AccessActivity">
 
-    <android.support.v7.widget.AppCompatImageButton
+    <ImageButton
         android:id="@+id/space_logo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -43,7 +43,7 @@ limitations under the License.
         android:background="@color/accent" />
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/access_unlock_account_recycler"
+        android:id="@+id/access_unlock_keys_recycler"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
@@ -51,7 +51,7 @@ limitations under the License.
         android:visibility="gone" />
 
     <View
-        android:id="@+id/access_unlock_account_separator"
+        android:id="@+id/access_unlock_keys_separator"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_margin="@dimen/view_margin"
@@ -74,11 +74,11 @@ limitations under the License.
             android:textColor="@color/text_primary" />
 
         <Button
-            android:id="@+id/access_import_account"
+            android:id="@+id/access_import_keys"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
-            android:text="@string/import_account"
+            android:text="@string/import_keys"
             android:textColor="@color/text_primary" />
 
     </LinearLayout>
@@ -89,7 +89,7 @@ limitations under the License.
         android:layout_margin="@dimen/view_margin"
         android:background="@color/accent" />
 
-    <android.support.v7.widget.AppCompatImageButton
+    <ImageButton
         android:id="@+id/aletheia_ware_llc_logo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

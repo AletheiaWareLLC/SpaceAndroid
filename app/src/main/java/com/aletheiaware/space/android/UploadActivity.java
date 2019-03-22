@@ -181,7 +181,6 @@ public class UploadActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
                         Bitmap bitmap = null;
-                        ByteArrayOutputStream os = new ByteArrayOutputStream();
                         if (SpaceUtils.isImage(type)) {
                             // ImageView
                             contentImageView.setImageURI(uri);
@@ -233,6 +232,7 @@ public class UploadActivity extends AppCompatActivity {
                             if (bitmap.getWidth() > SpaceUtils.PREVIEW_IMAGE_SIZE || bitmap.getHeight() > SpaceUtils.PREVIEW_IMAGE_SIZE) {
                                 bitmap = Bitmap.createScaledBitmap(bitmap, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE, false);
                             }
+                            ByteArrayOutputStream os = new ByteArrayOutputStream();
                             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os);
                             preview = Preview.newBuilder()
                                     .setType(SpaceUtils.IMAGE_JPEG_TYPE)
@@ -281,14 +281,15 @@ public class UploadActivity extends AppCompatActivity {
                         new Thread() {
                             @Override
                             public void run() {
+                                String customerId = null;
                                 try {
-                                    String customerId = SpaceUtils.register(alias, email, paymentId);
-                                    Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
-                                    if (customerId != null && !customerId.isEmpty()) {
-                                        SpaceAndroidUtils.mineFile(UploadActivity.this, name, type, preview, in);
-                                    }
+                                    customerId = SpaceUtils.register(alias, email, paymentId);
                                 } catch (IOException e) {
-                                    e.printStackTrace();
+                                    SpaceAndroidUtils.showErrorDialog(UploadActivity.this, R.string.error_registering, e);
+                                }
+                                if (customerId != null && !customerId.isEmpty()) {
+                                    Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
+                                    SpaceAndroidUtils.mineFile(UploadActivity.this, name, type, preview, in);
                                 }
                             }
                         }.start();

@@ -49,6 +49,7 @@ public class AliasAdapter extends ArrayAdapter<String> implements Filterable {
                 try {
                     aliases.sync();
                 } catch (IOException | NoSuchAlgorithmException e) {
+                    /* Ignored */
                     e.printStackTrace();
                 }
                 try {
@@ -67,8 +68,7 @@ public class AliasAdapter extends ArrayAdapter<String> implements Filterable {
                         }
                     });
                 } catch (IOException e) {
-                    /* Ignored */
-                    e.printStackTrace();
+                    SpaceAndroidUtils.showErrorDialog(activity, R.string.error_alias_read_failed, e);
                 }
                 activity.runOnUiThread(new Runnable() {
                     @Override

@@ -85,8 +85,7 @@ public class AccountActivity extends AppCompatActivity {
         registerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AccountActivity.this, StripeActivity.class);
-                startActivityForResult(intent, SpaceAndroidUtils.STRIPE_ACTIVITY);
+                register();
             }
         });
         subscribeButton = findViewById(R.id.account_subscribe_button);
@@ -101,11 +100,15 @@ public class AccountActivity extends AppCompatActivity {
                             final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                             final InetAddress host = SpaceAndroidUtils.getHost();
                             final String customerId = FinanceUtils.getCustomerId(host, alias, keys);
-                            String subscriptionId = SpaceUtils.subscribe(alias, customerId);
-                            Log.d(SpaceUtils.TAG, "Subscription ID" + subscriptionId);
-                            updateStripeInfo();
+                            if (customerId == null || customerId.isEmpty()) {
+                                register();
+                            } else {
+                                String subscriptionId = SpaceUtils.subscribe(alias, customerId);
+                                Log.d(SpaceUtils.TAG, "Subscription ID" + subscriptionId);
+                                updateStripeInfo();
+                            }
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            SpaceAndroidUtils.showErrorDialog(AccountActivity.this, R.string.error_subscribing, e);
                         }
                     }
                 }.start();
@@ -139,24 +142,12 @@ public class AccountActivity extends AppCompatActivity {
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            new ExportAccountDialog(AccountActivity.this, alias, Base64.encodeToString(accessCode, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING)) {
+                                            new ExportKeysDialog(AccountActivity.this, alias, Base64.encodeToString(accessCode, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING)) {
                                             }.create();
                                         }
                                     });
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (NoSuchPaddingException e) {
-                                    e.printStackTrace();
-                                } catch (NoSuchAlgorithmException e) {
-                                    e.printStackTrace();
-                                } catch (InvalidKeyException e) {
-                                    e.printStackTrace();
-                                } catch (InvalidAlgorithmParameterException e) {
-                                    e.printStackTrace();
-                                } catch (IllegalBlockSizeException e) {
-                                    e.printStackTrace();
-                                } catch (BadPaddingException e) {
-                                    e.printStackTrace();
+                                } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                                    SpaceAndroidUtils.showErrorDialog(AccountActivity.this, R.string.error_export_key_pair, e);
                                 }
                             }
                         }.start();
@@ -168,7 +159,7 @@ public class AccountActivity extends AppCompatActivity {
         deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SpaceAndroidUtils.showDeleteAccountDialog(AccountActivity.this, new DialogInterface.OnClickListener() {
+                SpaceAndroidUtils.showDeleteKeysDialog(AccountActivity.this, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
                         if (BCUtils.deleteRSAKeyPair(getFilesDir(), SpaceAndroidUtils.getAlias())) {
@@ -233,7 +224,7 @@ public class AccountActivity extends AppCompatActivity {
                                     Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
                                     updateStripeInfo();
                                 } catch (IOException e) {
-                                    e.printStackTrace();
+                                    SpaceAndroidUtils.showErrorDialog(AccountActivity.this, R.string.error_registering, e);
                                 }
                             }
                         }.start();
@@ -244,6 +235,11 @@ public class AccountActivity extends AppCompatActivity {
                         break;
                 }
         }
+    }
+
+    private void register() {
+        Intent intent = new Intent(AccountActivity.this, StripeActivity.class);
+        startActivityForResult(intent, SpaceAndroidUtils.STRIPE_ACTIVITY);
     }
 
     private void updateStripeInfo() {
@@ -275,8 +271,8 @@ public class AccountActivity extends AppCompatActivity {
                     }
                 }
             });
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchPaddingException | BadPaddingException e) {
+            SpaceAndroidUtils.showErrorDialog(AccountActivity.this, R.string.error_finance_read_failed, e);
         }
     }
 

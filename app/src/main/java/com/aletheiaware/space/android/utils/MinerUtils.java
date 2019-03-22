@@ -287,21 +287,22 @@ public class MinerUtils {
                         long size = BCUtils.createEntries(alias, keys, acl, new ArrayList<Reference>(), in, new BCUtils.RecordCallback() {
                             @Override
                             public void onRecord(Record record) {
-                                try {
-                                    Reference fileReference = null;
-                                    for (int i = 0; fileReference == null && i < 5; i++) {
+                                Reference fileReference = null;
+                                for (int i = 0; fileReference == null && i < 5; i++) {
+                                    try {
                                         fileReference = SpaceUtils.postRecord("file", record);
+                                    } catch (IOException e) {
+                                        /* Ignored */
+                                        e.printStackTrace();
                                     }
-                                    if (fileReference == null) {
-                                        // FIXME
-                                        System.err.println("Failed to post file record 5 times");
-                                        return;
-                                    }
-                                    metaReferences.add(fileReference);
-                                    Log.d(SpaceUtils.TAG, "Uploaded File " + new String(BCUtils.encodeBase64URL(fileReference.getRecordHash().toByteArray())));
-                                } catch (IOException e) {
-                                    e.printStackTrace();
                                 }
+                                if (fileReference == null) {
+                                    // FIXME
+                                    System.err.println("Failed to post file record 5 times");
+                                    return;
+                                }
+                                metaReferences.add(fileReference);
+                                Log.d(SpaceUtils.TAG, "Uploaded File " + new String(BCUtils.encodeBase64URL(fileReference.getRecordHash().toByteArray())));
                             }
                         });
                         final Meta meta = Meta.newBuilder()
@@ -313,7 +314,12 @@ public class MinerUtils {
                         Record metaRecord = BCUtils.createRecord(alias, keys, acl, metaReferences, meta.toByteArray());
                         Reference metaReference = null;
                         for (int i = 0; metaReference == null && i < 5; i++) {
-                            metaReference = SpaceUtils.postRecord("meta", metaRecord);
+                            try {
+                                metaReference = SpaceUtils.postRecord("meta", metaRecord);
+                            } catch (IOException e) {
+                                /* Ignored */
+                                e.printStackTrace();
+                            }
                         }
                         if (metaReference == null) {
                             // FIXME
@@ -332,7 +338,12 @@ public class MinerUtils {
                             Record previewRecord = BCUtils.createRecord(alias, keys, acl, previewReferences, preview.toByteArray());
                             Reference previewReference = null;
                             for (int i = 0; previewReference == null && i < 5; i++) {
-                                previewReference = SpaceUtils.postRecord("preview", previewRecord);
+                                try {
+                                    previewReference = SpaceUtils.postRecord("preview", previewRecord);
+                                } catch (IOException e) {
+                                    /* Ignored */
+                                    e.printStackTrace();
+                                }
                             }
                             if (previewReference == null) {
                                 // FIXME
@@ -381,8 +392,8 @@ public class MinerUtils {
                     final InetAddress host = SpaceAndroidUtils.getHost();
                     final Channel shares = new Channel(SpaceUtils.SHARE_CHANNEL_PREFIX + recipientAlias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Map<String, PublicKey> acl = new HashMap<>();
-                    acl.put(alias, keys.getPublic());
-                    acl.put(recipientAlias, recipientKey);
+                    acl.put(recipientAlias, recipientKey);// Recipient first
+                    acl.put(alias, keys.getPublic());// Sender second
                     final List<Reference> shareReferences = new ArrayList<>();
                     Record shareRecord = BCUtils.createRecord(alias, keys, acl, shareReferences, share.toByteArray());
                     byte[] shareRecordHashBytes = BCUtils.getHash(shareRecord.toByteArray());
@@ -421,8 +432,8 @@ public class MinerUtils {
                         final String alias = SpaceAndroidUtils.getAlias();
                         final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                         final Map<String, PublicKey> acl = new HashMap<>();
-                        acl.put(alias, keys.getPublic());
-                        acl.put(recipientAlias, recipientKey);
+                        acl.put(recipientAlias, recipientKey);// Recipient first
+                        acl.put(alias, keys.getPublic());// Sender second
                         final List<Reference> shareReferences = new ArrayList<>();
                         Record shareRecord = BCUtils.createRecord(alias, keys, acl, shareReferences, share.toByteArray());
                         Reference shareReference = null;
@@ -462,9 +473,9 @@ public class MinerUtils {
         }.start();
     }
 
-    public static void mineTagLocally(final Activity parent, final Tag tag) {
+    public static void mineTagLocally(final Activity parent, final Reference meta, final Tag tag) {
         Log.d(SpaceUtils.TAG, "Mine file locally");
-        createLocalMiningNotification(parent, "Tagging with " + tag.getValue());
+        createLocalMiningNotification(parent, "Tagging " + meta + " with " + tag.getValue());
         new Thread() {
             @Override
             public void run() {
@@ -473,10 +484,12 @@ public class MinerUtils {
                     final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                     final Node node = SpaceAndroidUtils.getNode();
                     final InetAddress host = SpaceAndroidUtils.getHost();
-                    final Channel tags = new Channel(SpaceUtils.TAG_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
+                    byte[] metaRecordHashBytes = meta.getRecordHash().toByteArray();
+                    final Channel tags = new Channel(SpaceUtils.TAG_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Map<String, PublicKey> acl = new HashMap<>();
                     acl.put(alias, keys.getPublic());
                     final List<Reference> tagReferences = new ArrayList<>();
+                    tagReferences.add(meta);
                     Record tagRecord = BCUtils.createRecord(alias, keys, acl, tagReferences, tag.toByteArray());
                     byte[] tagRecordHashBytes = BCUtils.getHash(tagRecord.toByteArray());
                     ByteString tagRecordHash = ByteString.copyFrom(tagRecordHashBytes);
@@ -503,9 +516,9 @@ public class MinerUtils {
         }.start();
     }
 
-    public static void mineTagRemotely(final Activity parent, final Tag tag) {
+    public static void mineTagRemotely(final Activity parent, final Reference meta, final Tag tag) {
         Log.d(SpaceUtils.TAG, "Mine tag remotely");
-        createRemoteMiningNotification(parent, "Tagging with " + tag.getValue());
+        createRemoteMiningNotification(parent, "Tagging " + meta + " with " + tag.getValue());
         new Thread() {
             @Override
             public void run() {
@@ -516,6 +529,7 @@ public class MinerUtils {
                         final Map<String, PublicKey> acl = new HashMap<>();
                         acl.put(alias, keys.getPublic());
                         final List<Reference> tagReferences = new ArrayList<>();
+                        tagReferences.add(meta);
                         Record tagRecord = BCUtils.createRecord(alias, keys, acl, tagReferences, tag.toByteArray());
                         Reference tagReference = null;
                         for (int i = 0; tagReference == null && i < 5; i++) {

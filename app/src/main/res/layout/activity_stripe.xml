@@ -90,6 +90,7 @@ limitations under the License.
                     android:gravity="center"
                     android:imeOptions="actionDone"
                     android:inputType="textEmailAddress"
+                    android:textColor="@color/text_primary"
                     android:textSize="@dimen/text_primary_size" />
 
                 <com.stripe.android.view.CardInputWidget
@@ -105,7 +106,8 @@ limitations under the License.
                     android:layout_margin="@dimen/view_margin"
                     android:autoLink="web"
                     android:text="@string/legalese_terms_of_service"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_primary_size"/>
 
                 <CheckBox
                     android:id="@+id/stripe_privacy_policy_check"
@@ -114,7 +116,18 @@ limitations under the License.
                     android:layout_margin="@dimen/view_margin"
                     android:autoLink="web"
                     android:text="@string/legalese_privacy_policy"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_primary_size"/>
+
+                <CheckBox
+                    android:id="@+id/stripe_beta_test_agreement_check"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/view_margin"
+                    android:autoLink="web"
+                    android:text="@string/legalese_beta_test_agreement"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_primary_size"/>
 
             </LinearLayout>
 

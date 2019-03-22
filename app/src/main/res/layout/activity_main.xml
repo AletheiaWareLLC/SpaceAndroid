@@ -60,6 +60,14 @@ limitations under the License.
 
     </android.support.design.widget.AppBarLayout>
 
+    <Spinner
+        android:id="@+id/main_sort"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_anchor="@id/main_recycler"
+        app:layout_anchorGravity="top|center"
+        android:padding="@dimen/activity_padding" />
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/main_recycler"
         android:layout_width="match_parent"

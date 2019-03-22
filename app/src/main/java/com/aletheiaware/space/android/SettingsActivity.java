@@ -114,6 +114,9 @@ public class SettingsActivity extends AppCompatActivity {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object o) {
                     final FragmentActivity activity = getActivity();
+                    if (activity == null) {
+                        return false;
+                    }
                     final String alias = SpaceAndroidUtils.getAlias();
                     if ((Boolean) o) {
                         new PasswordUnlockDialog(activity, alias) {
@@ -122,20 +125,13 @@ public class SettingsActivity extends AppCompatActivity {
                                 dialog.dismiss();
                                 try {
                                     BiometricUtils.enableBiometricUnlock(activity, alias, password);
-                                } catch (InvalidAlgorithmParameterException e) {
-                                    e.printStackTrace();
-                                } catch (InvalidKeyException e) {
-                                    e.printStackTrace();
-                                } catch (NoSuchAlgorithmException e) {
-                                    e.printStackTrace();
-                                } catch (NoSuchPaddingException e) {
-                                    e.printStackTrace();
-                                } catch (NoSuchProviderException e) {
-                                    e.printStackTrace();
+                                    update();
+                                } catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | NoSuchProviderException e) {
+                                    SpaceAndroidUtils.showErrorDialog(activity, R.string.error_biometric_enroll, e);
                                 }
                             }
                         }.create();
-                        return true;
+                        return BiometricUtils.isBiometricUnlockAvailable(activity);
                     } else {
                         return BiometricUtils.disableBiometricUnlock(activity, alias);
                     }

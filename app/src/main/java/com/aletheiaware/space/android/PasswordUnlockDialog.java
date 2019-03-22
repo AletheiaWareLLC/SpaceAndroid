@@ -42,9 +42,9 @@ public abstract class PasswordUnlockDialog {
         passwordText.setFocusable(true);
         passwordText.setFocusableInTouchMode(true);
         AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
-        ab.setTitle(R.string.unlock_account);
+        ab.setTitle(R.string.unlock_keys);
         ab.setView(unlockView);
-        ab.setPositiveButton(R.string.unlock_account_action, new DialogInterface.OnClickListener() {
+        ab.setPositiveButton(R.string.unlock_keys_action, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 final int passwordLength = passwordText.length();

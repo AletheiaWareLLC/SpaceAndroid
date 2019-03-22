@@ -17,12 +17,10 @@
 package com.aletheiaware.space.android;
 
 import android.app.Activity;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,8 +29,12 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Preview;
+import com.aletheiaware.space.android.utils.PreviewUtils;
+import com.aletheiaware.space.android.utils.PreviewUtils.PreviewCallback;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 
@@ -43,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapter.ViewHolder> {
+public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewHolder> {
 
     private final Activity activity;
     private final LayoutInflater inflater;
@@ -53,12 +55,15 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
     private final Set<ByteString> shared = new HashSet<>();
     private final List<ByteString> sorted = new ArrayList<>();
 
-    DatabaseAdapter(Activity activity) {
+    MetaAdapter(Activity activity) {
         this.activity = activity;
         this.inflater = activity.getLayoutInflater();
     }
 
-    public void addFile(ByteString recordHash, long timestamp, Meta meta, boolean shared) {
+    synchronized void addMeta(ByteString recordHash, long timestamp, Meta meta, boolean shared) {
+        if (meta == null) {
+            throw new NullPointerException();
+        }
         if (metas.put(recordHash, meta) == null) {
             sorted.add(recordHash);// Only add if new
             timestamps.put(recordHash, timestamp);
@@ -67,33 +72,21 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
             }
             sort();
         }
-        activity.runOnUiThread(new Runnable() {
-            public void run() {
-                notifyDataSetChanged();
-            }
-        });
     }
 
-    public void sort() {
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(activity);
-        String key = activity.getString(R.string.preference_sort_key);
-        // 1 - chronological
-        // 2 - reverse-chronological
-        String value = sharedPrefs.getString(key, "2");
+    synchronized void sort() {
+        String value = SpaceAndroidUtils.getSortPreference(activity);
         boolean chronological = "1".equals(value);
         SpaceUtils.sort(sorted, timestamps, chronological);
-    }
-
-    public void addPreview(ByteString recordHash, Preview preview) {
-        previews.put(recordHash, preview);
         activity.runOnUiThread(new Runnable() {
+            @Override
             public void run() {
                 notifyDataSetChanged();
             }
         });
     }
 
-    public boolean isShared(ByteString hash) {
+    boolean isShared(ByteString hash) {
         return shared.contains(hash);
     }
 
@@ -121,12 +114,25 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
             holder.setEmptyView();
         } else {
             ByteString hash = sorted.get(position);
+            Long time = timestamps.get(hash);
             Meta meta = metas.get(hash);
-            Preview preview = previews.get(hash);
-            if (preview == null) {
-                loadPreview(hash);
+            if (!previews.containsKey(hash)) {
+                PreviewUtils.loadPreview(activity.getCacheDir(), hash, isShared(hash), new PreviewCallback() {
+                    @Override
+                    public void onPreview(ByteString metaRecordHash, boolean shared, Preview preview) {
+                        if (preview != null) {
+                            previews.put(metaRecordHash, preview);
+                            activity.runOnUiThread(new Runnable() {
+                                public void run() {
+                                    notifyDataSetChanged();
+                                }
+                            });
+                        }
+                    }
+                });
             }
-            holder.set(hash, meta, preview, isShared(hash));
+            Preview preview = previews.get(hash);
+            holder.set(hash, time, meta, preview, isShared(hash));
         }
     }
 
@@ -138,29 +144,31 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
         return sorted.size();
     }
 
-    public abstract void loadPreview(ByteString metaRecordHash);
-
     public abstract void onSelection(ByteString metaRecordHash, Meta meta);
+
+    public boolean isEmpty() {
+        return sorted.isEmpty();
+    }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
 
         private ByteString hash;
-        private Meta meta;
 
+        private TextView itemTime;
         private ImageView itemImage;
         private TextView itemText;
         private TextView itemTitle;
 
         ViewHolder(LinearLayout view) {
             super(view);
+            itemTime = view.findViewById(R.id.list_item_time);
             itemImage = view.findViewById(R.id.list_item_image_view);
             itemText = view.findViewById(R.id.list_item_text_view);
             itemTitle = view.findViewById(R.id.list_item_title);
         }
 
-        void set(ByteString hash, Meta meta, Preview preview, boolean shared) {
+        void set(ByteString hash, Long time, Meta meta, Preview preview, boolean shared) {
             this.hash = hash;
-            this.meta = meta;
             if (SpaceUtils.isText(meta.getType())) {
                 itemImage.setVisibility(View.GONE);
                 itemText.setVisibility(View.VISIBLE);
@@ -196,18 +204,21 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
                     }
                 }
             }
+            itemTime.setText(BCUtils.timeToString(time));
             itemTitle.setText(meta.getName());
             if (shared) {
                 itemView.setBackgroundResource(R.color.white);
                 itemImage.setBackgroundResource(R.color.white);
                 itemText.setBackgroundResource(R.color.white);
                 itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.black));
+                itemTime.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.black));
                 itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.black));
             } else {
                 itemView.setBackgroundResource(R.color.black);
                 itemImage.setBackgroundResource(R.color.black);
                 itemText.setBackgroundResource(R.color.black);
                 itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.white));
+                itemTime.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.white));
                 itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.white));
             }
         }
@@ -236,13 +247,8 @@ public abstract class DatabaseAdapter extends RecyclerView.Adapter<DatabaseAdapt
             return hash;
         }
 
-        Meta getMeta() {
-            return meta;
-        }
-
         void setEmptyView() {
             hash = null;
-            meta = null;
             itemTitle.setText(R.string.empty_list);
         }
     }

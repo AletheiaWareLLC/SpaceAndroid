@@ -20,13 +20,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.AppCompatAutoCompleteTextView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Tag;
 import com.aletheiaware.space.android.utils.MinerUtils;
@@ -38,7 +39,7 @@ public class TagActivity extends AppCompatActivity {
     private TagAdapter adapter;
     private MetaLoader loader;
     private TextView nameTextView;
-    private AppCompatAutoCompleteTextView valueTextView;
+    private AutoCompleteTextView valueTextView;
     private EditText reasonEditText;
     private FloatingActionButton tagFab;
 
@@ -120,11 +121,17 @@ public class TagActivity extends AppCompatActivity {
                         tb.setReason(reason);
                     }
                     final Tag tag = tb.build();
-                    Log.d(SpaceUtils.TAG, "Tagging with " + tag);
+                    final Reference reference = Reference.newBuilder()
+                            .setTimestamp(loader.getTimestamp())
+                            .setBlockHash(loader.getBlockHash())
+                            .setChannelName(loader.getChannelName())
+                            .setRecordHash(loader.getRecordHash())
+                            .build();
+                    Log.d(SpaceUtils.TAG, "Tagging " + reference + " with " + tag);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            SpaceAndroidUtils.mineTag(TagActivity.this, tag);
+                            SpaceAndroidUtils.mineTag(TagActivity.this, reference, tag);
                         }
                     });
                 }

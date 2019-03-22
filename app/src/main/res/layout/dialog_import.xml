@@ -25,7 +25,7 @@ limitations under the License.
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
         android:labelFor="@id/import_alias_text"
-        android:text="@string/import_account_alias"
+        android:text="@string/import_keys_alias"
         android:textColor="@color/text_secondary"
         android:textSize="@dimen/text_secondary_size"/>
 
@@ -37,14 +37,15 @@ limitations under the License.
         android:inputType="text|textNoSuggestions"
         android:imeOptions="actionDone"
         android:gravity="center"
-        android:textColor="@color/text_primary" />
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_primary_size" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
         android:labelFor="@id/import_access_code_text"
-        android:text="@string/import_account_access_code"
+        android:text="@string/import_keys_access_code"
         android:textColor="@color/text_secondary"
         android:textSize="@dimen/text_secondary_size"/>
 
@@ -56,13 +57,14 @@ limitations under the License.
         android:inputType="text|textNoSuggestions"
         android:imeOptions="actionDone"
         android:gravity="center"
-        android:textColor="@color/text_primary" />
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_primary_size" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
-        android:text="@string/import_account_label"
+        android:text="@string/import_keys_label"
         android:textColor="@color/text_secondary" />
 
 </LinearLayout>

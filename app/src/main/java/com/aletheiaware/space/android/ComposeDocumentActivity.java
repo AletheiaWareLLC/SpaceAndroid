@@ -69,9 +69,9 @@ public class ComposeDocumentActivity extends AppCompatActivity {
 
         // Type Spinner
         typeSpinner = findViewById(R.id.compose_document_type);
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.mime_types, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        typeSpinner.setAdapter(adapter);
+        ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(this, R.array.mime_types, android.R.layout.simple_spinner_item);
+        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        typeSpinner.setAdapter(typeAdapter);
 
         // Content EditText
         contentEditText = findViewById(R.id.compose_document_content);
@@ -105,6 +105,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                 composeFab.setEnabled(false);
                 nameEditText.setEnabled(false);
                 typeSpinner.setEnabled(false);
+                sizeTextView.setEnabled(false);
                 contentEditText.setEnabled(false);
                 String name = nameEditText.getText().toString();
                 String type = typeSpinner.getSelectedItem().toString();
@@ -169,12 +170,15 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                         new Thread() {
                             @Override
                             public void run() {
+                                String customerId = null;
                                 try {
-                                    String customerId = SpaceUtils.register(alias, email, paymentId);
+                                    customerId = SpaceUtils.register(alias, email, paymentId);
+                                } catch (IOException e) {
+                                    SpaceAndroidUtils.showErrorDialog(ComposeDocumentActivity.this, R.string.error_registering, e);
+                                }
+                                if (customerId != null && !customerId.isEmpty()) {
                                     Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
                                     SpaceAndroidUtils.mineFile(ComposeDocumentActivity.this, name, type, preview, in);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
                                 }
                             }
                         }.start();

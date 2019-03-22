@@ -37,15 +37,18 @@ import java.util.List;
 
 public abstract class MetaLoader implements RecordCallback {
     private final Context context;
-    private final byte[] recordHash;
+    private final byte[] metaRecordHash;
     private final boolean shared;
+    private ByteString blockHash;
+    private String channelName;
+    private ByteString recordHash;
     private long timestamp;
     private Meta meta;
     private List<Reference> references;
 
-    MetaLoader(Context context, byte[] recordHash, boolean shared) {
+    MetaLoader(Context context, byte[] metaRecordHash, boolean shared) {
         this.context = context;
-        this.recordHash = recordHash;
+        this.metaRecordHash = metaRecordHash;
         this.shared = shared;
         new Thread() {
             @Override
@@ -60,16 +63,28 @@ public abstract class MetaLoader implements RecordCallback {
         }.start();
     }
 
-    byte[] getRecordHash() {
-        return recordHash;
+    byte[] getMetaRecordHash() {
+        return metaRecordHash;
     }
 
-    Meta getMeta() {
-        return meta;
+    ByteString getBlockHash() {
+        return blockHash;
+    }
+
+    String getChannelName() {
+        return channelName;
+    }
+
+    ByteString getRecordHash() {
+        return recordHash;
     }
 
     long getTimestamp() {
         return timestamp;
+    }
+
+    Meta getMeta() {
+        return meta;
     }
 
     boolean isShared() {
@@ -87,6 +102,7 @@ public abstract class MetaLoader implements RecordCallback {
                             Log.d(SpaceUtils.TAG, "Writing: " + payload.length);
                             out.write(payload);
                         } catch (IOException e) {
+                            /* Ignored */
                             e.printStackTrace();
                         }
                         return true;
@@ -97,8 +113,11 @@ public abstract class MetaLoader implements RecordCallback {
     }
 
     @Override
-    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+    public boolean onRecord(ByteString hash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
         try {
+            blockHash = hash;
+            channelName = block.getChannelName();
+            recordHash = blockEntry.getRecordHash();
             Record record = blockEntry.getRecord();
             timestamp = record.getTimestamp();
             meta = Meta.newBuilder().mergeFrom(payload).build();
@@ -108,6 +127,7 @@ public abstract class MetaLoader implements RecordCallback {
             Log.d(SpaceUtils.TAG, "Refs: " + references);
             onMetaLoaded();
         } catch (InvalidProtocolBufferException e) {
+            /* Ignored */
             e.printStackTrace();
         }
         return true;
@@ -115,15 +135,15 @@ public abstract class MetaLoader implements RecordCallback {
 
     private void loadMeta() throws IOException {
         if (shared) {
-            SpaceUtils.readShares(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), null, recordHash, this, null);
+            SpaceUtils.readShares(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), null, metaRecordHash, this, null);
         } else {
-            SpaceUtils.readMetas(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), recordHash, this);
+            SpaceUtils.readMetas(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), metaRecordHash, this);
         }
     }
 
     void readFile(RecordCallback callback) throws IOException {
         if (shared) {
-            SpaceUtils.readShares(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), null, recordHash, null, callback);
+            SpaceUtils.readShares(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), null, metaRecordHash, null, callback);
         } else if (references != null){
             for (Reference reference : references) {
                 SpaceUtils.readFiles(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), reference.getRecordHash().toByteArray(), callback);

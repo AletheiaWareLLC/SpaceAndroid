@@ -154,21 +154,21 @@ limitations under the License.
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/view_margin"
-                    android:text="@string/account_switch" />
+                    android:text="@string/switch_keys" />
 
                 <Button
                     android:id="@+id/account_export_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/view_margin"
-                    android:text="@string/account_export" />
+                    android:text="@string/export_keys" />
 
                 <Button
                     android:id="@+id/account_delete_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/view_margin"
-                    android:text="@string/account_delete"
+                    android:text="@string/delete_keys"
                     android:textColor="@color/warning" />
 
             </LinearLayout>

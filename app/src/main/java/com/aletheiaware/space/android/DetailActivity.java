@@ -24,6 +24,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -145,7 +146,7 @@ public class DetailActivity extends AppCompatActivity {
             if (!videos.exists() &&!videos.mkdirs()) {
                 Log.e(SpaceUtils.TAG, "Error making video directory");
             }
-            File f = new File(videos, new String(BCUtils.encodeBase64URL(loader.getRecordHash())));
+            File f = new File(videos, new String(BCUtils.encodeBase64URL(loader.getMetaRecordHash())));
             Log.d(SpaceUtils.TAG, "File");
             Log.d(SpaceUtils.TAG, "Path: " + f.getAbsolutePath());
             final Uri uri = FileProvider.getUriForFile(DetailActivity.this, getString(R.string.file_provider_authority), f);
@@ -216,7 +217,7 @@ public class DetailActivity extends AppCompatActivity {
             if (!images.exists() && !images.mkdirs()) {
                 Log.e(SpaceUtils.TAG, "Error making image directory");
             }
-            File f = new File(images, new String(BCUtils.encodeBase64URL(loader.getRecordHash())));
+            File f = new File(images, new String(BCUtils.encodeBase64URL(loader.getMetaRecordHash())));
             Log.d(SpaceUtils.TAG, "File");
             Log.d(SpaceUtils.TAG, "Path: " + f.getAbsolutePath());
             final Uri uri = FileProvider.getUriForFile(DetailActivity.this, getString(R.string.file_provider_authority), f);
@@ -231,14 +232,14 @@ public class DetailActivity extends AppCompatActivity {
             Log.d(SpaceUtils.TAG, "Length: " + f.length());
             Drawable[] drawables = { null };
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ImageDecoder.Source source = ImageDecoder.createSource(getContentResolver(), uri);
                 try {
-                    ImageDecoder.Source source = ImageDecoder.createSource(getContentResolver(), uri);
                     drawables[0] = ImageDecoder.decodeDrawable(source, new ImageDecoder.OnHeaderDecodedListener() {
                         @Override
-                        public void onHeaderDecoded(ImageDecoder decoder, ImageDecoder.ImageInfo info, ImageDecoder.Source source) {
+                        public void onHeaderDecoded(@NonNull ImageDecoder decoder, @NonNull ImageDecoder.ImageInfo info, @NonNull ImageDecoder.Source source) {
                             decoder.setOnPartialImageListener(new ImageDecoder.OnPartialImageListener() {
                                 @Override
-                                public boolean onPartialImage(ImageDecoder.DecodeException e) {
+                                public boolean onPartialImage(@NonNull ImageDecoder.DecodeException e) {
                                     e.printStackTrace();
                                     return true;
                                 }
@@ -411,14 +412,14 @@ public class DetailActivity extends AppCompatActivity {
 
     private void share() {
         Intent i = new Intent(DetailActivity.this, ShareActivity.class);
-        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, loader.getRecordHash());
+        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, loader.getMetaRecordHash());
         i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, loader.isShared());
         startActivityForResult(i, SpaceAndroidUtils.SHARE_ACTIVITY);
     }
 
     private void tag() {
         Intent i = new Intent(DetailActivity.this, TagActivity.class);
-        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, loader.getRecordHash());
+        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, loader.getMetaRecordHash());
         i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, loader.isShared());
         startActivityForResult(i, SpaceAndroidUtils.TAG_ACTIVITY);
     }

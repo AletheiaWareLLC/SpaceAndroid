@@ -16,6 +16,7 @@
 
 package com.aletheiaware.space.android.utils;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -42,6 +43,7 @@ import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BC.Node;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
+import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.finance.FinanceProto.Customer;
 import com.aletheiaware.finance.utils.FinanceUtils;
@@ -138,14 +140,14 @@ public class SpaceAndroidUtils {
 
     public static void add(final Activity parent) {
         new AlertDialog.Builder(parent, R.style.AlertDialogTheme)
-                .setTitle(R.string.title_dialog_add_document)
+                .setTitle(R.string.title_dialog_add_record)
                 .setItems(R.array.inputs, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which) {
                             case 0:
-                                Log.d(SpaceUtils.TAG, "New text record");
-                                newRecord(parent);
+                                Log.d(SpaceUtils.TAG, "Compose document");
+                                composeDocument(parent);
                                 break;
                             case 1:
                                 Log.d(SpaceUtils.TAG, "Upload file");
@@ -179,7 +181,7 @@ public class SpaceAndroidUtils {
                 .show();
     }
 
-    private static void newRecord(final Activity parent) {
+    private static void composeDocument(final Activity parent) {
         Intent i = new Intent(parent, ComposeDocumentActivity.class);
         parent.startActivityForResult(i, SpaceAndroidUtils.COMPOSE_ACTIVITY);
     }
@@ -301,7 +303,7 @@ public class SpaceAndroidUtils {
         return name;
     }
 
-    public static void showDeleteAccountDialog(final Activity parent, final DialogInterface.OnClickListener listener) {
+    public static void showDeleteKeysDialog(final Activity parent, final DialogInterface.OnClickListener listener) {
         parent.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -323,7 +325,12 @@ public class SpaceAndroidUtils {
                         .setNeutralButton(R.string.error_report, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int id) {
-                                report(parent, exception);
+                                StringBuilder sb = new StringBuilder();
+                                sb.append("======== Exception ========");
+                                StringWriter sw = new StringWriter();
+                                exception.printStackTrace(new PrintWriter(sw));
+                                sb.append(sw.toString());
+                                support(parent, sb);
                             }
                         })
                         .setMessage(resource)
@@ -344,7 +351,7 @@ public class SpaceAndroidUtils {
     }
 
     private static AlertDialog.Builder createErrorDialog(Activity parent) {
-        return new AlertDialog.Builder(parent.getApplicationContext(), R.style.AlertDialogTheme)
+        return new AlertDialog.Builder(parent, R.style.AlertDialogTheme)
                 .setTitle(R.string.title_dialog_error)
                 .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
@@ -354,17 +361,9 @@ public class SpaceAndroidUtils {
                 });
     }
 
-    public static void report(Activity parent, Exception exception) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("======== Exception ========");
-        StringWriter sw = new StringWriter();
-        exception.printStackTrace(new PrintWriter(sw));
-        sb.append(sw.toString());
-        support(parent, sb);
-    }
-
     @SuppressWarnings("deprecation")
     public static void support(Activity parent, StringBuilder content) {
+        content.append("\n\n\n");
         content.append("======== App Info ========\n");
         content.append("Build: ").append(BuildConfig.BUILD_TYPE).append("\n");
         content.append("App ID: ").append(BuildConfig.APPLICATION_ID).append("\n");
@@ -397,6 +396,7 @@ public class SpaceAndroidUtils {
         for (String key : map.keySet()) {
             content.append(key).append(":").append(map.get(key)).append("\n");
         }
+        content.append("\n\n\n");
         Log.d(SpaceUtils.TAG, content.toString());
         Intent intent = new Intent(Intent.ACTION_SENDTO);
         intent.setData(Uri.parse("mailto:"));
@@ -520,17 +520,38 @@ public class SpaceAndroidUtils {
         });
     }
 
-    public static void mineTag(final Activity parent, final SpaceProto.Tag tag) {
+    public static void mineTag(final Activity parent, final Reference meta, final SpaceProto.Tag tag) {
         MinerUtils.getMinerSelection(parent, new MinerUtils.MinerSelectionCallback() {
             @Override
             public void onMineLocally() {
-                MinerUtils.mineTagLocally(parent, tag);
+                MinerUtils.mineTagLocally(parent, meta, tag);
             }
 
             @Override
             public void onMineRemotely() {
-                MinerUtils.mineTagRemotely(parent, tag);
+                MinerUtils.mineTagRemotely(parent, meta, tag);
             }
         });
+    }
+
+    @SuppressLint("ApplySharedPref")
+    public static void setSortPreference(Activity parent, String value) {
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
+        SharedPreferences.Editor editor = sharedPrefs.edit();
+        String key = parent.getString(R.string.preference_sort_key);
+        editor.putString(key, value);
+        editor.commit();
+    }
+
+    public static String getSortPreference(Activity parent) {
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
+        String key = parent.getString(R.string.preference_sort_key);
+        // 1 - chronological
+        // 2 - reverse-chronological
+        String value = sharedPrefs.getString(key, "2");
+        if (value == null) {
+            value = "2";
+        }
+        return value;
     }
 }

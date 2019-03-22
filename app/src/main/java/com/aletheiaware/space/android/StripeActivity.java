@@ -24,7 +24,6 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.stripe.android.Stripe;
@@ -33,15 +32,13 @@ import com.stripe.android.model.Card;
 import com.stripe.android.model.Token;
 import com.stripe.android.view.CardInputWidget;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 public class StripeActivity extends AppCompatActivity {
 
     private EditText emailText;
     private CardInputWidget cardWidget;
     private CheckBox termsCheck;
     private CheckBox policyCheck;
+    private CheckBox betaCheck;
     private FloatingActionButton stripeFab;
 
     @Override
@@ -56,6 +53,7 @@ public class StripeActivity extends AppCompatActivity {
         cardWidget = findViewById(R.id.stripe_card_widget);
         termsCheck = findViewById(R.id.stripe_terms_of_service_check);
         policyCheck = findViewById(R.id.stripe_privacy_policy_check);
+        betaCheck = findViewById(R.id.stripe_beta_test_agreement_check);
         stripeFab = findViewById(R.id.stripe_fab);
         stripeFab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -91,11 +89,15 @@ public class StripeActivity extends AppCompatActivity {
 
         // Legal
         if (!termsCheck.isChecked()) {
-            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, "You must read, understand, and agree to the Terms of Service");
+            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, getString(R.string.error_terms_of_service_required));
             return;
         }
         if (!policyCheck.isChecked()) {
-            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, "You must read, understand, and agree to the Privacy Policy");
+            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, getString(R.string.error_privacy_policy_required));
+            return;
+        }
+        if (!betaCheck.isChecked()) {
+            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, getString(R.string.error_beta_test_agreement_required));
             return;
         }
 
@@ -120,10 +122,7 @@ public class StripeActivity extends AppCompatActivity {
                         }
 
                         public void onError(Exception error) {
-                            error.printStackTrace();
-                            StringWriter sw = new StringWriter();
-                            error.printStackTrace(new PrintWriter(sw));
-                            Toast.makeText(StripeActivity.this, sw.toString(), Toast.LENGTH_LONG).show();
+                            SpaceAndroidUtils.showErrorDialog(StripeActivity.this, R.string.error_stripe_invalid_payment, error);
                             setResult(RESULT_CANCELED);
                             finish();
                         }

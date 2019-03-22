@@ -21,12 +21,12 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.AppCompatImageButton;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 
 import com.aletheiaware.bc.BCProto.KeyShare;
 import com.aletheiaware.bc.utils.BCUtils;
@@ -49,21 +49,21 @@ import javax.crypto.NoSuchPaddingException;
 
 public class AccessActivity extends AppCompatActivity {
 
-    private RecyclerView unlockAccountRecycler;
-    private View unlockAccountSeparator;
+    private RecyclerView unlockKeysRecycler;
+    private View unlockKeysSeparator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_access);
 
-        unlockAccountRecycler = findViewById(R.id.access_unlock_account_recycler);
-        unlockAccountSeparator = findViewById(R.id.access_unlock_account_separator);
-        Button importAccountButton = findViewById(R.id.access_import_account);
-        importAccountButton.setOnClickListener(new View.OnClickListener() {
+        unlockKeysRecycler = findViewById(R.id.access_unlock_keys_recycler);
+        unlockKeysSeparator = findViewById(R.id.access_unlock_keys_separator);
+        Button importKeysButton = findViewById(R.id.access_import_keys);
+        importKeysButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new ImportAccountDialog(AccessActivity.this) {
+                new ImportKeysDialog(AccessActivity.this) {
                     @Override
                     public void onImport(DialogInterface dialog, final String alias, final String accessCode) {
                         dialog.dismiss();
@@ -82,7 +82,7 @@ public class AccessActivity extends AppCompatActivity {
                                         }
                                     });
                                 } catch (Exception e) {
-                                    e.printStackTrace();
+                                    SpaceAndroidUtils.showErrorDialog(AccessActivity.this, R.string.error_import_key_pair, e);
                                 }
                             }
                         }.start();
@@ -99,7 +99,7 @@ public class AccessActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-        AppCompatImageButton logoButton = findViewById(R.id.aletheia_ware_llc_logo);
+        ImageButton logoButton = findViewById(R.id.aletheia_ware_llc_logo);
         logoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -116,24 +116,24 @@ public class AccessActivity extends AppCompatActivity {
             setResult(RESULT_OK);
             finish();
         } else {
-            showAccountList();
+            showKeysList();
         }
     }
 
-    private void showAccountList() {
+    private void showKeysList() {
         // A key exists, show unlock option
         final List<String> ks = BCUtils.listRSAKeyPairs(getFilesDir());
         Log.d(SpaceUtils.TAG, "Keys: " + ks);
         if (ks.isEmpty()) {
-            unlockAccountRecycler.setVisibility(View.GONE);
-            unlockAccountSeparator.setVisibility(View.GONE);
+            unlockKeysRecycler.setVisibility(View.GONE);
+            unlockKeysSeparator.setVisibility(View.GONE);
         } else {
-            unlockAccountRecycler.setVisibility(View.VISIBLE);
-            unlockAccountSeparator.setVisibility(View.VISIBLE);
-            unlockAccountRecycler.setLayoutManager(new LinearLayoutManager(this));
-            final AccountAdapter adapter = new AccountAdapter(this, ks) {
+            unlockKeysRecycler.setVisibility(View.VISIBLE);
+            unlockKeysSeparator.setVisibility(View.VISIBLE);
+            unlockKeysRecycler.setLayoutManager(new LinearLayoutManager(this));
+            final KeysAdapter adapter = new KeysAdapter(this, ks) {
                 @Override
-                public void unlockAccount(final String alias) {
+                public void unlockKeys(final String alias) {
                     if (BiometricUtils.isBiometricUnlockAvailable(AccessActivity.this) && BiometricUtils.isBiometricUnlockEnabled(AccessActivity.this, alias)) {
                         biometricUnlock(alias);
                     } else {
@@ -142,21 +142,21 @@ public class AccessActivity extends AppCompatActivity {
                 }
 
                 @Override
-                public void deleteAccount(final String alias) {
-                    SpaceAndroidUtils.showDeleteAccountDialog(AccessActivity.this, new DialogInterface.OnClickListener() {
+                public void deleteKeys(final String alias) {
+                    SpaceAndroidUtils.showDeleteKeysDialog(AccessActivity.this, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int id) {
                             if (BCUtils.deleteRSAKeyPair(getFilesDir(), alias)) {
                                 removeAlias(alias);
                                 notifyDataSetChanged();
                                 dialog.dismiss();
-                                showAccountList();
+                                showKeysList();
                             }
                         }
                     });
                 }
             };
-            unlockAccountRecycler.setAdapter(adapter);
+            unlockKeysRecycler.setAdapter(adapter);
         }
     }
 
@@ -190,7 +190,7 @@ public class AccessActivity extends AppCompatActivity {
                 try {
                     unlock(alias, password);
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | InvalidKeySpecException | InvalidParameterSpecException | NoSuchAlgorithmException | NoSuchPaddingException e) {
-                    SpaceAndroidUtils.showErrorDialog(AccessActivity.this, R.string.error_unlock_account, e);
+                    SpaceAndroidUtils.showErrorDialog(AccessActivity.this, R.string.error_unlock_keys, e);
                 }
             }
         }.create();

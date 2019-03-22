@@ -46,6 +46,7 @@ public class TagAdapter extends ArrayAdapter<String> implements Filterable {
                 try {
                     tags.sync();
                 } catch (IOException | NoSuchAlgorithmException e) {
+                    /* Ignored */
                     e.printStackTrace();
                 }
                 try {
