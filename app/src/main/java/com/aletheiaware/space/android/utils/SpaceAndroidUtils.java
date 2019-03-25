@@ -122,7 +122,7 @@ public class SpaceAndroidUtils {
 
     public static InetAddress getHost() {
         try {
-            return InetAddress.getByName(SpaceUtils.SPACE_HOST);
+            return InetAddress.getByName(BuildConfig.DEBUG ? SpaceUtils.SPACE_HOST_TEST : SpaceUtils.SPACE_HOST);
         } catch (Exception e) {
             /* Ignored */
             e.printStackTrace();
@@ -364,6 +364,11 @@ public class SpaceAndroidUtils {
     @SuppressWarnings("deprecation")
     public static void support(Activity parent, StringBuilder content) {
         content.append("\n\n\n");
+        content.append("======== Account Info ========\n");
+        content.append("Alias: ").append(getAlias()).append("\n");
+        // TODO content.append("Public Key: ").append(getPublicKey()).append("\n");
+        // TODO content.append("Customer ID: ").append(getCustomerId()).append("\n");
+        // TODO content.append("Subscription ID: ").append(getSubscriptionId()).append("\n");
         content.append("======== App Info ========\n");
         content.append("Build: ").append(BuildConfig.BUILD_TYPE).append("\n");
         content.append("App ID: ").append(BuildConfig.APPLICATION_ID).append("\n");

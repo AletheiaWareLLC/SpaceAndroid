@@ -23,6 +23,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -52,7 +53,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-public class NewAccountActivity extends AppCompatActivity {
+public class CreateAccountActivity extends AppCompatActivity {
 
     private EditText aliasText;
     private EditText emailText;
@@ -62,7 +63,7 @@ public class NewAccountActivity extends AppCompatActivity {
     private CheckBox termsCheck;
     private CheckBox policyCheck;
     private CheckBox betaCheck;
-    private FloatingActionButton createAccountFab;
+    private Button createAccountButton;
 
     private View progressView;
     private ProgressBar progressBar;
@@ -88,22 +89,18 @@ public class NewAccountActivity extends AppCompatActivity {
         }.start();
 
         // Setup UI
-        setContentView(R.layout.activity_new_account);
+        setContentView(R.layout.activity_create_account);
 
-        // Toolbar
-        Toolbar toolbar = findViewById(R.id.new_account_toolbar);
-        setSupportActionBar(toolbar);
-
-        aliasText = findViewById(R.id.new_account_alias_text);
-        emailText = findViewById(R.id.new_account_email_text);
-        newPasswordText = findViewById(R.id.new_account_new_password_text);
-        confirmPasswordText = findViewById(R.id.new_account_confirm_password_text);
-        cardWidget = findViewById(R.id.new_account_card_widget);
-        termsCheck = findViewById(R.id.new_account_terms_of_service_check);
-        policyCheck = findViewById(R.id.new_account_privacy_policy_check);
-        betaCheck = findViewById(R.id.new_account_beta_test_agreement_check);
-        createAccountFab = findViewById(R.id.new_account_fab);
-        createAccountFab.setOnClickListener(new View.OnClickListener() {
+        aliasText = findViewById(R.id.create_account_alias_text);
+        emailText = findViewById(R.id.create_account_email_text);
+        newPasswordText = findViewById(R.id.create_account_new_password_text);
+        confirmPasswordText = findViewById(R.id.create_account_confirm_password_text);
+        cardWidget = findViewById(R.id.create_account_card_widget);
+        termsCheck = findViewById(R.id.create_account_terms_of_service_check);
+        policyCheck = findViewById(R.id.create_account_privacy_policy_check);
+        betaCheck = findViewById(R.id.create_account_beta_test_agreement_check);
+        createAccountButton = findViewById(R.id.create_account_button);
+        createAccountButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 // Alias
@@ -112,15 +109,15 @@ public class NewAccountActivity extends AppCompatActivity {
                 try {
                     // TODO add textwatcher to aliasText, each change check if alias is unique and if not display aliasErrorText
                     if (!AliasUtils.isUnique(aliases, alias)) {
-                        SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_alias_taken));
+                        SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_alias_taken));
                         return;
                     }
                 } catch (IOException e) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, R.string.error_alias_read_failed, e);
+                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_alias_read_failed, e);
                     return;
                 }
                 if (alias.isEmpty()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_alias_invalid));
+                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_alias_invalid));
                     return;
                 }
 
@@ -128,7 +125,7 @@ public class NewAccountActivity extends AppCompatActivity {
                 final String email = emailText.getText().toString();
                 // TODO ensure email is valid
                 if (email.isEmpty()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_email_invalid));
+                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_email_invalid));
                     return;
                 }
 
@@ -136,11 +133,11 @@ public class NewAccountActivity extends AppCompatActivity {
                 // TODO ensure password meets minimum security
                 final int passwordLength = newPasswordText.length();
                 if (passwordLength < 12) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_password_short));
+                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_password_short));
                     return;
                 }
                 if (passwordLength != confirmPasswordText.length()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_password_lengths_differ));
+                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_password_lengths_differ));
                     return;
                 }
 
@@ -149,37 +146,37 @@ public class NewAccountActivity extends AppCompatActivity {
                 newPasswordText.getText().getChars(0, passwordLength, newPassword, 0);
                 confirmPasswordText.getText().getChars(0, passwordLength, confirmPassword, 0);
                 if (!Arrays.equals(newPassword, confirmPassword)) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_passwords_differ));
+                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_passwords_differ));
                     return;
                 }
 
                 // Payment
                 final Card card = cardWidget.getCard();
                 if (card == null || !card.validateCard()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_stripe_invalid_payment));
+                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_stripe_invalid_payment));
                     return;
                 }
 
                 // Legal
                 if (!termsCheck.isChecked()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_terms_of_service_required));
+                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_terms_of_service_required));
                     return;
                 }
                 if (!policyCheck.isChecked()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_privacy_policy_required));
+                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_privacy_policy_required));
                     return;
                 }
                 if (!betaCheck.isChecked()) {
-                    SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, getString(R.string.error_beta_test_agreement_required));
+                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_beta_test_agreement_required));
                     return;
                 }
 
-                createAccountFab.hide();
+                createAccountButton.setEnabled(false);
 
-                progressView = View.inflate(NewAccountActivity.this, R.layout.dialog_progress, null);
+                progressView = View.inflate(CreateAccountActivity.this, R.layout.dialog_progress, null);
                 progressBar = progressView.findViewById(R.id.progress);
-                dialog = new AlertDialog.Builder(NewAccountActivity.this, R.style.AlertDialogTheme)
-                        .setTitle(R.string.title_dialog_new_account)
+                dialog = new AlertDialog.Builder(CreateAccountActivity.this, R.style.AlertDialogTheme)
+                        .setTitle(R.string.title_dialog_creating_account)
                         .setCancelable(false)
                         .setView(progressBar)
                         .show();
@@ -196,7 +193,7 @@ public class NewAccountActivity extends AppCompatActivity {
                             setProgressBar(4);
                             // TODO mine privacy policy agreement into blockchain
                             setProgressBar(5);
-                            Stripe stripe = new Stripe(NewAccountActivity.this, "pk_test_gvdQJ2CsMiwE0gARM6nGUbUb");
+                            Stripe stripe = new Stripe(CreateAccountActivity.this, getString(R.string.stripe_publishable_key));
                             setProgressBar(6);
                             stripe.createToken(
                                     card,
@@ -209,7 +206,7 @@ public class NewAccountActivity extends AppCompatActivity {
                                                     try {
                                                         customerId = SpaceUtils.register(alias, email, token.getId());
                                                     } catch (IOException e) {
-                                                        SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, R.string.error_registering, e);
+                                                        SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_registering, e);
                                                     }
                                                     Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
                                                     if (customerId != null && !customerId.isEmpty()) {
@@ -217,7 +214,7 @@ public class NewAccountActivity extends AppCompatActivity {
                                                             String subscriptionId = SpaceUtils.subscribe(alias, customerId);
                                                             Log.d(SpaceUtils.TAG, "Subscription ID: " + subscriptionId);
                                                         } catch (IOException e) {
-                                                            SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, R.string.error_subscribing, e);
+                                                            SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_subscribing, e);
                                                         }
                                                     }
                                                 }
@@ -225,7 +222,7 @@ public class NewAccountActivity extends AppCompatActivity {
                                         }
 
                                         public void onError(Exception error) {
-                                            SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, R.string.error_new_account, error);
+                                            SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_create_account, error);
                                         }
                                     }
                             );
@@ -241,12 +238,12 @@ public class NewAccountActivity extends AppCompatActivity {
                                 }
                             });
                         } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | InvalidKeySpecException | InvalidParameterSpecException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                            SpaceAndroidUtils.showErrorDialog(NewAccountActivity.this, R.string.error_new_account, e);
+                            SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_create_account, e);
                         } finally {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    createAccountFab.show();
+                                    createAccountButton.setEnabled(true);
                                     if (dialog != null && dialog.isShowing()) {
                                         dialog.dismiss();
                                     }

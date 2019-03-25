@@ -137,7 +137,12 @@ limitations under the License.
                     android:id="@+id/account_register_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
                     android:layout_margin="@dimen/view_margin"
+                    android:background="@color/primary_dark"
+                    android:padding="10dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_primary_size"
                     android:text="@string/account_register"
                     android:visibility="gone" />
 
@@ -145,31 +150,50 @@ limitations under the License.
                     android:id="@+id/account_subscribe_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
                     android:layout_margin="@dimen/view_margin"
+                    android:background="@color/primary_dark"
+                    android:padding="10dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_primary_size"
                     android:text="@string/account_subscribe"
                     android:visibility="gone" />
-
-                <Button
-                    android:id="@+id/account_switch_button"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="@dimen/view_margin"
-                    android:text="@string/switch_keys" />
 
                 <Button
                     android:id="@+id/account_export_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
                     android:layout_margin="@dimen/view_margin"
+                    android:background="@color/primary_dark"
+                    android:padding="10dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_primary_size"
                     android:text="@string/export_keys" />
+
+                <Button
+                    android:id="@+id/account_switch_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_margin="@dimen/view_margin"
+                    android:background="@color/primary_dark"
+                    android:padding="10dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_primary_size"
+                    android:text="@string/switch_keys" />
 
                 <Button
                     android:id="@+id/account_delete_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
                     android:layout_margin="@dimen/view_margin"
-                    android:text="@string/delete_keys"
-                    android:textColor="@color/warning" />
+                    android:background="@color/warning"
+                    android:padding="10dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_primary_size"
+                    android:text="@string/delete_keys" />
 
             </LinearLayout>
 

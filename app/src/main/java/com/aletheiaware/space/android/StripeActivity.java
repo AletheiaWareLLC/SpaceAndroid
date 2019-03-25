@@ -109,7 +109,7 @@ public class StripeActivity extends AppCompatActivity {
         Card card = cardWidget.getCard();
         if (card != null) {
             card.setName(email);
-            Stripe stripe = new Stripe(StripeActivity.this, "pk_test_gvdQJ2CsMiwE0gARM6nGUbUb");
+            Stripe stripe = new Stripe(StripeActivity.this, getString(R.string.stripe_publishable_key));
             stripe.createToken(
                     card,
                     new TokenCallback() {

@@ -147,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
             if (adapter.isEmpty()) {
                 refresh();
             }
+            // TODO hide sortSpinner if adapter is empty
             switch (SpaceAndroidUtils.getSortPreference(this)) {
                 case "1":
                     sortSpinner.setSelection(0);

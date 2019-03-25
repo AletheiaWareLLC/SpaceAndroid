@@ -66,20 +66,26 @@ limitations under the License.
         android:padding="@dimen/activity_padding">
 
         <Button
-            android:id="@+id/access_new_account"
+            android:id="@+id/access_create_account"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:layout_margin="@dimen/view_margin"
-            android:text="@string/new_account"
-            android:textColor="@color/text_primary" />
+            android:padding="10dp"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size"
+            android:text="@string/create_account" />
 
         <Button
             android:id="@+id/access_import_keys"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:layout_margin="@dimen/view_margin"
-            android:text="@string/import_keys"
-            android:textColor="@color/text_primary" />
+            android:padding="10dp"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size"
+            android:text="@string/import_keys" />
 
     </LinearLayout>
 

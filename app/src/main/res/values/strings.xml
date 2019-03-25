@@ -23,7 +23,7 @@ limitations under the License.
 
     <string name="backdrop_description">Backdrop</string>
 
-    <string name="access_new_label">New Account</string>
+    <string name="access_create_account_label">Create Account</string>
     <string name="access_biometric_unlock_title">Biometric Unlock</string>
     <string name="access_biometric_unlock_description">Unlock your keys with your fingerprint</string>
 
@@ -36,22 +36,22 @@ limitations under the License.
     <string name="account_register">Register Keys</string>
     <string name="account_subscribe">Subscribe Keys</string>
 
-    <string name="new_account">New Account</string>
-    <string name="new_account_action">New</string>
-    <string name="new_account_label">Create a new account</string>
-    <string name="new_account_alias">Alias</string>
-    <string name="new_account_email">Email</string>
-    <string name="new_account_new_password">New Password</string>
-    <string name="new_account_confirm_password">Confirm Password</string>
-    <string name="new_account_step_1">Step 1: Alias</string>
-    <string name="new_account_step_2">Step 2: Email</string>
-    <string name="new_account_step_3">Step 3: Password</string>
-    <string name="new_account_step_4">Step 4: Payment</string>
-    <string name="new_account_step_5">Step 5: Legal</string>
+    <string name="create_account">Create Account</string>
+    <string name="create_account_action">Create</string>
+    <string name="create_account_label">Create a new account</string>
+    <string name="create_account_alias">Alias</string>
+    <string name="create_account_email">Email</string>
+    <string name="create_account_new_password">New Password</string>
+    <string name="create_account_confirm_password">Confirm Password</string>
+    <string name="create_account_step_1">Step 1: Alias</string>
+    <string name="create_account_step_2">Step 2: Email</string>
+    <string name="create_account_step_3">Step 3: Password</string>
+    <string name="create_account_step_4">Step 4: Payment</string>
+    <string name="create_account_step_5">Step 5: Legal</string>
 
     <string name="error_report">Report</string>
     <string name="error_connection">Failed to connect to AletheiaWare.com</string>
-    <string name="error_new_account">Failed to create account</string>
+    <string name="error_create_account">Failed to create account</string>
     <string name="error_decoding_image">Failed to decode image</string>
     <string name="error_decoding_video">Failed to decode video</string>
     <string name="error_downloading">Failed to download file</string>
@@ -111,7 +111,7 @@ limitations under the License.
     <string name="title_activity_compose_document">Compose Document</string>
     <string name="title_activity_detail">Detail</string>
     <string name="title_activity_main">@string/app_name</string>
-    <string name="title_activity_new_account">New Account</string>
+    <string name="title_activity_create_account">Create Account</string>
     <string name="title_activity_payment">Payment</string>
     <string name="title_activity_preview">Preview</string>
     <string name="title_activity_settings">Settings</string>
@@ -121,7 +121,7 @@ limitations under the License.
     <string name="title_dialog_error">Error</string>
     <string name="title_dialog_add_record">Add Record</string>
     <string name="title_dialog_select_miner">Select Miner</string>
-    <string name="title_dialog_new_account">Creating Account</string>
+    <string name="title_dialog_creating_account">Creating Account</string>
     <string name="title_notification_local">Mining Locally</string>
     <string name="title_notification_remote">Mining Remotely</string>
 

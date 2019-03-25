@@ -97,10 +97,10 @@ limitations under the License.
         android:id="@+id/tag_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
+        android:layout_gravity="bottom|center"
         app:fabSize="normal"
         app:layout_anchor="@id/tag_nested_scroll_view"
-        app:layout_anchorGravity="bottom|end"
+        app:layout_anchorGravity="bottom|center"
         app:srcCompat="@drawable/tag" />
 
 </android.support.design.widget.CoordinatorLayout>

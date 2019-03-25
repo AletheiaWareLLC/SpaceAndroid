@@ -91,11 +91,11 @@ public class AccessActivity extends AppCompatActivity {
             }
         });
         // TODO add button to import backed up keys, either by OCR, or copy/paste.
-        Button createAccountButton = findViewById(R.id.access_new_account);
+        Button createAccountButton = findViewById(R.id.access_create_account);
         createAccountButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AccessActivity.this, NewAccountActivity.class);
+                Intent intent = new Intent(AccessActivity.this, CreateAccountActivity.class);
                 startActivity(intent);
             }
         });

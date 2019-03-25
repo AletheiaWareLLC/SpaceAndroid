@@ -56,8 +56,8 @@ public class AccountActivity extends AppCompatActivity {
     private TextView subscriptionText;
     private Button registerButton;
     private Button subscribeButton;
-    private Button switchButton;
     private Button exportButton;
+    private Button switchButton;
     private Button deleteButton;
 
     @Override
@@ -114,15 +114,6 @@ public class AccountActivity extends AppCompatActivity {
                 }.start();
             }
         });
-        switchButton = findViewById(R.id.account_switch_button);
-        switchButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                SpaceAndroidUtils.initialize(null, null);
-                setResult(RESULT_OK);
-                finish();
-            }
-        });
         exportButton = findViewById(R.id.account_export_button);
         exportButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -153,6 +144,15 @@ public class AccountActivity extends AppCompatActivity {
                         }.start();
                     }
                 }.create();
+            }
+        });
+        switchButton = findViewById(R.id.account_switch_button);
+        switchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SpaceAndroidUtils.initialize(null, null);
+                setResult(RESULT_OK);
+                finish();
             }
         });
         deleteButton = findViewById(R.id.account_delete_button);
