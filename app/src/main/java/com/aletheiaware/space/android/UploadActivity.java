@@ -106,8 +106,6 @@ public class UploadActivity extends AppCompatActivity {
                 String type = typeTextView.getText().toString();
                 if (in != null) {
                     SpaceAndroidUtils.mineFile(UploadActivity.this, name, type, preview, in);
-                    setResult(RESULT_OK);
-                    finish();
                 }
             }
         });
@@ -292,8 +290,6 @@ public class UploadActivity extends AppCompatActivity {
                                 if (customerId != null && !customerId.isEmpty()) {
                                     Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
                                     SpaceAndroidUtils.mineFile(UploadActivity.this, name, type, preview, in);
-                                    setResult(RESULT_OK);
-                                    finish();
                                 }
                             }
                         }.start();

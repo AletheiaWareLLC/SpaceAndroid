@@ -115,8 +115,6 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                         .setData(ByteString.copyFromUtf8(text.substring(0, Math.min(text.length(), SpaceUtils.PREVIEW_TEXT_LENGTH))))
                         .build();
                 SpaceAndroidUtils.mineFile(ComposeDocumentActivity.this, name, type, preview, new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())));
-                setResult(RESULT_OK);
-                finish();
             }
         });
     }
@@ -181,8 +179,6 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                                 if (customerId != null && !customerId.isEmpty()) {
                                     Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
                                     SpaceAndroidUtils.mineFile(ComposeDocumentActivity.this, name, type, preview, in);
-                                    setResult(RESULT_OK);
-                                    finish();
                                 }
                             }
                         }.start();

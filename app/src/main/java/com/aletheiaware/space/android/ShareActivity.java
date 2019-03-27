@@ -204,8 +204,6 @@ public class ShareActivity extends AppCompatActivity {
                                         @Override
                                         public void run() {
                                             SpaceAndroidUtils.mineShare(ShareActivity.this, recipient, recipientKey, share);
-                                            setResult(RESULT_OK);
-                                            finish();
                                         }
                                     });
                                 } catch (IOException e) {

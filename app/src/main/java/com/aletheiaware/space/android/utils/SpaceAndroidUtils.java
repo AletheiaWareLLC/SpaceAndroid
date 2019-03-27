@@ -502,11 +502,13 @@ public class SpaceAndroidUtils {
             @Override
             public void onMineLocally() {
                 MinerUtils.mineFileLocally(parent, name, type, preview, in);
+                okAndFinish(parent);
             }
 
             @Override
             public void onMineRemotely() {
                 MinerUtils.mineFileRemotely(parent, name, type, preview, in);
+                okAndFinish(parent);
             }
         });
     }
@@ -516,11 +518,13 @@ public class SpaceAndroidUtils {
             @Override
             public void onMineLocally() {
                 MinerUtils.mineShareLocally(parent, recipient, recipientKey, share);
+                okAndFinish(parent);
             }
 
             @Override
             public void onMineRemotely() {
                 MinerUtils.mineShareRemotely(parent, recipient, recipientKey, share);
+                okAndFinish(parent);
             }
         });
     }
@@ -530,11 +534,23 @@ public class SpaceAndroidUtils {
             @Override
             public void onMineLocally() {
                 MinerUtils.mineTagLocally(parent, meta, tag);
+                okAndFinish(parent);
             }
 
             @Override
             public void onMineRemotely() {
                 MinerUtils.mineTagRemotely(parent, meta, tag);
+                okAndFinish(parent);
+            }
+        });
+    }
+
+    private static void okAndFinish(final Activity parent) {
+        parent.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                parent.setResult(Activity.RESULT_OK);
+                parent.finish();
             }
         });
     }

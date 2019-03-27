@@ -137,8 +137,6 @@ public class TagActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             SpaceAndroidUtils.mineTag(TagActivity.this, reference, tag);
-                            setResult(RESULT_OK);
-                            finish();
                         }
                     });
                 }
