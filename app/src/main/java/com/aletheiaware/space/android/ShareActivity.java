@@ -160,8 +160,6 @@ public class ShareActivity extends AppCompatActivity {
                                                 return false;
                                             }
                                         });
-                                        // TODO sb.addAllPreviewReference(previewRefs);
-                                        // TODO sb.addAllPreviewKey(previewKeys);
                                     } else {
                                         final Channel files = new Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, cache, host);
                                         SpaceUtils.readMetas(host, cache, alias, keys, loader.getMetaRecordHash(), new RecordCallback() {
@@ -185,18 +183,29 @@ public class ShareActivity extends AppCompatActivity {
                                                         .setChannelName(block.getChannelName())
                                                         .setRecordHash(blockEntry.getRecordHash()));
                                                 sb.setMetaKey(ByteString.copyFrom(key));
-                                                // TODO sb.addAllPreviewReference(previewRefs);
-                                                // TODO sb.addAllPreviewKey(previewKeys);
                                                 return false;
                                             }
                                         });
                                     }
+                                    SpaceUtils.readPreviews(host, cache, alias, keys, null, loader.getMetaRecordHash(), new RecordCallback() {
+                                        @Override
+                                        public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                            sb.addPreviewReference(Reference.newBuilder()
+                                                    .setTimestamp(blockEntry.getRecord().getTimestamp())
+                                                    .setChannelName(block.getChannelName())
+                                                    .setRecordHash(blockEntry.getRecordHash()));
+                                            sb.addPreviewKey(ByteString.copyFrom(key));
+                                            return false;
+                                        }
+                                    });
                                     final Share share = sb.build();
                                     Log.d(SpaceUtils.TAG, "Share: " + share);
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
                                             SpaceAndroidUtils.mineShare(ShareActivity.this, recipient, recipientKey, share);
+                                            setResult(RESULT_OK);
+                                            finish();
                                         }
                                     });
                                 } catch (IOException e) {

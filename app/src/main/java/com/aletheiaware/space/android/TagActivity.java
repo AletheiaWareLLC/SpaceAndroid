@@ -89,7 +89,12 @@ public class TagActivity extends AppCompatActivity {
                 loader = new MetaLoader(this, metaRecordHash, shared) {
                     @Override
                     void onMetaLoaded() {
-                        loadUI();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                loadUI();
+                            }
+                        });
                     }
                 };
             }
@@ -132,6 +137,8 @@ public class TagActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             SpaceAndroidUtils.mineTag(TagActivity.this, reference, tag);
+                            setResult(RESULT_OK);
+                            finish();
                         }
                     });
                 }

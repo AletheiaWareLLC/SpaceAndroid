@@ -262,8 +262,6 @@ public class MinerUtils {
                         @Override
                         public void run() {
                             NotificationManagerCompat.from(parent).cancel(LOCAL_NOTIFICATION_ID);
-                            parent.setResult(Activity.RESULT_OK);
-                            parent.finish();
                         }
                     });
                 }
@@ -370,8 +368,6 @@ public class MinerUtils {
                         @Override
                         public void run() {
                             NotificationManagerCompat.from(parent).cancel(REMOTE_NOTIFICATION_ID);
-                            parent.setResult(Activity.RESULT_OK);
-                            parent.finish();
                         }
                     });
                 }
@@ -412,8 +408,6 @@ public class MinerUtils {
                         @Override
                         public void run() {
                             NotificationManagerCompat.from(parent).cancel(LOCAL_NOTIFICATION_ID);
-                            parent.setResult(Activity.RESULT_OK);
-                            parent.finish();
                         }
                     });
                 }
@@ -464,8 +458,6 @@ public class MinerUtils {
                         @Override
                         public void run() {
                             NotificationManagerCompat.from(parent).cancel(REMOTE_NOTIFICATION_ID);
-                            parent.setResult(Activity.RESULT_OK);
-                            parent.finish();
                         }
                     });
                 }
@@ -507,8 +499,6 @@ public class MinerUtils {
                         @Override
                         public void run() {
                             NotificationManagerCompat.from(parent).cancel(LOCAL_NOTIFICATION_ID);
-                            parent.setResult(Activity.RESULT_OK);
-                            parent.finish();
                         }
                     });
                 }
@@ -559,8 +549,6 @@ public class MinerUtils {
                         @Override
                         public void run() {
                             NotificationManagerCompat.from(parent).cancel(REMOTE_NOTIFICATION_ID);
-                            parent.setResult(Activity.RESULT_OK);
-                            parent.finish();
                         }
                     });
                 }
