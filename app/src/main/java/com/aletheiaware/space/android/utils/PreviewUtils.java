@@ -57,9 +57,9 @@ public class PreviewUtils {
                     try {
                         final String alias = SpaceAndroidUtils.getAlias();
                         final KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                        final InetAddress host = SpaceAndroidUtils.getHost();
+                        final InetAddress host = SpaceAndroidUtils.getSpaceHost();
                         final byte[] metaRecordHashBytes = metaRecordHash.toByteArray();
-                        final Channel previews = new Channel(SpaceUtils.PREVIEW_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, cacheDir, host);
+                        final Channel previews = new Channel(SpaceUtils.SPACE_PREFIX_PREVIEW + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, cacheDir, host);
                         try {
                             previews.sync();
                         } catch (IOException | NoSuchAlgorithmException e) {
@@ -67,7 +67,7 @@ public class PreviewUtils {
                             e.printStackTrace();
                         }
                         if (shared) {
-                            final Channel shares = new Channel(SpaceUtils.SHARE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, cacheDir, host);
+                            final Channel shares = new Channel(SpaceUtils.SPACE_PREFIX_SHARE + alias, BCUtils.THRESHOLD_STANDARD, cacheDir, host);
                             try {
                                 shares.sync();
                             } catch (IOException | NoSuchAlgorithmException e) {

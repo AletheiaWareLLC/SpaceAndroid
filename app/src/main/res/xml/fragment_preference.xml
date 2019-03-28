@@ -38,6 +38,8 @@ limitations under the License.
             android:summary="@string/preference_miner_description"
             android:title="@string/preference_miner_title" />
 
+        <!-- TODO add default miner hostname -->
+
     </android.support.v7.preference.PreferenceCategory>
 
     <android.support.v7.preference.PreferenceCategory android:title="@string/preference_cache_title">

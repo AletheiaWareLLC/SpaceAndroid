@@ -17,7 +17,6 @@
 package com.aletheiaware.space.android;
 
 import android.content.Context;
-import android.net.Uri;
 import android.util.Log;
 
 import com.aletheiaware.bc.BC.Channel.RecordCallback;
@@ -32,7 +31,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 
 public abstract class MetaLoader implements RecordCallback {
@@ -91,27 +89,6 @@ public abstract class MetaLoader implements RecordCallback {
         return shared;
     }
 
-    void writeFileToURI(Uri uri) throws IOException {
-        try (OutputStream out = context.getContentResolver().openOutputStream(uri)) {
-            Log.d(SpaceUtils.TAG, "Writing to: " + uri.toString());
-            if (out != null) {
-                readFile(new RecordCallback() {
-                    @Override
-                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                        try {
-                            Log.d(SpaceUtils.TAG, "Writing: " + payload.length);
-                            out.write(payload);
-                        } catch (IOException e) {
-                            /* Ignored */
-                            e.printStackTrace();
-                        }
-                        return true;
-                    }
-                });
-            }
-        }
-    }
-
     @Override
     public boolean onRecord(ByteString hash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
         try {
@@ -135,18 +112,18 @@ public abstract class MetaLoader implements RecordCallback {
 
     private void loadMeta() throws IOException {
         if (shared) {
-            SpaceUtils.readShares(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), null, metaRecordHash, this, null);
+            SpaceUtils.readShares(SpaceAndroidUtils.getSpaceHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), null, metaRecordHash, this, null);
         } else {
-            SpaceUtils.readMetas(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), metaRecordHash, this);
+            SpaceUtils.readMetas(SpaceAndroidUtils.getSpaceHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), metaRecordHash, this);
         }
     }
 
     void readFile(RecordCallback callback) throws IOException {
         if (shared) {
-            SpaceUtils.readShares(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), null, metaRecordHash, null, callback);
+            SpaceUtils.readShares(SpaceAndroidUtils.getSpaceHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), null, metaRecordHash, null, callback);
         } else if (references != null){
             for (Reference reference : references) {
-                SpaceUtils.readFiles(SpaceAndroidUtils.getHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), reference.getRecordHash().toByteArray(), callback);
+                SpaceUtils.readFiles(SpaceAndroidUtils.getSpaceHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), reference.getRecordHash().toByteArray(), callback);
             }
         }
     }

@@ -49,15 +49,21 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
 
     private final Activity activity;
     private final LayoutInflater inflater;
+    private final String alias;
     private final Map<ByteString, Meta> metas = new HashMap<>();
     private final Map<ByteString, Preview> previews = new HashMap<>();
     private final Map<ByteString, Long> timestamps = new HashMap<>();
     private final Set<ByteString> shared = new HashSet<>();
     private final List<ByteString> sorted = new ArrayList<>();
 
-    MetaAdapter(Activity activity) {
+    MetaAdapter(Activity activity, String alias) {
         this.activity = activity;
         this.inflater = activity.getLayoutInflater();
+        this.alias = alias;
+    }
+
+    public String getAlias() {
+        return alias;
     }
 
     synchronized void addMeta(ByteString recordHash, long timestamp, Meta meta, boolean shared) {

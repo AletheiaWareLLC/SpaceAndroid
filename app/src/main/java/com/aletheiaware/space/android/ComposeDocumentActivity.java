@@ -32,7 +32,6 @@ import android.widget.TextView;
 
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
-import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -52,7 +51,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        MinerUtils.createNotificationChannels(this);
+        SpaceAndroidUtils.createNotificationChannels(this);
 
         // Setup UI
         setContentView(R.layout.activity_compose_document);
@@ -162,6 +161,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                                 .setData(ByteString.copyFromUtf8(text.substring(0, Math.min(text.length(), SpaceUtils.PREVIEW_TEXT_LENGTH))))
                                 .build();
                         final ByteArrayInputStream in = new ByteArrayInputStream(text.getBytes(Charset.defaultCharset()));
+                        final String website = SpaceAndroidUtils.getSpaceWebsite();
                         final String alias = SpaceAndroidUtils.getAlias();
                         final String email = intent.getStringExtra(SpaceAndroidUtils.EMAIL_EXTRA);
                         Log.d(SpaceUtils.TAG, "Email: " + email);
@@ -172,7 +172,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                             public void run() {
                                 String customerId = null;
                                 try {
-                                    customerId = SpaceUtils.register(alias, email, paymentId);
+                                    customerId = SpaceUtils.register(website, alias, email, paymentId);
                                 } catch (IOException e) {
                                     SpaceAndroidUtils.showErrorDialog(ComposeDocumentActivity.this, R.string.error_registering, e);
                                 }

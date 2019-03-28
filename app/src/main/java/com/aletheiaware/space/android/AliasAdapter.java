@@ -45,7 +45,7 @@ public class AliasAdapter extends ArrayAdapter<String> implements Filterable {
         new Thread() {
             @Override
             public void run() {
-                Channel aliases = new Channel(AliasUtils.ALIAS_CHANNEL, BCUtils.THRESHOLD_STANDARD, activity.getCacheDir(), SpaceAndroidUtils.getHost());
+                Channel aliases = new Channel(AliasUtils.ALIAS_CHANNEL, BCUtils.THRESHOLD_STANDARD, activity.getCacheDir(), SpaceAndroidUtils.getSpaceHost());
                 try {
                     aliases.sync();
                 } catch (IOException | NoSuchAlgorithmException e) {

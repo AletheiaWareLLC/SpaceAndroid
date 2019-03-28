@@ -99,12 +99,20 @@ limitations under the License.
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/view_margin" />
 
+                <TextView
+                    android:id="@+id/stripe_legalese_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/view_margin"
+                    android:text="@string/legalese_label"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_primary_size" />
+
                 <CheckBox
                     android:id="@+id/stripe_terms_of_service_check"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/view_margin"
-                    android:autoLink="web"
                     android:text="@string/legalese_terms_of_service"
                     android:textColor="@color/text_primary"
                     android:textSize="@dimen/text_primary_size"/>
@@ -114,17 +122,24 @@ limitations under the License.
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/view_margin"
-                    android:autoLink="web"
                     android:text="@string/legalese_privacy_policy"
                     android:textColor="@color/text_primary"
                     android:textSize="@dimen/text_primary_size"/>
+
+                <TextView
+                    android:id="@+id/stripe_legalese_beta_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/view_margin"
+                    android:text="@string/legalese_beta_label"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_primary_size" />
 
                 <CheckBox
                     android:id="@+id/stripe_beta_test_agreement_check"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="@dimen/view_margin"
-                    android:autoLink="web"
                     android:text="@string/legalese_beta_test_agreement"
                     android:textColor="@color/text_primary"
                     android:textSize="@dimen/text_primary_size"/>

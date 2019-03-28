@@ -16,6 +16,9 @@
 
 package com.aletheiaware.space.android;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.ImageDecoder;
 import android.graphics.drawable.AnimatedImageDrawable;
@@ -25,6 +28,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -34,6 +39,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.MediaController;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.VideoView;
 
@@ -48,6 +54,7 @@ import com.google.protobuf.ByteString;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 
 public class DetailActivity extends AppCompatActivity {
 
@@ -64,6 +71,7 @@ public class DetailActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SpaceAndroidUtils.createNotificationChannels(this);
 
         // Setup UI
         setContentView(R.layout.activity_detail);
@@ -150,13 +158,8 @@ public class DetailActivity extends AppCompatActivity {
             Log.d(SpaceUtils.TAG, "File");
             Log.d(SpaceUtils.TAG, "Path: " + f.getAbsolutePath());
             final Uri uri = FileProvider.getUriForFile(DetailActivity.this, getString(R.string.file_provider_authority), f);
-            if (!f.exists() || f.length() == 0) {
-                try {
-                    loader.writeFileToURI(uri);
-                } catch (IOException ex) {
-                    /* Ignored */
-                    ex.printStackTrace();
-                }
+            if (!f.exists() || f.length() < meta.getSize()) {
+                writeFileToURI(uri);
             }
             Log.d(SpaceUtils.TAG, "Length: " + f.length());
             runOnUiThread(new Runnable() {
@@ -221,13 +224,8 @@ public class DetailActivity extends AppCompatActivity {
             Log.d(SpaceUtils.TAG, "File");
             Log.d(SpaceUtils.TAG, "Path: " + f.getAbsolutePath());
             final Uri uri = FileProvider.getUriForFile(DetailActivity.this, getString(R.string.file_provider_authority), f);
-            if (!f.exists() || f.length() == 0) {
-                try {
-                    loader.writeFileToURI(uri);
-                } catch (IOException ex) {
-                    /* Ignored */
-                    ex.printStackTrace();
-                }
+            if (!f.exists() || f.length() < meta.getSize()) {
+                writeFileToURI(uri);
             }
             Log.d(SpaceUtils.TAG, "Length: " + f.length());
             Drawable[] drawables = { null };
@@ -302,6 +300,66 @@ public class DetailActivity extends AppCompatActivity {
                 }
             });
         }
+        // TODO show tags
+    }
+
+    private void writeFileToURI(Uri uri) {
+        final double size = loader.getMeta().getSize();
+        final ProgressBar[] progressBar = new ProgressBar[1];
+        final Dialog[] dialog = new Dialog[1];
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                View progressView = View.inflate(DetailActivity.this, R.layout.dialog_progress, null);
+                progressBar[0] = progressView.findViewById(R.id.progress);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    progressBar[0].setMin(0);
+                }
+                progressBar[0].setMax(100);
+                dialog[0] = new AlertDialog.Builder(DetailActivity.this, R.style.AlertDialogTheme)
+                        .setTitle(R.string.title_dialog_loading_document)
+                        .setCancelable(false)
+                        .setView(progressBar[0])
+                        .show();
+            }
+        });
+        try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+            Log.d(SpaceUtils.TAG, "Writing to: " + uri.toString());
+            if (out != null) {
+                loader.readFile(new RecordCallback() {
+                    @Override
+                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                        try {
+                            Log.d(SpaceUtils.TAG, "Writing: " + payload.length);
+                            out.write(payload);
+                            final double percent = (payload.length / size) * 100.0;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressBar[0].setProgress((int) percent);
+                                }
+                            });
+                        } catch (IOException e) {
+                            /* Ignored */
+                            e.printStackTrace();
+                        }
+                        return true;
+                    }
+                });
+            }
+        } catch (IOException ex) {
+            /* Ignored */
+            ex.printStackTrace();
+        } finally {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (dialog[0].isShowing()) {
+                        dialog[0].dismiss();
+                    }
+                }
+            });
+        }
     }
 
     @Override
@@ -324,14 +382,59 @@ public class DetailActivity extends AppCompatActivity {
                     if (data != null) {
                         final Uri uri = data.getData();
                         if (uri != null) {
+                            // Create download notification
+                            final NotificationCompat.Builder builder = new NotificationCompat.Builder(this, SpaceAndroidUtils.DOWNLOAD_CHANNEL_ID)
+                                    .setSmallIcon(R.drawable.cloud_download)
+                                    .setContentTitle(getString(R.string.title_notification_download))
+                                    .setContentText(loader.getMeta().getName())
+                                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                                    .setProgress(100, 0, false)
+                                    .setAutoCancel(true)
+                                    .setTimeoutAfter(SpaceAndroidUtils.NOTIFICATION_TIMEOUT);
+
+                            final NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+                            notificationManager.notify(SpaceAndroidUtils.DOWNLOAD_NOTIFICATION_ID, builder.build());
+
+                            final double size = loader.getMeta().getSize();
                             new Thread() {
                                 @Override
                                 public void run() {
-                                    try {
-                                        loader.writeFileToURI(uri);
+                                    try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+                                        Log.d(SpaceUtils.TAG, "Downloading to: " + uri.toString());
+                                        if (out != null) {
+                                            loader.readFile(new RecordCallback() {
+                                                @Override
+                                                public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                                    try {
+                                                        Log.d(SpaceUtils.TAG, "Downloading: " + payload.length);
+                                                        out.write(payload);
+                                                        final double percent = (payload.length / size) * 100.0;
+                                                        runOnUiThread(new Runnable() {
+                                                            @Override
+                                                            public void run() {
+                                                                builder.setProgress(100, (int) percent, false);
+                                                                notificationManager.notify(SpaceAndroidUtils.DOWNLOAD_NOTIFICATION_ID, builder.build());
+                                                            }
+                                                        });
+                                                    } catch (IOException e) {
+                                                        /* Ignored */
+                                                        e.printStackTrace();
+                                                    }
+                                                    return true;
+                                                }
+                                            });
+                                        }
                                     } catch (IOException ex) {
                                         /* Ignored */
                                         ex.printStackTrace();
+                                    } finally {
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                // Dismiss download notification
+                                                notificationManager.cancel(SpaceAndroidUtils.DOWNLOAD_NOTIFICATION_ID);
+                                            }
+                                        });
                                     }
                                 }
                             }.start();

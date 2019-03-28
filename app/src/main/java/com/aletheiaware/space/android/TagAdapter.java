@@ -37,12 +37,12 @@ import java.security.NoSuchAlgorithmException;
 
 public class TagAdapter extends ArrayAdapter<String> implements Filterable {
 
-    public TagAdapter(final Activity activity, final String alias, final KeyPair keys) {
+    public TagAdapter(final Activity activity, final String alias, final KeyPair keys, final byte[] metaRecordHash, boolean shared) {
         super(activity, android.R.layout.simple_dropdown_item_1line);
         new Thread() {
             @Override
             public void run() {
-                Channel tags = new Channel(SpaceUtils.TAG_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, activity.getCacheDir(), SpaceAndroidUtils.getHost());
+                Channel tags = new Channel(SpaceUtils.SPACE_PREFIX_TAG + new String(BCUtils.encodeBase64URL(metaRecordHash)), BCUtils.THRESHOLD_STANDARD, activity.getCacheDir(), SpaceAndroidUtils.getSpaceHost());
                 try {
                     tags.sync();
                 } catch (IOException | NoSuchAlgorithmException e) {

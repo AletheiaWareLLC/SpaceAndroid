@@ -30,10 +30,12 @@ import android.widget.TextView;
 import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Tag;
-import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 
+import java.security.KeyPair;
+
+// TODO move to TagDialog
 public class TagActivity extends AppCompatActivity {
 
     private TagAdapter adapter;
@@ -46,7 +48,7 @@ public class TagActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        MinerUtils.createNotificationChannels(this);
+        SpaceAndroidUtils.createNotificationChannels(this);
 
         // Setup UI
         setContentView(R.layout.activity_tag);
@@ -73,7 +75,8 @@ public class TagActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         if (SpaceAndroidUtils.isInitialized()) {
-            adapter = new TagAdapter(this, SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair());
+            String alias = SpaceAndroidUtils.getAlias();
+            KeyPair keys = SpaceAndroidUtils.getKeyPair();
             byte[] metaRecordHash = null;
             boolean shared = false;
             final Intent intent = getIntent();
@@ -97,6 +100,7 @@ public class TagActivity extends AppCompatActivity {
                         });
                     }
                 };
+                adapter = new TagAdapter(this, alias, keys, metaRecordHash, shared);
             }
         } else {
             Intent intent = new Intent(this, AccessActivity.class);

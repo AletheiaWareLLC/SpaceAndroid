@@ -36,7 +36,6 @@ import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Share;
-import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -47,6 +46,7 @@ import java.net.InetAddress;
 import java.security.KeyPair;
 import java.security.PublicKey;
 
+// TODO move to ShareDialog
 public class ShareActivity extends AppCompatActivity {
 
     private AliasAdapter adapter;
@@ -58,7 +58,7 @@ public class ShareActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        MinerUtils.createNotificationChannels(this);
+        SpaceAndroidUtils.createNotificationChannels(this);
 
         adapter = new AliasAdapter(this);
 
@@ -137,7 +137,7 @@ public class ShareActivity extends AppCompatActivity {
                                 final String alias = SpaceAndroidUtils.getAlias();
                                 final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                                 final File cache = getCacheDir();
-                                final InetAddress host = SpaceAndroidUtils.getHost();
+                                final InetAddress host = SpaceAndroidUtils.getSpaceHost();
                                 final Channel aliases = new Channel(AliasUtils.ALIAS_CHANNEL, BCUtils.THRESHOLD_STANDARD, cache, host);
                                 try {
                                     final PublicKey recipientKey = AliasUtils.getPublicKey(aliases, recipient);
@@ -161,7 +161,7 @@ public class ShareActivity extends AppCompatActivity {
                                             }
                                         });
                                     } else {
-                                        final Channel files = new Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, cache, host);
+                                        final Channel files = new Channel(SpaceUtils.SPACE_PREFIX_FILE + alias, BCUtils.THRESHOLD_STANDARD, cache, host);
                                         SpaceUtils.readMetas(host, cache, alias, keys, loader.getMetaRecordHash(), new RecordCallback() {
                                             @Override
                                             public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {

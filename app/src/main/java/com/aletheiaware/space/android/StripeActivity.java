@@ -20,6 +20,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -51,8 +52,12 @@ public class StripeActivity extends AppCompatActivity {
         TextView amountText = findViewById(R.id.stripe_amount_text);
         emailText = findViewById(R.id.stripe_email_text);
         cardWidget = findViewById(R.id.stripe_card_widget);
+        TextView legaleseLabel = findViewById(R.id.stripe_legalese_label);
+        legaleseLabel.setMovementMethod(LinkMovementMethod.getInstance());
         termsCheck = findViewById(R.id.stripe_terms_of_service_check);
         policyCheck = findViewById(R.id.stripe_privacy_policy_check);
+        TextView legaleseBetaLabel = findViewById(R.id.stripe_legalese_beta_label);
+        legaleseBetaLabel.setMovementMethod(LinkMovementMethod.getInstance());
         betaCheck = findViewById(R.id.stripe_beta_test_agreement_check);
         stripeFab = findViewById(R.id.stripe_fab);
         stripeFab.setOnClickListener(new View.OnClickListener() {

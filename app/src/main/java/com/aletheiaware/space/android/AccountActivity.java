@@ -96,14 +96,15 @@ public class AccountActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         try {
+                            final String website = SpaceAndroidUtils.getSpaceWebsite();
                             final String alias = SpaceAndroidUtils.getAlias();
                             final KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                            final InetAddress host = SpaceAndroidUtils.getHost();
-                            final String customerId = FinanceUtils.getCustomerId(host, alias, keys);
+                            final InetAddress address = SpaceAndroidUtils.getSpaceHost();
+                            final String customerId = FinanceUtils.getCustomerId(address, alias, keys);
                             if (customerId == null || customerId.isEmpty()) {
                                 register();
                             } else {
-                                String subscriptionId = SpaceUtils.subscribe(alias, customerId);
+                                String subscriptionId = SpaceUtils.subscribe(website, alias, customerId);
                                 Log.d(SpaceUtils.TAG, "Subscription ID" + subscriptionId);
                                 updateStripeInfo();
                             }
@@ -127,9 +128,10 @@ public class AccountActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 try {
+                                    final String website = SpaceAndroidUtils.getSpaceWebsite();
                                     final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                                     final byte[] accessCode = BCUtils.generateSecretKey(BCUtils.AES_KEY_SIZE_BYTES);
-                                    BCUtils.exportKeyPair(getFilesDir(), alias, password, keys, accessCode);
+                                    BCUtils.exportKeyPair(website, getFilesDir(), alias, password, keys, accessCode);
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
@@ -213,6 +215,7 @@ public class AccountActivity extends AppCompatActivity {
             case SpaceAndroidUtils.STRIPE_ACTIVITY:
                 switch (resultCode) {
                     case RESULT_OK:
+                        final String website = SpaceAndroidUtils.getSpaceWebsite();
                         final String alias = SpaceAndroidUtils.getAlias();
                         final String email = intent.getStringExtra(SpaceAndroidUtils.EMAIL_EXTRA);
                         final String paymentId = intent.getStringExtra(SpaceAndroidUtils.STRIPE_TOKEN_EXTRA);
@@ -220,7 +223,7 @@ public class AccountActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 try {
-                                    String customerId = SpaceUtils.register(alias, email, paymentId);
+                                    String customerId = SpaceUtils.register(website, alias, email, paymentId);
                                     Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
                                     updateStripeInfo();
                                 } catch (IOException e) {
@@ -246,7 +249,7 @@ public class AccountActivity extends AppCompatActivity {
         try {
             final String alias = SpaceAndroidUtils.getAlias();
             final KeyPair keys = SpaceAndroidUtils.getKeyPair();
-            final InetAddress host = SpaceAndroidUtils.getHost();
+            final InetAddress host = SpaceAndroidUtils.getSpaceHost();
             final String customerId = FinanceUtils.getCustomerId(host, alias, keys);
             final String subscriptionId = FinanceUtils.getSubscriptionId(host, alias, keys);
             runOnUiThread(new Runnable() {

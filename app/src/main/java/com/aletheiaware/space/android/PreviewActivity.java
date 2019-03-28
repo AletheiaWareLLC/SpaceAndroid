@@ -23,7 +23,6 @@ import android.support.v7.widget.Toolbar;
 import android.widget.TextView;
 
 import com.aletheiaware.space.SpaceProto.Meta;
-import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 
 public class PreviewActivity extends AppCompatActivity {
@@ -34,7 +33,7 @@ public class PreviewActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        MinerUtils.createNotificationChannels(this);
+        SpaceAndroidUtils.createNotificationChannels(this);
 
         // Setup UI
         setContentView(R.layout.activity_preview);

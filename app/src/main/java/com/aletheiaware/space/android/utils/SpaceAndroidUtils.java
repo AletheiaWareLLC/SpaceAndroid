@@ -18,6 +18,9 @@ package com.aletheiaware.space.android.utils;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -33,6 +36,8 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.support.media.ExifInterface;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.preference.PreferenceManager;
@@ -50,6 +55,7 @@ import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.SpaceProto;
 import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.ComposeDocumentActivity;
+import com.aletheiaware.space.android.MainActivity;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -91,6 +97,13 @@ public class SpaceAndroidUtils {
     public static final String SHARED_EXTRA = "shared";
     public static final String STRIPE_AMOUNT_EXTRA = "stripe-amount";
     public static final String STRIPE_TOKEN_EXTRA = "stripe-token";
+    public static final String LOCAL_CHANNEL_ID = "Local Mining Channel";
+    public static final String REMOTE_CHANNEL_ID = "Remote Mining Channel";
+    public static final String DOWNLOAD_CHANNEL_ID = "Download Channel";
+    public static final int LOCAL_NOTIFICATION_ID = 1;
+    public static final int REMOTE_NOTIFICATION_ID = 2;
+    public static final int DOWNLOAD_NOTIFICATION_ID = 3;
+    public static final int NOTIFICATION_TIMEOUT = 5 * 60 * 1000;// 5 minutes
 
     private static String alias = null;
     private static KeyPair keyPair = null;
@@ -120,7 +133,7 @@ public class SpaceAndroidUtils {
         return node;
     }
 
-    public static InetAddress getHost() {
+    public static InetAddress getSpaceHost() {
         try {
             return InetAddress.getByName(BuildConfig.DEBUG ? SpaceUtils.SPACE_HOST_TEST : SpaceUtils.SPACE_HOST);
         } catch (Exception e) {
@@ -128,6 +141,10 @@ public class SpaceAndroidUtils {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static String getSpaceWebsite() {
+        return BuildConfig.DEBUG ? SpaceUtils.SPACE_WEBSITE_TEST : SpaceUtils.SPACE_WEBSITE;
     }
 
     public static Uri getTempURI() {
@@ -139,6 +156,8 @@ public class SpaceAndroidUtils {
     }
 
     public static void add(final Activity parent) {
+        // TODO merge upload into composeDocument
+        // TODO use fragments to swap editors based on MIME/Meta.type
         new AlertDialog.Builder(parent, R.style.AlertDialogTheme)
                 .setTitle(R.string.title_dialog_add_record)
                 .setItems(R.array.inputs, new DialogInterface.OnClickListener() {
@@ -224,7 +243,7 @@ public class SpaceAndroidUtils {
     }
 
     public static boolean isCustomer(File cache) throws IOException {
-        final Channel customers = new Channel(FinanceUtils.CUSTOMER_CHANNEL, BCUtils.THRESHOLD_STANDARD, cache, getHost());
+        final Channel customers = new Channel(FinanceUtils.CUSTOMER_CHANNEL, BCUtils.THRESHOLD_STANDARD, cache, getSpaceHost());
         final Customer.Builder cb = Customer.newBuilder();
         customers.read(alias, keyPair, null, new RecordCallback() {
             @Override
@@ -369,6 +388,12 @@ public class SpaceAndroidUtils {
         // TODO content.append("Public Key: ").append(getPublicKey()).append("\n");
         // TODO content.append("Customer ID: ").append(getCustomerId()).append("\n");
         // TODO content.append("Subscription ID: ").append(getSubscriptionId()).append("\n");
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
+        Map<String, ?> map = sharedPrefs.getAll();
+        content.append("======== Preferences ========\n");
+        for (String key : map.keySet()) {
+            content.append(key).append(":").append(map.get(key)).append("\n");
+        }
         content.append("======== App Info ========\n");
         content.append("Build: ").append(BuildConfig.BUILD_TYPE).append("\n");
         content.append("App ID: ").append(BuildConfig.APPLICATION_ID).append("\n");
@@ -395,12 +420,6 @@ public class SpaceAndroidUtils {
         content.append("Tags: ").append(Build.TAGS).append("\n");
         content.append("Type: ").append(Build.TYPE).append("\n");
         content.append("User: ").append(Build.USER).append("\n");
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
-        Map<String, ?> map = sharedPrefs.getAll();
-        content.append("======== Preferences ========\n");
-        for (String key : map.keySet()) {
-            content.append(key).append(":").append(map.get(key)).append("\n");
-        }
         content.append("\n\n\n");
         Log.d(SpaceUtils.TAG, content.toString());
         Intent intent = new Intent(Intent.ACTION_SENDTO);
@@ -574,5 +593,58 @@ public class SpaceAndroidUtils {
             value = "2";
         }
         return value;
+    }
+
+    public static void createNotificationChannels(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel localChannel = new NotificationChannel(LOCAL_CHANNEL_ID, context.getString(R.string.notification_channel_name_local), NotificationManager.IMPORTANCE_HIGH);
+            localChannel.setDescription(context.getString(R.string.notification_channel_description_local));
+            NotificationChannel remoteChannel = new NotificationChannel(REMOTE_CHANNEL_ID, context.getString(R.string.notification_channel_name_remote), NotificationManager.IMPORTANCE_HIGH);
+            remoteChannel.setDescription(context.getString(R.string.notification_channel_description_remote));
+            NotificationChannel downloadChannel = new NotificationChannel(DOWNLOAD_CHANNEL_ID, context.getString(R.string.notification_channel_name_download), NotificationManager.IMPORTANCE_HIGH);
+            downloadChannel.setDescription(context.getString(R.string.notification_channel_description_download));
+            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(localChannel);
+                notificationManager.createNotificationChannel(remoteChannel);
+                notificationManager.createNotificationChannel(downloadChannel);
+            }
+        }
+    }
+
+    public static void createLocalMiningNotification(Context context, String name) {
+        Intent intent = new Intent(context, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, LOCAL_CHANNEL_ID)
+                .setSmallIcon(R.drawable.bc_mine)
+                .setContentTitle(context.getString(R.string.title_notification_local))
+                .setContentText(name)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setProgress(0, 0, true)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setTimeoutAfter(NOTIFICATION_TIMEOUT);
+
+        NotificationManagerCompat.from(context).notify(LOCAL_NOTIFICATION_ID, builder.build());
+    }
+
+    public static void createRemoteMiningNotification(Context context, String name) {
+        Intent intent = new Intent(context, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, REMOTE_CHANNEL_ID)
+                .setSmallIcon(R.drawable.cloud_upload)
+                .setContentTitle(context.getString(R.string.title_notification_remote))
+                .setContentText(name)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setProgress(0, 0, true)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setTimeoutAfter(NOTIFICATION_TIMEOUT);
+
+        NotificationManagerCompat.from(context).notify(REMOTE_NOTIFICATION_ID, builder.build());
     }
 }

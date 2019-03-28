@@ -36,7 +36,6 @@ import android.widget.VideoView;
 
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
-import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -62,8 +61,11 @@ public class UploadActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        MinerUtils.createNotificationChannels(this);
+        SpaceAndroidUtils.createNotificationChannels(this);
 
+        // TODO add menu items
+        // TODO - Preview - choose which preview sizes to generate and mine after meta. Consider adding default preview sizes to settings
+        // TODO - Tag - choose which tags to apply and mine after meta.
         // Setup UI
         setContentView(R.layout.activity_upload);
 
@@ -88,6 +90,8 @@ public class UploadActivity extends AppCompatActivity {
 
         // Content VideoView
         contentVideoView = findViewById(R.id.upload_video_view);
+
+        // TODO Add access spinner - choose from private, public, or a list of recipients with whom to grant access and mine after meta.
 
         // FloatingActionButton
         uploadFab = findViewById(R.id.upload_fab);
@@ -273,6 +277,7 @@ public class UploadActivity extends AppCompatActivity {
                         Log.d(SpaceUtils.TAG, "Name: " + name);
                         final String type = typeTextView.getText().toString();
                         Log.d(SpaceUtils.TAG, "Type: " + type);
+                        final String website = SpaceAndroidUtils.getSpaceWebsite();
                         final String alias = SpaceAndroidUtils.getAlias();
                         final String email = intent.getStringExtra(SpaceAndroidUtils.EMAIL_EXTRA);
                         Log.d(SpaceUtils.TAG, "Email: " + email);
@@ -283,7 +288,7 @@ public class UploadActivity extends AppCompatActivity {
                             public void run() {
                                 String customerId = null;
                                 try {
-                                    customerId = SpaceUtils.register(alias, email, paymentId);
+                                    customerId = SpaceUtils.register(website, alias, email, paymentId);
                                 } catch (IOException e) {
                                     SpaceAndroidUtils.showErrorDialog(UploadActivity.this, R.string.error_registering, e);
                                 }

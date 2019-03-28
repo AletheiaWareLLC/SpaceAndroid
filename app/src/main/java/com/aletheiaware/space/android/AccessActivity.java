@@ -72,7 +72,8 @@ public class AccessActivity extends AppCompatActivity {
                             public void run() {
                                 // Use access code to import key
                                 try {
-                                    KeyShare ks = BCUtils.getKeyShare(alias);
+                                    final String website = SpaceAndroidUtils.getSpaceWebsite();
+                                    KeyShare ks = BCUtils.getKeyShare(website, alias);
                                     BCUtils.importRSAKeyPair(getFilesDir(), accessCode, ks);
                                     runOnUiThread(new Runnable() {
                                         @Override

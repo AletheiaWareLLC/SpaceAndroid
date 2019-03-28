@@ -17,15 +17,9 @@
 package com.aletheiaware.space.android.utils;
 
 import android.app.Activity;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.preference.PreferenceManager;
@@ -42,7 +36,6 @@ import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.SpaceProto.Tag;
 import com.aletheiaware.space.SpaceProto.Preview;
-import com.aletheiaware.space.android.MainActivity;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.StripeActivity;
 import com.aletheiaware.space.utils.SpaceUtils;
@@ -75,63 +68,7 @@ public class MinerUtils {
         void onMineRemotely();
     }
 
-    private static final String LOCAL_CHANNEL_ID = "Local Mining Channel";
-    private static final String REMOTE_CHANNEL_ID = "Remote Mining Channel";
-    private static final int LOCAL_NOTIFICATION_ID = 1;
-    private static final int REMOTE_NOTIFICATION_ID = 2;
-    private static final int NOTIFICATION_TIMEOUT = 2 * 60 * 1000;// 2 minutes
-
     private MinerUtils() {}
-
-    public static void createNotificationChannels(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel localChannel = new NotificationChannel(LOCAL_CHANNEL_ID, context.getString(R.string.notification_channel_name_local), NotificationManager.IMPORTANCE_HIGH);
-            localChannel.setDescription(context.getString(R.string.notification_channel_description_local));
-            NotificationChannel remoteChannel = new NotificationChannel(REMOTE_CHANNEL_ID, context.getString(R.string.notification_channel_name_remote), NotificationManager.IMPORTANCE_HIGH);
-            remoteChannel.setDescription(context.getString(R.string.notification_channel_description_remote));
-            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(localChannel);
-                notificationManager.createNotificationChannel(remoteChannel);
-            }
-        }
-    }
-
-    private static void createLocalMiningNotification(Context context, String name) {
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, LOCAL_CHANNEL_ID)
-                .setSmallIcon(R.drawable.bc_mine)
-                .setContentTitle(context.getString(R.string.title_notification_local))
-                .setContentText(name)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setProgress(0, 0, true)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                .setTimeoutAfter(NOTIFICATION_TIMEOUT);
-
-        NotificationManagerCompat.from(context).notify(LOCAL_NOTIFICATION_ID, builder.build());
-    }
-
-    private static void createRemoteMiningNotification(Context context, String name) {
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, REMOTE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.cloud_upload)
-                .setContentTitle(context.getString(R.string.title_notification_remote))
-                .setContentText(name)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setProgress(0, 0, true)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                .setTimeoutAfter(NOTIFICATION_TIMEOUT);
-
-        NotificationManagerCompat.from(context).notify(REMOTE_NOTIFICATION_ID, builder.build());
-    }
 
     public static void getMinerSelection(final Activity parent, final MinerSelectionCallback callback) {
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
@@ -179,7 +116,7 @@ public class MinerUtils {
 
     public static void mineFileLocally(final Activity parent, final String name, final String type, final Preview preview, final InputStream in) {
         Log.d(SpaceUtils.TAG, "Mine file locally");
-        createLocalMiningNotification(parent, name);
+        SpaceAndroidUtils.createLocalMiningNotification(parent, name);
         new Thread() {
             @Override
             public void run() {
@@ -187,9 +124,9 @@ public class MinerUtils {
                     final String alias = SpaceAndroidUtils.getAlias();
                     final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                     final Node node = SpaceAndroidUtils.getNode();
-                    final InetAddress host = SpaceAndroidUtils.getHost();
-                    final Channel metas = new Channel(SpaceUtils.META_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
-                    final Channel files = new Channel(SpaceUtils.FILE_CHANNEL_PREFIX + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
+                    final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+                    final Channel metas = new Channel(SpaceUtils.SPACE_PREFIX_META + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
+                    final Channel files = new Channel(SpaceUtils.SPACE_PREFIX_FILE + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Map<String, PublicKey> acl = new HashMap<>();
                     acl.put(alias, keys.getPublic());
                     final List<Reference> metaReferences = new ArrayList<>();
@@ -251,7 +188,7 @@ public class MinerUtils {
                                 .setRecordHash(previewRecordHash)
                                 .setRecord(previewRecord)
                                 .build());
-                        final Channel previews = new Channel(SpaceUtils.PREVIEW_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
+                        final Channel previews = new Channel(SpaceUtils.SPACE_PREFIX_PREVIEW + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                         BCUtils.Pair<byte[], Block> previewResult = node.mine(previews, previewEntries);
                         Log.d(SpaceUtils.TAG, "Mined Preview " + new String(BCUtils.encodeBase64URL(previewResult.a)));
                     }
@@ -261,7 +198,7 @@ public class MinerUtils {
                     parent.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            NotificationManagerCompat.from(parent).cancel(LOCAL_NOTIFICATION_ID);
+                            NotificationManagerCompat.from(parent).cancel(SpaceAndroidUtils.LOCAL_NOTIFICATION_ID);
                         }
                     });
                 }
@@ -271,7 +208,7 @@ public class MinerUtils {
 
     public static void mineFileRemotely(final Activity parent, final String name, final String type, final Preview preview, final InputStream in) {
         Log.d(SpaceUtils.TAG, "Mine file remotely");
-        createRemoteMiningNotification(parent, name);
+        SpaceAndroidUtils.createRemoteMiningNotification(parent, name);
         new Thread() {
             @Override
             public void run() {
@@ -279,6 +216,7 @@ public class MinerUtils {
                     if (SpaceAndroidUtils.isCustomer(parent.getCacheDir())) {
                         final String alias = SpaceAndroidUtils.getAlias();
                         final KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                        final String website = SpaceAndroidUtils.getSpaceWebsite();
                         final Map<String, PublicKey> acl = new HashMap<>();
                         acl.put(alias, keys.getPublic());
                         final List<Reference> metaReferences = new ArrayList<>();
@@ -288,7 +226,7 @@ public class MinerUtils {
                                 Reference fileReference = null;
                                 for (int i = 0; fileReference == null && i < 5; i++) {
                                     try {
-                                        fileReference = SpaceUtils.postRecord("file", record);
+                                        fileReference = SpaceUtils.postRecord(website, "file", record);
                                     } catch (IOException e) {
                                         /* Ignored */
                                         e.printStackTrace();
@@ -313,7 +251,7 @@ public class MinerUtils {
                         Reference metaReference = null;
                         for (int i = 0; metaReference == null && i < 5; i++) {
                             try {
-                                metaReference = SpaceUtils.postRecord("meta", metaRecord);
+                                metaReference = SpaceUtils.postRecord(website, "meta", metaRecord);
                             } catch (IOException e) {
                                 /* Ignored */
                                 e.printStackTrace();
@@ -337,7 +275,7 @@ public class MinerUtils {
                             Reference previewReference = null;
                             for (int i = 0; previewReference == null && i < 5; i++) {
                                 try {
-                                    previewReference = SpaceUtils.postRecord("preview", previewRecord);
+                                    previewReference = SpaceUtils.postRecord(website, "preview", previewRecord);
                                 } catch (IOException e) {
                                     /* Ignored */
                                     e.printStackTrace();
@@ -367,7 +305,7 @@ public class MinerUtils {
                     parent.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            NotificationManagerCompat.from(parent).cancel(REMOTE_NOTIFICATION_ID);
+                            NotificationManagerCompat.from(parent).cancel(SpaceAndroidUtils.REMOTE_NOTIFICATION_ID);
                         }
                     });
                 }
@@ -377,7 +315,7 @@ public class MinerUtils {
 
     public static void mineShareLocally(final Activity parent, final String recipientAlias, final PublicKey recipientKey, final Share share) {
         Log.d(SpaceUtils.TAG, "Mine share locally");
-        createLocalMiningNotification(parent, "Sharing with " + recipientAlias);
+        SpaceAndroidUtils.createLocalMiningNotification(parent, "Sharing with " + recipientAlias);
         new Thread() {
             @Override
             public void run() {
@@ -385,8 +323,8 @@ public class MinerUtils {
                     final String alias = SpaceAndroidUtils.getAlias();
                     final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                     final Node node = SpaceAndroidUtils.getNode();
-                    final InetAddress host = SpaceAndroidUtils.getHost();
-                    final Channel shares = new Channel(SpaceUtils.SHARE_CHANNEL_PREFIX + recipientAlias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
+                    final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+                    final Channel shares = new Channel(SpaceUtils.SPACE_PREFIX_SHARE + recipientAlias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Map<String, PublicKey> acl = new HashMap<>();
                     acl.put(recipientAlias, recipientKey);// Recipient first
                     acl.put(alias, keys.getPublic());// Sender second
@@ -407,7 +345,7 @@ public class MinerUtils {
                     parent.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            NotificationManagerCompat.from(parent).cancel(LOCAL_NOTIFICATION_ID);
+                            NotificationManagerCompat.from(parent).cancel(SpaceAndroidUtils.LOCAL_NOTIFICATION_ID);
                         }
                     });
                 }
@@ -417,7 +355,7 @@ public class MinerUtils {
 
     public static void mineShareRemotely(final Activity parent, final String recipientAlias, final PublicKey recipientKey, final Share share) {
         Log.d(SpaceUtils.TAG, "Mine share remotely");
-        createRemoteMiningNotification(parent, "Sharing with " + recipientAlias);
+        SpaceAndroidUtils.createRemoteMiningNotification(parent, "Sharing with " + recipientAlias);
         new Thread() {
             @Override
             public void run() {
@@ -425,6 +363,7 @@ public class MinerUtils {
                     if (SpaceAndroidUtils.isCustomer(parent.getCacheDir())) {
                         final String alias = SpaceAndroidUtils.getAlias();
                         final KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                        final String website = SpaceAndroidUtils.getSpaceWebsite();
                         final Map<String, PublicKey> acl = new HashMap<>();
                         acl.put(recipientAlias, recipientKey);// Recipient first
                         acl.put(alias, keys.getPublic());// Sender second
@@ -432,7 +371,7 @@ public class MinerUtils {
                         Record shareRecord = BCUtils.createRecord(alias, keys, acl, shareReferences, share.toByteArray());
                         Reference shareReference = null;
                         for (int i = 0; shareReference == null && i < 5; i++) {
-                            shareReference = SpaceUtils.postRecord("share", shareRecord);
+                            shareReference = SpaceUtils.postRecord(website, "share", shareRecord);
                         }
                         if (shareReference == null) {
                             // FIXME
@@ -457,7 +396,7 @@ public class MinerUtils {
                     parent.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            NotificationManagerCompat.from(parent).cancel(REMOTE_NOTIFICATION_ID);
+                            NotificationManagerCompat.from(parent).cancel(SpaceAndroidUtils.REMOTE_NOTIFICATION_ID);
                         }
                     });
                 }
@@ -467,7 +406,7 @@ public class MinerUtils {
 
     public static void mineTagLocally(final Activity parent, final Reference meta, final Tag tag) {
         Log.d(SpaceUtils.TAG, "Mine file locally");
-        createLocalMiningNotification(parent, "Tagging " + meta + " with " + tag.getValue());
+        SpaceAndroidUtils.createLocalMiningNotification(parent, "Tagging " + meta + " with " + tag.getValue());
         new Thread() {
             @Override
             public void run() {
@@ -475,9 +414,9 @@ public class MinerUtils {
                     final String alias = SpaceAndroidUtils.getAlias();
                     final KeyPair keys = SpaceAndroidUtils.getKeyPair();
                     final Node node = SpaceAndroidUtils.getNode();
-                    final InetAddress host = SpaceAndroidUtils.getHost();
+                    final InetAddress host = SpaceAndroidUtils.getSpaceHost();
                     byte[] metaRecordHashBytes = meta.getRecordHash().toByteArray();
-                    final Channel tags = new Channel(SpaceUtils.TAG_CHANNEL_PREFIX + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
+                    final Channel tags = new Channel(SpaceUtils.SPACE_PREFIX_TAG + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Map<String, PublicKey> acl = new HashMap<>();
                     acl.put(alias, keys.getPublic());
                     final List<Reference> tagReferences = new ArrayList<>();
@@ -498,7 +437,7 @@ public class MinerUtils {
                     parent.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            NotificationManagerCompat.from(parent).cancel(LOCAL_NOTIFICATION_ID);
+                            NotificationManagerCompat.from(parent).cancel(SpaceAndroidUtils.LOCAL_NOTIFICATION_ID);
                         }
                     });
                 }
@@ -508,7 +447,7 @@ public class MinerUtils {
 
     public static void mineTagRemotely(final Activity parent, final Reference meta, final Tag tag) {
         Log.d(SpaceUtils.TAG, "Mine tag remotely");
-        createRemoteMiningNotification(parent, "Tagging " + meta + " with " + tag.getValue());
+        SpaceAndroidUtils.createRemoteMiningNotification(parent, "Tagging " + meta + " with " + tag.getValue());
         new Thread() {
             @Override
             public void run() {
@@ -516,6 +455,7 @@ public class MinerUtils {
                     if (SpaceAndroidUtils.isCustomer(parent.getCacheDir())) {
                         final String alias = SpaceAndroidUtils.getAlias();
                         final KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                        final String website = SpaceAndroidUtils.getSpaceWebsite();
                         final Map<String, PublicKey> acl = new HashMap<>();
                         acl.put(alias, keys.getPublic());
                         final List<Reference> tagReferences = new ArrayList<>();
@@ -523,7 +463,7 @@ public class MinerUtils {
                         Record tagRecord = BCUtils.createRecord(alias, keys, acl, tagReferences, tag.toByteArray());
                         Reference tagReference = null;
                         for (int i = 0; tagReference == null && i < 5; i++) {
-                            tagReference = SpaceUtils.postRecord("tag", tagRecord);
+                            tagReference = SpaceUtils.postRecord(website, "tag", tagRecord);
                         }
                         if (tagReference == null) {
                             // FIXME
@@ -548,7 +488,7 @@ public class MinerUtils {
                     parent.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            NotificationManagerCompat.from(parent).cancel(REMOTE_NOTIFICATION_ID);
+                            NotificationManagerCompat.from(parent).cancel(SpaceAndroidUtils.REMOTE_NOTIFICATION_ID);
                         }
                     });
                 }

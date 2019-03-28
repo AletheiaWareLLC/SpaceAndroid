@@ -53,7 +53,7 @@ import java.security.KeyPair;
 public class MainActivity extends AppCompatActivity {
 
     private MetaAdapter adapter;
-
+    private RecyclerView recyclerView;
     private Spinner sortSpinner;
 
     @Override
@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // RecyclerView
-        RecyclerView recyclerView = findViewById(R.id.main_recycler);
+        recyclerView = findViewById(R.id.main_recycler);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.addItemDecoration(new DividerItemDecoration(this, layoutManager.getOrientation()));
@@ -124,26 +124,28 @@ public class MainActivity extends AppCompatActivity {
                 SpaceAndroidUtils.add(MainActivity.this);
             }
         });
-
-        // Adapter
-        adapter = new MetaAdapter(this) {
-            @Override
-            public void onSelection(ByteString hash, Meta meta) {
-                Intent i = new Intent(MainActivity.this, DetailActivity.class);
-                i.putExtra(SpaceAndroidUtils.HASH_EXTRA, hash.toByteArray());
-                i.putExtra(SpaceAndroidUtils.META_EXTRA, meta.toByteArray());
-                i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, isShared(hash));
-                startActivityForResult(i, SpaceAndroidUtils.DETAIL_ACTIVITY);
-            }
-        };
-        // TODO visually show files that are still getting mined
-        recyclerView.setAdapter(adapter);
     }
 
     @Override
     public void onResume() {
         super.onResume();
         if (SpaceAndroidUtils.isInitialized()) {
+            String alias = SpaceAndroidUtils.getAlias();
+            if (adapter == null || !alias.equals(adapter.getAlias())) {
+                // Adapter
+                adapter = new MetaAdapter(this, alias) {
+                    @Override
+                    public void onSelection(ByteString hash, Meta meta) {
+                        Intent i = new Intent(MainActivity.this, DetailActivity.class);
+                        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, hash.toByteArray());
+                        i.putExtra(SpaceAndroidUtils.META_EXTRA, meta.toByteArray());
+                        i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, isShared(hash));
+                        startActivityForResult(i, SpaceAndroidUtils.DETAIL_ACTIVITY);
+                    }
+                };
+                // TODO visually show files that are still getting mined
+                recyclerView.setAdapter(adapter);
+            }
             if (adapter.isEmpty()) {
                 refresh();
             }
@@ -306,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
         new Thread() {
             @Override
             public void run() {
-                final InetAddress address = SpaceAndroidUtils.getHost();
+                final InetAddress address = SpaceAndroidUtils.getSpaceHost();
                 final File cache = getCacheDir();
                 final String alias = SpaceAndroidUtils.getAlias();
                 final KeyPair keys = SpaceAndroidUtils.getKeyPair();

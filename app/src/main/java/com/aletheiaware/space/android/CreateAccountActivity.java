@@ -18,15 +18,17 @@ package com.aletheiaware.space.android;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.aletheiaware.alias.utils.AliasUtils;
 import com.aletheiaware.bc.BC.Channel;
@@ -78,7 +80,7 @@ public class CreateAccountActivity extends AppCompatActivity {
         new Thread() {
             @Override
             public void run() {
-                aliases = new Channel(AliasUtils.ALIAS_CHANNEL, BCUtils.THRESHOLD_STANDARD, getCacheDir(), SpaceAndroidUtils.getHost());
+                aliases = new Channel(AliasUtils.ALIAS_CHANNEL, BCUtils.THRESHOLD_STANDARD, getCacheDir(), SpaceAndroidUtils.getSpaceHost());
                 try {
                     aliases.sync();
                 } catch (IOException | NoSuchAlgorithmException e) {
@@ -92,12 +94,52 @@ public class CreateAccountActivity extends AppCompatActivity {
         setContentView(R.layout.activity_create_account);
 
         aliasText = findViewById(R.id.create_account_alias_text);
+        aliasText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                final String alias = s.toString();
+                new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            final boolean unique = AliasUtils.isUnique(aliases, alias);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (unique) {
+                                        aliasText.setError(null);
+                                    } else {
+                                        aliasText.setError(getString(R.string.error_alias_taken));
+                                    }
+                                }
+                            });
+                        } catch (IOException e) {
+                            SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_alias_read_failed, e);
+                        }
+                    }
+                }.start();
+            }
+        });
         emailText = findViewById(R.id.create_account_email_text);
         newPasswordText = findViewById(R.id.create_account_new_password_text);
         confirmPasswordText = findViewById(R.id.create_account_confirm_password_text);
         cardWidget = findViewById(R.id.create_account_card_widget);
+        TextView legaleseLabel = findViewById(R.id.create_account_legalese_label);
+        legaleseLabel.setMovementMethod(LinkMovementMethod.getInstance());
         termsCheck = findViewById(R.id.create_account_terms_of_service_check);
         policyCheck = findViewById(R.id.create_account_privacy_policy_check);
+        TextView legaleseBetaLabel = findViewById(R.id.create_account_legalese_beta_label);
+        legaleseBetaLabel.setMovementMethod(LinkMovementMethod.getInstance());
         betaCheck = findViewById(R.id.create_account_beta_test_agreement_check);
         createAccountButton = findViewById(R.id.create_account_button);
         createAccountButton.setOnClickListener(new View.OnClickListener() {
@@ -106,16 +148,6 @@ public class CreateAccountActivity extends AppCompatActivity {
                 // Alias
                 final String alias = aliasText.getText().toString();
                 // TODO ensure alias is valid
-                try {
-                    // TODO add textwatcher to aliasText, each change check if alias is unique and if not display aliasErrorText
-                    if (!AliasUtils.isUnique(aliases, alias)) {
-                        SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_alias_taken));
-                        return;
-                    }
-                } catch (IOException e) {
-                    SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_alias_read_failed, e);
-                    return;
-                }
                 if (alias.isEmpty()) {
                     SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, getString(R.string.error_alias_invalid));
                     return;
@@ -183,11 +215,12 @@ public class CreateAccountActivity extends AppCompatActivity {
                 new Thread() {
                     @Override
                     public void run() {
+                        final String website = SpaceAndroidUtils.getSpaceWebsite();
                         try {
                             setProgressBar(1);
                             final KeyPair keyPair = BCUtils.createRSAKeyPair(getFilesDir(), alias, newPassword);
                             setProgressBar(2);
-                            AliasUtils.registerAlias(alias, keyPair);
+                            AliasUtils.registerAlias(website, alias, keyPair);
                             setProgressBar(3);
                             // TODO mine terms of service agreement into blockchain
                             setProgressBar(4);
@@ -204,14 +237,14 @@ public class CreateAccountActivity extends AppCompatActivity {
                                                 public void run() {
                                                     String customerId = null;
                                                     try {
-                                                        customerId = SpaceUtils.register(alias, email, token.getId());
+                                                        customerId = SpaceUtils.register(website, alias, email, token.getId());
                                                     } catch (IOException e) {
                                                         SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_registering, e);
                                                     }
                                                     Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
                                                     if (customerId != null && !customerId.isEmpty()) {
                                                         try {
-                                                            String subscriptionId = SpaceUtils.subscribe(alias, customerId);
+                                                            String subscriptionId = SpaceUtils.subscribe(website, alias, customerId);
                                                             Log.d(SpaceUtils.TAG, "Subscription ID: " + subscriptionId);
                                                         } catch (IOException e) {
                                                             SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_subscribing, e);
