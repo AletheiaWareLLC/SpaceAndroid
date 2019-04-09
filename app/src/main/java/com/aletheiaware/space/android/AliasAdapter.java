@@ -80,7 +80,7 @@ public class AliasAdapter extends ArrayAdapter<String> implements Filterable {
         }.start();
     }
 
-    Alias get(String alias) {
+    public Alias get(String alias) {
         return am.get(alias);
     }
 }

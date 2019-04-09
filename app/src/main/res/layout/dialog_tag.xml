@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-Copyright 2018 Aletheia Ware LLC
+Copyright 2019 Aletheia Ware LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,17 +25,16 @@ limitations under the License.
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
-        android:labelFor="@id/export_alias_text"
-        android:text="@string/export_keys_alias"
+        android:labelFor="@id/tag_name"
+        android:text="@string/tag_name"
         android:textColor="@color/text_secondary"
         android:textSize="@dimen/text_secondary_size"/>
 
     <TextView
-        android:id="@+id/export_alias_text"
+        android:id="@+id/tag_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
-        android:gravity="center"
         android:textColor="@color/text_primary"
         android:textSize="@dimen/text_primary_size" />
 
@@ -43,17 +42,18 @@ limitations under the License.
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
-        android:labelFor="@id/export_access_code_text"
-        android:text="@string/export_keys_access_code"
+        android:labelFor="@id/tag_value"
+        android:text="@string/tag_value"
         android:textColor="@color/text_secondary"
         android:textSize="@dimen/text_secondary_size"/>
 
-    <TextView
-        android:id="@+id/export_access_code_text"
+    <AutoCompleteTextView
+        android:id="@+id/tag_value"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
-        android:gravity="center"
+        android:imeOptions="actionDone"
+        android:inputType="text|textNoSuggestions"
         android:textColor="@color/text_primary"
         android:textSize="@dimen/text_primary_size" />
 
@@ -61,7 +61,26 @@ limitations under the License.
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
-        android:text="@string/export_keys_label"
+        android:labelFor="@id/tag_reason"
+        android:text="@string/tag_reason"
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/text_secondary_size"/>
+
+    <EditText
+        android:id="@+id/tag_reason"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
+        android:imeOptions="actionDone"
+        android:inputType="text|textCapSentences|textAutoComplete|textAutoCorrect"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_primary_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
+        android:text="@string/tag_document_label"
         android:textColor="@color/text_secondary"
         android:textSize="@dimen/text_secondary_size"/>
 

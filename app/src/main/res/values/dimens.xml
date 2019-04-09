@@ -15,9 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <resources>
-    <dimen name="activity_padding">10dp</dimen>
-    <dimen name="fab_margin">16dp</dimen>
-    <dimen name="view_margin">10dp</dimen>
+    <dimen name="activity_padding">12dp</dimen>
+    <dimen name="view_margin">8dp</dimen>
     <dimen name="text_primary_size">20sp</dimen>
     <dimen name="text_secondary_size">16sp</dimen>
 </resources>

@@ -14,94 +14,68 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/background_dark"
-    android:fitsSystemWindows="false"
-    tools:context=".ComposeDocumentActivity">
+    android:padding="@dimen/activity_padding"
+    tools:context=".ui.ComposeDocumentActivity">
 
-    <android.support.design.widget.AppBarLayout
-        android:id="@+id/compose_document_appbar"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/primary"
-        android:theme="@style/AppBarOverlay">
+        android:orientation="vertical">
 
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/compose_document_toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:theme="@style/ActionBarTheme"
-            app:layout_collapseMode="pin"
-            app:popupTheme="@style/PopupOverlay" />
-
-    </android.support.design.widget.AppBarLayout>
-
-    <android.support.v4.widget.NestedScrollView
-        android:id="@+id/compose_document_nested_scroll_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fitsSystemWindows="false"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <LinearLayout
+        <EditText
+            android:id="@+id/compose_document_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="@dimen/activity_padding">
+            android:layout_margin="@dimen/view_margin"
+            android:imeOptions="actionDone"
+            android:inputType="text|textNoSuggestions"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size" />
 
-            <EditText
-                android:id="@+id/compose_document_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:imeOptions="actionDone"
-                android:inputType="text|textNoSuggestions"
-                android:textColor="@color/text_primary"
-                android:textSize="@dimen/text_primary_size" />
+        <Spinner
+            android:id="@+id/compose_document_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary" />
 
-            <Spinner
-                android:id="@+id/compose_document_type"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:textColor="@color/text_primary" />
+        <TextView
+            android:id="@+id/compose_document_size"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size" />
 
-            <TextView
-                android:id="@+id/compose_document_size"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:textColor="@color/text_secondary"
-                android:textSize="@dimen/text_secondary_size" />
+        <EditText
+            android:id="@+id/compose_document_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:inputType="text|textMultiLine"
+            android:lines="4"
+            android:scrollbars="vertical"
+            android:textColor="@color/text"
+            android:textSize="@dimen/text_primary_size" />
 
-            <EditText
-                android:id="@+id/compose_document_content"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:inputType="text|textMultiLine"
-                android:lines="4"
-                android:scrollbars="vertical"
-                android:textColor="@color/text"
-                android:textSize="@dimen/text_primary_size" />
+        <Button
+            android:id="@+id/compose_document_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="@dimen/view_margin"
+            android:background="@color/accent"
+            android:padding="10dp"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size"
+            android:text="@string/mine_action"
+            android:drawableStart="@drawable/bc_mine" />
 
-        </LinearLayout>
+    </LinearLayout>
 
-    </android.support.v4.widget.NestedScrollView>
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/compose_document_fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center"
-        android:layout_margin="@dimen/fab_margin"
-        app:fabSize="normal"
-        app:layout_anchor="@id/compose_document_nested_scroll_view"
-        app:layout_anchorGravity="bottom|center"
-        app:srcCompat="@drawable/bc_mine" />
-
-</android.support.design.widget.CoordinatorLayout>
+</ScrollView>

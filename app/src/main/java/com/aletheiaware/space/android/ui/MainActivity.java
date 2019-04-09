@@ -14,32 +14,31 @@
  * limitations under the License.
  */
 
-package com.aletheiaware.space.android;
+package com.aletheiaware.space.android.ui;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.AppBarLayout;
-import android.support.design.widget.CollapsingToolbarLayout;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Spinner;
 
 import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.space.SpaceProto.Meta;
+import com.aletheiaware.space.android.MetaAdapter;
+import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -62,31 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Setup UI
         setContentView(R.layout.activity_main);
-
-        // Toolbar
-        Toolbar toolbar = findViewById(R.id.main_toolbar);
-        toolbar.setTitle("");
-        setSupportActionBar(toolbar);
-
-        // CollapsingToolbar
-        final CollapsingToolbarLayout collapsingToolbar = findViewById(R.id.main_collapsing_toolbar);
-        collapsingToolbar.setTitle("");
-        final CharSequence title = getString(R.string.title_activity_main);
-        // Appbar
-        AppBarLayout appbar = findViewById(R.id.main_appbar);
-        appbar.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
-            boolean showing = false;
-            @Override
-            public void onOffsetChanged(AppBarLayout appBar, int verticalOffset) {
-                if (Math.abs(appBar.getTotalScrollRange() + verticalOffset) < 10) {
-                    collapsingToolbar.setTitle(title);
-                    showing = true;
-                } else if (showing) {
-                    collapsingToolbar.setTitle("");
-                    showing = false;
-                }
-            }
-        });
+        setTitle(null);
 
         // SortSpinner
         sortSpinner = findViewById(R.id.main_sort);
@@ -116,9 +91,9 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.addItemDecoration(new DividerItemDecoration(this, layoutManager.getOrientation()));
 
-        // Add FloatingActionButton
-        FloatingActionButton addFab = findViewById(R.id.main_add_fab);
-        addFab.setOnClickListener(new View.OnClickListener() {
+        // Add Button
+        Button addButton = findViewById(R.id.main_add_button);
+        addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 SpaceAndroidUtils.add(MainActivity.this);

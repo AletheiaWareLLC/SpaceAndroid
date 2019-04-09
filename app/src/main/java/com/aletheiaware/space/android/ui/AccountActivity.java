@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.aletheiaware.space.android;
+package com.aletheiaware.space.android.ui;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -23,7 +23,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -33,6 +32,7 @@ import android.widget.Toast;
 
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.finance.utils.FinanceUtils;
+import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 
@@ -67,10 +67,6 @@ public class AccountActivity extends AppCompatActivity {
         // Setup UI
         setContentView(R.layout.activity_account);
 
-        // Toolbar
-        Toolbar toolbar = findViewById(R.id.account_toolbar);
-        setSupportActionBar(toolbar);
-
         aliasText = findViewById(R.id.account_alias_text);
         aliasText.setOnClickListener(new CopyToClipboardListener(aliasText, "Alias"));
         publicKeyText = findViewById(R.id.account_public_key_text);
@@ -104,7 +100,7 @@ public class AccountActivity extends AppCompatActivity {
                             if (customerId == null || customerId.isEmpty()) {
                                 register();
                             } else {
-                                String subscriptionId = SpaceUtils.subscribe(website, alias, customerId);
+                                String subscriptionId = BCUtils.subscribe(website+"/space-subscribe", alias, customerId);
                                 Log.d(SpaceUtils.TAG, "Subscription ID" + subscriptionId);
                                 updateStripeInfo();
                             }
@@ -223,7 +219,7 @@ public class AccountActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 try {
-                                    String customerId = SpaceUtils.register(website, alias, email, paymentId);
+                                    String customerId = BCUtils.register(website+"/space-register", alias, email, paymentId);
                                     Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
                                     updateStripeInfo();
                                 } catch (IOException e) {

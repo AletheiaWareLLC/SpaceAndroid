@@ -23,16 +23,15 @@ limitations under the License.
     android:gravity="center"
     android:orientation="vertical"
     android:padding="@dimen/activity_padding"
-    tool:context=".AccessActivity">
+    tool:context=".ui.AccessActivity">
 
     <ImageButton
         android:id="@+id/space_logo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="5dp"
+        android:layout_margin="@dimen/view_margin"
         android:background="@android:color/transparent"
         android:contentDescription="@string/space_logo"
-        android:padding="5dp"
         android:tint="@color/text_primary"
         app:srcCompat="@drawable/space_logo" />
 
@@ -63,7 +62,7 @@ limitations under the License.
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="@dimen/activity_padding">
+        android:layout_margin="@dimen/view_margin">
 
         <Button
             android:id="@+id/access_create_account"
@@ -71,6 +70,7 @@ limitations under the License.
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_margin="@dimen/view_margin"
+            android:background="@color/accent"
             android:padding="10dp"
             android:textColor="@color/text_primary"
             android:textSize="@dimen/text_primary_size"
@@ -82,6 +82,7 @@ limitations under the License.
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_margin="@dimen/view_margin"
+            android:background="@color/accent"
             android:padding="10dp"
             android:textColor="@color/text_primary"
             android:textSize="@dimen/text_primary_size"
@@ -99,10 +100,9 @@ limitations under the License.
         android:id="@+id/aletheia_ware_llc_logo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="5dp"
+        android:layout_margin="@dimen/view_margin"
         android:background="@android:color/transparent"
         android:contentDescription="@string/aletheia_ware_llc_logo"
-        android:padding="5dp"
         android:tint="@color/text_primary"
         app:srcCompat="@drawable/aletheia_ware_llc_logo" />
 

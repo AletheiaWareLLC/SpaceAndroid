@@ -14,102 +14,75 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:background="@android:color/background_dark"
-    android:fitsSystemWindows="false"
-    android:gravity="center">
+    android:padding="@dimen/activity_padding"
+    tools:context=".ui.DetailActivity">
 
-    <android.support.design.widget.AppBarLayout
-        android:id="@+id/detail_appbar"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/primary"
-        android:theme="@style/AppBarOverlay">
+        android:gravity="center"
+        android:orientation="vertical">
 
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/detail_toolbar"
+        <VideoView
+            android:id="@+id/detail_video_view"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:theme="@style/ActionBarTheme"
-            app:layout_collapseMode="pin"
-            app:popupTheme="@style/PopupOverlay" />
+            android:layout_height="200dp"
+            android:layout_margin="@dimen/view_margin"
+            android:visibility="gone" />
 
-    </android.support.design.widget.AppBarLayout>
-
-    <android.support.v4.widget.NestedScrollView
-        android:id="@+id/detail_nested_scroll_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fitsSystemWindows="false"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <LinearLayout
+        <ImageView
+            android:id="@+id/detail_image_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="@dimen/activity_padding">
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:adjustViewBounds="true"
+            android:visibility="gone" />
 
-            <VideoView
-                android:id="@+id/detail_video_view"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_margin="@dimen/view_margin"
-                android:visibility="gone" />
+        <TextView
+            android:id="@+id/detail_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text"
+            android:textSize="@dimen/text_primary_size"
+            android:visibility="gone" />
 
-            <ImageView
-                android:id="@+id/detail_image_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:adjustViewBounds="true"
-                android:visibility="gone" />
+        <TextView
+            android:id="@+id/detail_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size" />
 
-            <TextView
-                android:id="@+id/detail_text_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:textColor="@color/text"
-                android:textSize="@dimen/text_primary_size"
-                android:visibility="gone" />
+        <TextView
+            android:id="@+id/detail_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size" />
 
-            <TextView
-                android:id="@+id/detail_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:textColor="@color/text_primary"
-                android:textSize="@dimen/text_primary_size" />
+        <TextView
+            android:id="@+id/detail_size"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
 
-            <TextView
-                android:id="@+id/detail_type"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:textColor="@color/text_secondary"
-                android:textSize="@dimen/text_secondary_size" />
+        <TextView
+            android:id="@+id/detail_timestamp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+    </LinearLayout>
 
-            <TextView
-                android:id="@+id/detail_size"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:textColor="@color/text_secondary"
-                android:textSize="@dimen/text_secondary_size"/>
-
-            <TextView
-                android:id="@+id/detail_timestamp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/view_margin"
-                android:textColor="@color/text_secondary"
-                android:textSize="@dimen/text_secondary_size"/>
-        </LinearLayout>
-
-    </android.support.v4.widget.NestedScrollView>
-
-</android.support.design.widget.CoordinatorLayout>
+</ScrollView>

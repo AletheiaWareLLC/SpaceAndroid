@@ -90,6 +90,8 @@ limitations under the License.
     <string name="legalese_beta_label">This beta version of SPACE is made available under the <a href="https://aletheiaware.com/space-beta-test-agreement.html">Beta Test Agreement</a></string>
     <string name="legalese_beta_test_agreement">I understand, and agree to the Beta Test Agreement</string>
 
+    <string name="main_add">Add</string>
+
     <string name="menu_account">Account</string>
     <string name="menu_download">Download</string>
     <string name="menu_refresh">Refresh</string>
@@ -98,6 +100,8 @@ limitations under the License.
     <string name="menu_tag">Tag</string>
 
     <string name="mime_type_text_plain">text/plain</string>
+
+    <string name="mine_action">Mine</string>
 
     <string name="notification_channel_name_local">Local Mining</string>
     <string name="notification_channel_name_remote">Remote Mining</string>
@@ -117,16 +121,16 @@ limitations under the License.
     <string name="title_activity_main">@string/app_name</string>
     <string name="title_activity_create_account">Create Account</string>
     <string name="title_activity_payment">Payment</string>
-    <string name="title_activity_preview">Preview</string>
     <string name="title_activity_settings">Settings</string>
-    <string name="title_activity_share">Share</string>
-    <string name="title_activity_tag">Tag</string>
     <string name="title_activity_upload">Upload File</string>
     <string name="title_dialog_error">Error</string>
     <string name="title_dialog_add_record">Add Record</string>
     <string name="title_dialog_select_miner">Select Miner</string>
     <string name="title_dialog_creating_account">Creating Account</string>
     <string name="title_dialog_loading_document">Loading Document</string>
+    <string name="title_dialog_preview">Preview</string>
+    <string name="title_dialog_share">Share</string>
+    <string name="title_dialog_tag">Tag</string>
     <string name="title_notification_local">Mining Locally</string>
     <string name="title_notification_remote">Mining Remotely</string>
     <string name="title_notification_download">Downloading</string>
@@ -162,10 +166,19 @@ limitations under the License.
     <string name="no_data">No data</string>
     <string name="default_text_preview">Abc</string>
 
+    <string name="preview_name">Document</string>
+    <string name="preview_action">Generate</string>
+    <string name="preview_document_label">Previews are used instead of downloading the whole document</string>
+
     <string name="share_action">Share</string>
+    <string name="share_alias">Alias</string>
+    <string name="share_name">Document</string>
     <string name="share_document_label">Sharing a document is non-reversible</string>
 
     <string name="tag_action">Tag</string>
+    <string name="tag_name">Document</string>
+    <string name="tag_value">Value</string>
+    <string name="tag_reason">Reason</string>
     <string name="tag_document_label">Tags are used to search and filter documents</string>
 
     <string name="space_logo">Space Logo</string>

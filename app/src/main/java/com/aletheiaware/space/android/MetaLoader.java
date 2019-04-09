@@ -24,14 +24,26 @@ import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Record;
 import com.aletheiaware.bc.BCProto.Reference;
+import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public abstract class MetaLoader implements RecordCallback {
     private final Context context;
@@ -44,7 +56,7 @@ public abstract class MetaLoader implements RecordCallback {
     private Meta meta;
     private List<Reference> references;
 
-    MetaLoader(Context context, byte[] metaRecordHash, boolean shared) {
+    public MetaLoader(Context context, byte[] metaRecordHash, boolean shared) {
         this.context = context;
         this.metaRecordHash = metaRecordHash;
         this.shared = shared;
@@ -61,31 +73,31 @@ public abstract class MetaLoader implements RecordCallback {
         }.start();
     }
 
-    byte[] getMetaRecordHash() {
+    public byte[] getMetaRecordHash() {
         return metaRecordHash;
     }
 
-    ByteString getBlockHash() {
+    public ByteString getBlockHash() {
         return blockHash;
     }
 
-    String getChannelName() {
+    public String getChannelName() {
         return channelName;
     }
 
-    ByteString getRecordHash() {
+    public ByteString getRecordHash() {
         return recordHash;
     }
 
-    long getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
-    Meta getMeta() {
+    public Meta getMeta() {
         return meta;
     }
 
-    boolean isShared() {
+    public boolean isShared() {
         return shared;
     }
 
@@ -118,15 +130,46 @@ public abstract class MetaLoader implements RecordCallback {
         }
     }
 
-    void readFile(RecordCallback callback) throws IOException {
+    public void readFile(RecordCallback callback) throws IOException {
+        final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+        final File cache = context.getCacheDir();
+        final String alias = SpaceAndroidUtils.getAlias();
+        final KeyPair keys = SpaceAndroidUtils.getKeyPair();
         if (shared) {
-            SpaceUtils.readShares(SpaceAndroidUtils.getSpaceHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), null, metaRecordHash, null, callback);
-        } else if (references != null){
+            SpaceUtils.readShares(host, cache, alias, keys, null, metaRecordHash, null, callback);
+        } else if (references != null) {
+            // TODO maintain mapping of record to parent block stored under cache/record/<record-hash>
+            // So records can be loaded from cache if block exists, currently have to request from server each time
             for (Reference reference : references) {
-                SpaceUtils.readFiles(SpaceAndroidUtils.getSpaceHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), reference.getRecordHash().toByteArray(), callback);
+                // SpaceUtils.readFiles(host, cache, alias, keys, reference.getRecordHash().toByteArray(), callback);
+                Block block = BCUtils.getBlock(host, reference);
+                if (block == null) {
+                    break;
+                }
+                try {
+                    ByteString hash = ByteString.copyFrom(BCUtils.getHash(block.toByteArray()));
+                    for (BlockEntry entry : block.getEntryList()) {
+                        final ByteString rh = entry.getRecordHash();
+                        if (Arrays.equals(rh.toByteArray(), reference.getRecordHash().toByteArray())) {
+                            final Record record = entry.getRecord();
+                            for (Record.Access a : record.getAccessList()) {
+                                if (a.getAlias().equals(alias)) {
+                                    byte[] key = a.getSecretKey().toByteArray();
+                                    byte[] decryptedKey = BCUtils.decryptRSA(keys.getPrivate(), key);
+                                    byte[] decryptedPayload = BCUtils.decryptAES(decryptedKey, record.getPayload().toByteArray());
+                                    if (!callback.onRecord(hash, block, entry, decryptedKey, decryptedPayload)) {
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
 
-    abstract void onMetaLoaded();
+    public abstract void onMetaLoaded();
 }

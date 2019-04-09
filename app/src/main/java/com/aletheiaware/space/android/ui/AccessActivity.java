@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.aletheiaware.space.android;
+package com.aletheiaware.space.android.ui;
 
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -30,6 +30,9 @@ import android.widget.ImageButton;
 
 import com.aletheiaware.bc.BCProto.KeyShare;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.space.android.BiometricUnlockDialog;
+import com.aletheiaware.space.android.KeysAdapter;
+import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.BiometricUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;

@@ -56,7 +56,7 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
     private final Set<ByteString> shared = new HashSet<>();
     private final List<ByteString> sorted = new ArrayList<>();
 
-    MetaAdapter(Activity activity, String alias) {
+    public MetaAdapter(Activity activity, String alias) {
         this.activity = activity;
         this.inflater = activity.getLayoutInflater();
         this.alias = alias;
@@ -66,7 +66,7 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
         return alias;
     }
 
-    synchronized void addMeta(ByteString recordHash, long timestamp, Meta meta, boolean shared) {
+    public synchronized void addMeta(ByteString recordHash, long timestamp, Meta meta, boolean shared) {
         if (meta == null) {
             throw new NullPointerException();
         }
@@ -80,7 +80,7 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
         }
     }
 
-    synchronized void sort() {
+    public synchronized void sort() {
         String value = SpaceAndroidUtils.getSortPreference(activity);
         boolean chronological = "1".equals(value);
         SpaceUtils.sort(sorted, timestamps, chronological);
@@ -92,7 +92,7 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
         });
     }
 
-    boolean isShared(ByteString hash) {
+    protected boolean isShared(ByteString hash) {
         return shared.contains(hash);
     }
 
@@ -213,19 +213,19 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
             itemTime.setText(BCUtils.timeToString(time));
             itemTitle.setText(meta.getName());
             if (shared) {
-                itemView.setBackgroundResource(R.color.white);
-                itemImage.setBackgroundResource(R.color.white);
-                itemText.setBackgroundResource(R.color.white);
-                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.black));
-                itemTime.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.black));
-                itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.black));
+                itemView.setBackgroundResource(R.color.primary_light);
+                itemImage.setBackgroundResource(R.color.primary_light);
+                itemText.setBackgroundResource(R.color.primary_light);
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.primary_dark));
+                itemTime.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.primary_dark));
+                itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.primary_dark));
             } else {
-                itemView.setBackgroundResource(R.color.black);
-                itemImage.setBackgroundResource(R.color.black);
-                itemText.setBackgroundResource(R.color.black);
-                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.white));
-                itemTime.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.white));
-                itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.white));
+                itemView.setBackgroundResource(R.color.primary_dark);
+                itemImage.setBackgroundResource(R.color.primary_dark);
+                itemText.setBackgroundResource(R.color.primary_dark);
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.primary_light));
+                itemTime.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.primary_light));
+                itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.primary_light));
             }
         }
 

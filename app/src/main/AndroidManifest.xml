@@ -39,25 +39,25 @@ limitations under the License.
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
-            android:name=".AccessActivity"
+            android:name=".ui.AccessActivity"
             android:label="@string/title_activity_access"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".AccountActivity"
+            android:name=".ui.AccountActivity"
             android:label="@string/title_activity_account"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".CreateAccountActivity"
+            android:name=".ui.CreateAccountActivity"
             android:label="@string/title_activity_create_account"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".DetailActivity"
+            android:name=".ui.DetailActivity"
             android:label="@string/title_activity_detail"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme" />
         <activity
-            android:name=".MainActivity"
-            android:label="@string/title_activity_main"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:name=".ui.MainActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -65,33 +65,21 @@ limitations under the License.
             </intent-filter>
         </activity>
         <activity
-            android:name=".ComposeDocumentActivity"
+            android:name=".ui.ComposeDocumentActivity"
             android:label="@string/title_activity_compose_document"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme" />
         <activity
-            android:name=".PreviewActivity"
-            android:label="@string/title_activity_preview"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".SettingsActivity"
+            android:name=".ui.SettingsActivity"
             android:label="@string/title_activity_settings"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".ShareActivity"
-            android:label="@string/title_activity_share"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".StripeActivity"
+            android:name=".ui.StripeActivity"
             android:label="@string/title_activity_payment"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".TagActivity"
-            android:label="@string/title_activity_tag"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".UploadActivity"
+            android:name=".ui.UploadActivity"
             android:label="@string/title_activity_upload"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
 

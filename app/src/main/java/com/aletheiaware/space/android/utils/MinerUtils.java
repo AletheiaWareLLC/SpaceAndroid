@@ -37,7 +37,7 @@ import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.SpaceProto.Tag;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.R;
-import com.aletheiaware.space.android.StripeActivity;
+import com.aletheiaware.space.android.ui.StripeActivity;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 

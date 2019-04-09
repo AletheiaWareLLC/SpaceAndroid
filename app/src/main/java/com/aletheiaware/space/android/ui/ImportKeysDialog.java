@@ -14,44 +14,45 @@
  * limitations under the License.
  */
 
-package com.aletheiaware.space.android;
+package com.aletheiaware.space.android.ui;
 
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.support.v7.app.AlertDialog;
+import android.content.DialogInterface;
 import android.view.View;
-import android.widget.TextView;
+import android.widget.EditText;
 
-public abstract class ExportKeysDialog {
+import com.aletheiaware.space.android.R;
+
+public abstract class ImportKeysDialog {
 
     private final Activity activity;
-    private final String alias;
-    private final String accessCode;
     private AlertDialog dialog;
 
-    public ExportKeysDialog(Activity activity, String alias, String accessCode) {
+    public ImportKeysDialog(Activity activity) {
         this.activity = activity;
-        this.alias = alias;
-        this.accessCode = accessCode;
     }
 
     public void create() {
-        View accessView = View.inflate(activity, R.layout.dialog_export, null);
-        final TextView aliasText = accessView.findViewById(R.id.export_alias_text);
-        aliasText.setText(alias);
-        final TextView accessCodeText = accessView.findViewById(R.id.export_access_code_text);
-        accessCodeText.setText(accessCode);
+        View accessView = View.inflate(activity, R.layout.dialog_import, null);
+        final EditText aliasText = accessView.findViewById(R.id.import_alias_text);
+        aliasText.setFocusable(true);
+        aliasText.setFocusableInTouchMode(true);
+        final EditText accessCodeText = accessView.findViewById(R.id.import_access_code_text);
+        accessCodeText.setFocusableInTouchMode(true);
         AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
-        ab.setTitle(R.string.export_keys);
+        ab.setTitle(R.string.import_keys);
         ab.setView(accessView);
-        ab.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+        ab.setPositiveButton(R.string.import_keys_action, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                dialog.dismiss();
+                onImport(dialog, aliasText.getText().toString(), accessCodeText.getText().toString());
             }
         });
         dialog = ab.show();
     }
+
+    public abstract void onImport(DialogInterface dialog, String alias, String accessCode);
 
     public AlertDialog getDialog() {
         return dialog;

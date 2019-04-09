@@ -19,7 +19,7 @@ limitations under the License.
     <style name="AppTheme" parent="Theme.AppCompat">
         <item name="android:buttonStyle">@style/AppTheme.Button</item>
         <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorPrimaryDark">@color/primary</item>
         <item name="colorAccent">@color/accent</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
@@ -38,17 +38,17 @@ limitations under the License.
     <style name="ActionBarTheme" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="AlertDialogTheme" parent="Theme.AppCompat.Dialog.Alert">
-        <item name="android:background">@color/black</item>
+        <item name="android:background">@color/primary</item>
         <item name="buttonBarPositiveButtonStyle">@style/AlertDialogPositiveButtonStyle</item>
         <item name="buttonBarNegativeButtonStyle">@style/AlertDialogNegativeButtonStyle</item>
     </style>
 
     <style name="AlertDialogPositiveButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
-        <item name="android:textColor">@color/primary_light</item>
+        <item name="android:textColor">@color/accent</item>
     </style>
 
     <style name="AlertDialogNegativeButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
-        <item name="android:textColor">@color/primary_dark</item>
+        <item name="android:textColor">@color/accent</item>
     </style>
 
     <style name="AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />

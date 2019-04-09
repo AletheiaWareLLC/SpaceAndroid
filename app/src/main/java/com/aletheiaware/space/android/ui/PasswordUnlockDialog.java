@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.aletheiaware.space.android;
+package com.aletheiaware.space.android.ui;
 
 import android.app.Activity;
 import android.content.DialogInterface;
@@ -22,6 +22,8 @@ import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import com.aletheiaware.space.android.R;
 
 public abstract class PasswordUnlockDialog {
 

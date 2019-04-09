@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.aletheiaware.space.android;
+package com.aletheiaware.space.android.ui;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -23,12 +23,11 @@ import android.media.MediaMetadataRetriever;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.media.ExifInterface;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -36,6 +35,7 @@ import android.widget.VideoView;
 
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
+import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -56,7 +56,7 @@ public class UploadActivity extends AppCompatActivity {
 
     private Preview preview;
     private InputStream in;
-    private FloatingActionButton uploadFab;
+    private Button uploadButton;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -68,10 +68,6 @@ public class UploadActivity extends AppCompatActivity {
         // TODO - Tag - choose which tags to apply and mine after meta.
         // Setup UI
         setContentView(R.layout.activity_upload);
-
-        // Toolbar
-        Toolbar toolbar = findViewById(R.id.upload_toolbar);
-        setSupportActionBar(toolbar);
 
         // Name EditText
         nameEditText = findViewById(R.id.upload_name);
@@ -93,13 +89,13 @@ public class UploadActivity extends AppCompatActivity {
 
         // TODO Add access spinner - choose from private, public, or a list of recipients with whom to grant access and mine after meta.
 
-        // FloatingActionButton
-        uploadFab = findViewById(R.id.upload_fab);
-        uploadFab.setOnClickListener(new View.OnClickListener() {
+        // Upload Button
+        uploadButton = findViewById(R.id.upload_button);
+        uploadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                uploadFab.hide();
-                uploadFab.setEnabled(false);
+                uploadButton.setVisibility(View.GONE);
+                uploadButton.setEnabled(false);
                 nameEditText.setEnabled(false);
                 typeTextView.setEnabled(false);
                 sizeTextView.setEnabled(false);
@@ -167,7 +163,7 @@ public class UploadActivity extends AppCompatActivity {
                     byte[] bytes = text.getBytes();
                     in = new ByteArrayInputStream(bytes);
                     sizeTextView.setText(BCUtils.sizeToString(bytes.length));
-                    uploadFab.show();
+                    uploadButton.setVisibility(View.VISIBLE);
                 } else if (uri != null) {
                     nameEditText.setText(SpaceAndroidUtils.getName(this, uri));
                     try {
@@ -245,7 +241,7 @@ public class UploadActivity extends AppCompatActivity {
                                     .setHeight(bitmap.getHeight())
                                     .build();
                         }
-                        uploadFab.show();
+                        uploadButton.setVisibility(View.VISIBLE);
                     }
                 }
             }
@@ -288,7 +284,7 @@ public class UploadActivity extends AppCompatActivity {
                             public void run() {
                                 String customerId = null;
                                 try {
-                                    customerId = SpaceUtils.register(website, alias, email, paymentId);
+                                    customerId = BCUtils.register(website+"/space-register", alias, email, paymentId);
                                 } catch (IOException e) {
                                     SpaceAndroidUtils.showErrorDialog(UploadActivity.this, R.string.error_registering, e);
                                 }

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.aletheiaware.space.android;
+package com.aletheiaware.space.android.ui;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.PendingIntent;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.ImageDecoder;
 import android.graphics.drawable.AnimatedImageDrawable;
@@ -32,7 +32,6 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -43,11 +42,19 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.VideoView;
 
+import com.aletheiaware.alias.AliasProto;
+import com.aletheiaware.alias.utils.AliasUtils;
+import com.aletheiaware.bc.BC.Channel;
 import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
+import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
+import com.aletheiaware.space.SpaceProto.Share;
+import com.aletheiaware.space.SpaceProto.Tag;
+import com.aletheiaware.space.android.MetaLoader;
+import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -55,6 +62,9 @@ import com.google.protobuf.ByteString;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.security.KeyPair;
+import java.security.PublicKey;
 
 public class DetailActivity extends AppCompatActivity {
 
@@ -75,10 +85,6 @@ public class DetailActivity extends AppCompatActivity {
 
         // Setup UI
         setContentView(R.layout.activity_detail);
-
-        // Toolbar
-        Toolbar toolbar = findViewById(R.id.detail_toolbar);
-        setSupportActionBar(toolbar);
 
         // Content VideoView
         contentVideoView = findViewById(R.id.detail_video_view);
@@ -119,7 +125,7 @@ public class DetailActivity extends AppCompatActivity {
             if (metaRecordHash != null) {
                 loader = new MetaLoader(this, metaRecordHash, shared) {
                     @Override
-                    void onMetaLoaded() {
+                    public void onMetaLoaded() {
                         loadUI();
                     }
                 };
@@ -142,6 +148,7 @@ public class DetailActivity extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                setTitle(meta.getName());
                 nameTextView.setText(meta.getName());
                 typeTextView.setText(type);
                 sizeTextView.setText(BCUtils.sizeToString(meta.getSize()));
@@ -300,7 +307,8 @@ public class DetailActivity extends AppCompatActivity {
                 }
             });
         }
-        // TODO show tags
+        // TODO show tags - display current tags for document
+        // TODO show previews - display current previews for document
     }
 
     private void writeFileToURI(Uri uri) {
@@ -442,36 +450,6 @@ public class DetailActivity extends AppCompatActivity {
                     }
                 }
                 break;
-            case SpaceAndroidUtils.PREVIEW_ACTIVITY:
-                switch (resultCode) {
-                    case RESULT_OK:
-                        break;
-                    case RESULT_CANCELED:
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case SpaceAndroidUtils.SHARE_ACTIVITY:
-                switch (resultCode) {
-                    case RESULT_OK:
-                        break;
-                    case RESULT_CANCELED:
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case SpaceAndroidUtils.TAG_ACTIVITY:
-                switch (resultCode) {
-                    case RESULT_OK:
-                        break;
-                    case RESULT_CANCELED:
-                        break;
-                    default:
-                        break;
-                }
-                break;
             default:
                 super.onActivityResult(requestCode, resultCode, data);
         }
@@ -491,6 +469,7 @@ public class DetailActivity extends AppCompatActivity {
             case R.id.menu_download:
                 download();
                 return true;
+            // TODO add option to generate new preview
             case R.id.menu_share:
                 share();
                 return true;
@@ -514,16 +493,117 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void share() {
-        Intent i = new Intent(DetailActivity.this, ShareActivity.class);
-        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, loader.getMetaRecordHash());
-        i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, loader.isShared());
-        startActivityForResult(i, SpaceAndroidUtils.SHARE_ACTIVITY);
+        new ShareDialog(DetailActivity.this, loader.getMetaRecordHash(), loader.getMeta(), loader.isShared()) {
+            @Override
+            public void onShare(DialogInterface dialog, final AliasProto.Alias recipient) {
+                new Thread() {
+                    @Override
+                    public void run() {
+                        final String alias = SpaceAndroidUtils.getAlias();
+                        final KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                        final File cache = getCacheDir();
+                        final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+                        final Channel aliases = new Channel(AliasUtils.ALIAS_CHANNEL, BCUtils.THRESHOLD_STANDARD, cache, host);
+                        try {
+                            final PublicKey recipientKey = AliasUtils.getPublicKey(aliases, recipient.getAlias());
+                            final Share.Builder sb = Share.newBuilder();
+                            if (loader.isShared()) {
+                                SpaceUtils.readShares(host, cache, alias, keys, null, loader.getMetaRecordHash(), new RecordCallback() {
+                                    @Override
+                                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                        sb.setMetaReference(Reference.newBuilder()
+                                                .setTimestamp(blockEntry.getRecord().getTimestamp())
+                                                .setChannelName(block.getChannelName())
+                                                .setRecordHash(blockEntry.getRecordHash()));
+                                        sb.setMetaKey(ByteString.copyFrom(key));
+                                        return false;
+                                    }
+                                }, new RecordCallback() {
+                                    @Override
+                                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                        sb.addChunkKey(ByteString.copyFrom(key));
+                                        return false;
+                                    }
+                                });
+                            } else {
+                                final Channel files = new Channel(SpaceUtils.SPACE_PREFIX_FILE + alias, BCUtils.THRESHOLD_STANDARD, cache, host);
+                                SpaceUtils.readMetas(host, cache, alias, keys, loader.getMetaRecordHash(), new RecordCallback() {
+                                    @Override
+                                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                        for (Reference r : blockEntry.getRecord().getReferenceList()) {
+                                            try {
+                                                files.read(alias, keys, r.getRecordHash().toByteArray(), new RecordCallback() {
+                                                    @Override
+                                                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                                        sb.addChunkKey(ByteString.copyFrom(key));
+                                                        return false;
+                                                    }
+                                                });
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                        sb.setMetaReference(Reference.newBuilder()
+                                                .setTimestamp(blockEntry.getRecord().getTimestamp())
+                                                .setChannelName(block.getChannelName())
+                                                .setRecordHash(blockEntry.getRecordHash()));
+                                        sb.setMetaKey(ByteString.copyFrom(key));
+                                        return false;
+                                    }
+                                });
+                            }
+                            SpaceUtils.readPreviews(host, cache, alias, keys, null, loader.getMetaRecordHash(), new RecordCallback() {
+                                @Override
+                                public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                    sb.addPreviewReference(Reference.newBuilder()
+                                            .setTimestamp(blockEntry.getRecord().getTimestamp())
+                                            .setChannelName(block.getChannelName())
+                                            .setRecordHash(blockEntry.getRecordHash()));
+                                    sb.addPreviewKey(ByteString.copyFrom(key));
+                                    return false;
+                                }
+                            });
+                            final Share share = sb.build();
+                            Log.d(SpaceUtils.TAG, "Share: " + share);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    SpaceAndroidUtils.mineShare(DetailActivity.this, recipient.getAlias(), recipientKey, share);
+                                }
+                            });
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }.start();
+            }
+        }.create();
     }
 
     private void tag() {
-        Intent i = new Intent(DetailActivity.this, TagActivity.class);
-        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, loader.getMetaRecordHash());
-        i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, loader.isShared());
-        startActivityForResult(i, SpaceAndroidUtils.TAG_ACTIVITY);
+        new TagDialog(this, SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), loader.getMetaRecordHash(), loader.getMeta(), loader.isShared()) {
+            @Override
+            public void onTag(DialogInterface dialog, String value, String reason) {
+                Tag.Builder tb = Tag.newBuilder()
+                        .setValue(value);
+                if (!reason.isEmpty()) {
+                    tb.setReason(reason);
+                }
+                final Tag tag = tb.build();
+                final Reference reference = Reference.newBuilder()
+                        .setTimestamp(loader.getTimestamp())
+                        .setBlockHash(loader.getBlockHash())
+                        .setChannelName(loader.getChannelName())
+                        .setRecordHash(loader.getRecordHash())
+                        .build();
+                Log.d(SpaceUtils.TAG, "Tagging " + reference + " with " + tag);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        SpaceAndroidUtils.mineTag(DetailActivity.this, reference, tag);
+                    }
+                });
+            }
+        }.create();
     }
 }

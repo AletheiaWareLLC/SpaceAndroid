@@ -54,8 +54,8 @@ import com.aletheiaware.finance.FinanceProto.Customer;
 import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.SpaceProto;
 import com.aletheiaware.space.android.BuildConfig;
-import com.aletheiaware.space.android.ComposeDocumentActivity;
-import com.aletheiaware.space.android.MainActivity;
+import com.aletheiaware.space.android.ui.ComposeDocumentActivity;
+import com.aletheiaware.space.android.ui.MainActivity;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -83,12 +83,9 @@ public class SpaceAndroidUtils {
     public static final int DETAIL_ACTIVITY = 105;
     public static final int DOWNLOAD_ACTIVITY = 106;
     public static final int OPEN_ACTIVITY = 107;
-    public static final int PREVIEW_ACTIVITY = 108;
-    public static final int SETTINGS_ACTIVITY = 109;
-    public static final int SHARE_ACTIVITY = 110;
-    public static final int STRIPE_ACTIVITY = 111;
-    public static final int TAG_ACTIVITY = 112;
-    public static final int UPLOAD_ACTIVITY = 113;
+    public static final int SETTINGS_ACTIVITY = 108;
+    public static final int STRIPE_ACTIVITY = 109;
+    public static final int UPLOAD_ACTIVITY = 110;
 
     public static final String DATA_EXTRA = "data";
     public static final String EMAIL_EXTRA = "email";

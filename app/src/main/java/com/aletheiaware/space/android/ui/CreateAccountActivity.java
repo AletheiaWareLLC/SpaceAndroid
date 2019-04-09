@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.aletheiaware.space.android;
+package com.aletheiaware.space.android.ui;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
@@ -33,6 +33,7 @@ import android.widget.TextView;
 import com.aletheiaware.alias.utils.AliasUtils;
 import com.aletheiaware.bc.BC.Channel;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.stripe.android.Stripe;
@@ -237,14 +238,14 @@ public class CreateAccountActivity extends AppCompatActivity {
                                                 public void run() {
                                                     String customerId = null;
                                                     try {
-                                                        customerId = SpaceUtils.register(website, alias, email, token.getId());
+                                                        customerId = BCUtils.register(website+"/space-register", alias, email, token.getId());
                                                     } catch (IOException e) {
                                                         SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_registering, e);
                                                     }
                                                     Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
                                                     if (customerId != null && !customerId.isEmpty()) {
                                                         try {
-                                                            String subscriptionId = SpaceUtils.subscribe(website, alias, customerId);
+                                                            String subscriptionId = BCUtils.subscribe(website+"/space-subscribe", alias, customerId);
                                                             Log.d(SpaceUtils.TAG, "Subscription ID: " + subscriptionId);
                                                         } catch (IOException e) {
                                                             SpaceAndroidUtils.showErrorDialog(CreateAccountActivity.this, R.string.error_subscribing, e);

@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package com.aletheiaware.space.android;
+package com.aletheiaware.space.android.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
+import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -46,7 +46,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
     private Spinner typeSpinner;
     private TextView sizeTextView;
     private EditText contentEditText;
-    private FloatingActionButton composeFab;
+    private Button composeButton;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -55,10 +55,6 @@ public class ComposeDocumentActivity extends AppCompatActivity {
 
         // Setup UI
         setContentView(R.layout.activity_compose_document);
-
-        // Toolbar
-        Toolbar toolbar = findViewById(R.id.compose_document_toolbar);
-        setSupportActionBar(toolbar);
 
         // Name EditText
         nameEditText = findViewById(R.id.compose_document_name);
@@ -95,13 +91,13 @@ public class ComposeDocumentActivity extends AppCompatActivity {
         sizeTextView = findViewById(R.id.compose_document_size);
         sizeTextView.setText(BCUtils.sizeToString(0));
 
-        // FloatingActionButton
-        composeFab = findViewById(R.id.compose_document_fab);
-        composeFab.setOnClickListener(new View.OnClickListener() {
+        // Compose Button
+        composeButton = findViewById(R.id.compose_document_button);
+        composeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                composeFab.hide();
-                composeFab.setEnabled(false);
+                composeButton.setVisibility(View.GONE);
+                composeButton.setEnabled(false);
                 nameEditText.setEnabled(false);
                 typeSpinner.setEnabled(false);
                 sizeTextView.setEnabled(false);
@@ -126,7 +122,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
             if (intent != null) {
                 Log.d(SpaceUtils.TAG, intent.toString());
             }
-            composeFab.show();
+            composeButton.setVisibility(View.VISIBLE);
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
             startActivityForResult(intent, SpaceAndroidUtils.ACCESS_ACTIVITY);
@@ -172,7 +168,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                             public void run() {
                                 String customerId = null;
                                 try {
-                                    customerId = SpaceUtils.register(website, alias, email, paymentId);
+                                    customerId = BCUtils.register(website+"/space-register", alias, email, paymentId);
                                 } catch (IOException e) {
                                     SpaceAndroidUtils.showErrorDialog(ComposeDocumentActivity.this, R.string.error_registering, e);
                                 }

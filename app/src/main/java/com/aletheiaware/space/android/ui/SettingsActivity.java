@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.aletheiaware.space.android;
+package com.aletheiaware.space.android.ui;
 
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -26,9 +26,10 @@ import android.support.v7.preference.CheckBoxPreference;
 import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
-import android.support.v7.widget.Toolbar;
 
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.space.android.BuildConfig;
+import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.BiometricUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 
@@ -47,10 +48,6 @@ public class SettingsActivity extends AppCompatActivity {
 
         // Setup UI
         setContentView(R.layout.activity_settings);
-
-        // Toolbar
-        Toolbar toolbar = findViewById(R.id.settings_toolbar);
-        setSupportActionBar(toolbar);
 
         if (savedInstanceState == null) {
             Fragment preferenceFragment = new SettingsPreferenceFragment();
