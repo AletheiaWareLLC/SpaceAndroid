@@ -39,17 +39,9 @@ limitations under the License.
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity
-            android:name=".ui.AccessActivity"
-            android:label="@string/title_activity_access"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".ui.AccountActivity"
-            android:label="@string/title_activity_account"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".ui.CreateAccountActivity"
-            android:label="@string/title_activity_create_account"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:name=".ui.ComposeDocumentActivity"
+            android:label="@string/title_activity_compose_document"
+            android:theme="@style/AppTheme" />
         <activity
             android:name=".ui.DetailActivity"
             android:label="@string/title_activity_detail"
@@ -65,16 +57,8 @@ limitations under the License.
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.ComposeDocumentActivity"
-            android:label="@string/title_activity_compose_document"
-            android:theme="@style/AppTheme" />
-        <activity
             android:name=".ui.SettingsActivity"
             android:label="@string/title_activity_settings"
-            android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".ui.StripeActivity"
-            android:label="@string/title_activity_payment"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".ui.UploadActivity"

@@ -22,6 +22,7 @@ import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BCProto;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.SpaceProto.Share;
@@ -50,13 +51,13 @@ public class PreviewUtils {
     }
 
     public static void loadPreview(final File cacheDir, final ByteString metaRecordHash, final boolean shared, final PreviewCallback callback) {
-        if (SpaceAndroidUtils.isInitialized()) {
+        if (BCAndroidUtils.isInitialized()) {
             new Thread() {
                 @Override
                 public void run() {
                     try {
-                        final String alias = SpaceAndroidUtils.getAlias();
-                        final KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                        final String alias = BCAndroidUtils.getAlias();
+                        final KeyPair keys = BCAndroidUtils.getKeyPair();
                         final InetAddress host = SpaceAndroidUtils.getSpaceHost();
                         final byte[] metaRecordHashBytes = metaRecordHash.toByteArray();
                         final Channel previews = new Channel(SpaceUtils.SPACE_PREFIX_PREVIEW + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, cacheDir, host);

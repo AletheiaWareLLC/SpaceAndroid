@@ -27,14 +27,17 @@ import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
 
+import com.aletheiaware.bc.android.ui.PasswordUnlockDialog;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.R;
-import com.aletheiaware.space.android.utils.BiometricUtils;
+import com.aletheiaware.bc.android.utils.BiometricUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
@@ -114,7 +117,7 @@ public class SettingsActivity extends AppCompatActivity {
                     if (activity == null) {
                         return false;
                     }
-                    final String alias = SpaceAndroidUtils.getAlias();
+                    final String alias = BCAndroidUtils.getAlias();
                     if ((Boolean) o) {
                         new PasswordUnlockDialog(activity, alias) {
                             @Override
@@ -124,7 +127,7 @@ public class SettingsActivity extends AppCompatActivity {
                                     BiometricUtils.enableBiometricUnlock(activity, alias, password);
                                     update();
                                 } catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | NoSuchProviderException e) {
-                                    SpaceAndroidUtils.showErrorDialog(activity, R.string.error_biometric_enroll, e);
+                                    BCAndroidUtils.showErrorDialog(activity, R.string.error_biometric_enroll, e);
                                 }
                             }
                         }.create();
@@ -144,7 +147,7 @@ public class SettingsActivity extends AppCompatActivity {
             supportPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
-                    SpaceAndroidUtils.support(getActivity(), new StringBuilder());
+                    BCAndroidUtils.support(getActivity(), new StringBuilder());
                     return true;
                 }
             });
@@ -154,7 +157,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         public void update() {
             final FragmentActivity activity = getActivity();
-            final String alias = SpaceAndroidUtils.getAlias();
+            final String alias = BCAndroidUtils.getAlias();
 
             long size = SpaceAndroidUtils.getCacheSize(activity);
             cacheSizePreference.setSummary(BCUtils.sizeToString(size));

@@ -18,7 +18,7 @@ limitations under the License.
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:tool="http://schemas.android.com/tools"
-    android:background="@android:color/background_dark"
+    android:background="@color/background"
     android:padding="@dimen/activity_padding"
     android:orientation="vertical"
     tool:context=".ui.SettingsActivity">

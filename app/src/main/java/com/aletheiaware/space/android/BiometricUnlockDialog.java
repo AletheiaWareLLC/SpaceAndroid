@@ -23,8 +23,8 @@ import android.os.Build;
 import android.os.CancellationSignal;
 
 import com.aletheiaware.bc.utils.BCUtils;
-import com.aletheiaware.space.android.utils.BiometricCallback;
-import com.aletheiaware.space.android.utils.BiometricUtils;
+import com.aletheiaware.bc.android.utils.BiometricCallback;
+import com.aletheiaware.bc.android.utils.BiometricUtils;
 
 import java.io.File;
 import java.io.FileInputStream;

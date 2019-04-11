@@ -19,7 +19,7 @@ limitations under the License.
     xmlns:tool="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/background_dark"
+    android:background="@color/background"
     android:padding="@dimen/activity_padding"
     tool:context=".ui.MainActivity">
 
@@ -34,7 +34,7 @@ limitations under the License.
             android:layout_height="wrap_content"
             android:contentDescription="@string/backdrop_description"
             android:scaleType="centerInside"
-            app:srcCompat="@drawable/space_logo"
+            app:srcCompat="@drawable/app_logo"
             android:layout_margin="@dimen/view_margin" />
 
         <View

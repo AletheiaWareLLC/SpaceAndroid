@@ -36,6 +36,9 @@ import android.widget.Spinner;
 import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
+import com.aletheiaware.bc.android.ui.AccessActivity;
+import com.aletheiaware.bc.android.ui.AccountActivity;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.MetaAdapter;
 import com.aletheiaware.space.android.R;
@@ -104,8 +107,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        if (SpaceAndroidUtils.isInitialized()) {
-            String alias = SpaceAndroidUtils.getAlias();
+        if (BCAndroidUtils.isInitialized()) {
+            final String alias = BCAndroidUtils.getAlias();
             if (adapter == null || !alias.equals(adapter.getAlias())) {
                 // Adapter
                 adapter = new MetaAdapter(this, alias) {
@@ -285,8 +288,8 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 final InetAddress address = SpaceAndroidUtils.getSpaceHost();
                 final File cache = getCacheDir();
-                final String alias = SpaceAndroidUtils.getAlias();
-                final KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                final String alias = BCAndroidUtils.getAlias();
+                final KeyPair keys = BCAndroidUtils.getKeyPair();
                 try {
                     SpaceUtils.readMetas(address, cache, alias, keys, null, new RecordCallback() {
                         @Override
@@ -303,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                 } catch (IOException e) {
-                    SpaceAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_meta_read_failed, e);
+                    BCAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_meta_read_failed, e);
                 }
                 try {
                     SpaceUtils.readShares(address, cache, alias, keys, null, null, new RecordCallback() {
@@ -321,7 +324,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }, null);
                 } catch (IOException e) {
-                    SpaceAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_shared_meta_read_failed, e);
+                    BCAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_shared_meta_read_failed, e);
                 }
                 runOnUiThread(new Runnable() {
                     @Override

@@ -33,6 +33,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.VideoView;
 
+import com.aletheiaware.bc.android.ui.AccessActivity;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.R;
@@ -114,7 +116,7 @@ public class UploadActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        if (SpaceAndroidUtils.isInitialized()) {
+        if (BCAndroidUtils.isInitialized()) {
             Intent intent = getIntent();
             if (intent != null) {
                 String action = intent.getAction();
@@ -169,7 +171,7 @@ public class UploadActivity extends AppCompatActivity {
                     try {
                         in = getContentResolver().openInputStream(uri);
                     } catch (IOException e) {
-                        SpaceAndroidUtils.showErrorDialog(this, R.string.error_reading_uri, e);
+                        BCAndroidUtils.showErrorDialog(this, R.string.error_reading_uri, e);
                     }
                     if (in == null) {
                         contentTextView.setText(getString(R.string.no_data));
@@ -261,41 +263,6 @@ public class UploadActivity extends AppCompatActivity {
                     case RESULT_CANCELED:
                         setResult(RESULT_CANCELED);
                         finish();
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case SpaceAndroidUtils.STRIPE_ACTIVITY:
-                switch (resultCode) {
-                    case RESULT_OK:
-                        final String name = nameEditText.getText().toString();
-                        Log.d(SpaceUtils.TAG, "Name: " + name);
-                        final String type = typeTextView.getText().toString();
-                        Log.d(SpaceUtils.TAG, "Type: " + type);
-                        final String website = SpaceAndroidUtils.getSpaceWebsite();
-                        final String alias = SpaceAndroidUtils.getAlias();
-                        final String email = intent.getStringExtra(SpaceAndroidUtils.EMAIL_EXTRA);
-                        Log.d(SpaceUtils.TAG, "Email: " + email);
-                        final String paymentId = intent.getStringExtra(SpaceAndroidUtils.STRIPE_TOKEN_EXTRA);
-                        Log.d(SpaceUtils.TAG, "PaymentId: " + paymentId);
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                String customerId = null;
-                                try {
-                                    customerId = BCUtils.register(website+"/space-register", alias, email, paymentId);
-                                } catch (IOException e) {
-                                    SpaceAndroidUtils.showErrorDialog(UploadActivity.this, R.string.error_registering, e);
-                                }
-                                if (customerId != null && !customerId.isEmpty()) {
-                                    Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
-                                    SpaceAndroidUtils.mineFile(UploadActivity.this, name, type, preview, in);
-                                }
-                            }
-                        }.start();
-                        break;
-                    case RESULT_CANCELED:
                         break;
                     default:
                         break;

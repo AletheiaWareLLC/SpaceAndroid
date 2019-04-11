@@ -49,6 +49,8 @@ import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Reference;
+import com.aletheiaware.bc.android.ui.AccessActivity;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Share;
@@ -111,7 +113,7 @@ public class DetailActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        if (SpaceAndroidUtils.isInitialized()) {
+        if (BCAndroidUtils.isInitialized()) {
             byte[] metaRecordHash = null;
             boolean shared = false;
             final Intent intent = getIntent();
@@ -499,8 +501,8 @@ public class DetailActivity extends AppCompatActivity {
                 new Thread() {
                     @Override
                     public void run() {
-                        final String alias = SpaceAndroidUtils.getAlias();
-                        final KeyPair keys = SpaceAndroidUtils.getKeyPair();
+                        final String alias = BCAndroidUtils.getAlias();
+                        final KeyPair keys = BCAndroidUtils.getKeyPair();
                         final File cache = getCacheDir();
                         final InetAddress host = SpaceAndroidUtils.getSpaceHost();
                         final Channel aliases = new Channel(AliasUtils.ALIAS_CHANNEL, BCUtils.THRESHOLD_STANDARD, cache, host);
@@ -581,7 +583,9 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void tag() {
-        new TagDialog(this, SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), loader.getMetaRecordHash(), loader.getMeta(), loader.isShared()) {
+        final String alias = BCAndroidUtils.getAlias();
+        final KeyPair keys = BCAndroidUtils.getKeyPair();
+        new TagDialog(this, alias, keys, loader.getMetaRecordHash(), loader.getMeta(), loader.isShared()) {
             @Override
             public void onTag(DialogInterface dialog, String value, String reason) {
                 Tag.Builder tb = Tag.newBuilder()

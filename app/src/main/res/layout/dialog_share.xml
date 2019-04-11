@@ -14,55 +14,62 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/background_dark"
-    android:orientation="vertical"
+    android:background="@color/background"
     android:padding="@dimen/activity_padding">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="@dimen/view_margin"
-        android:labelFor="@id/share_name"
-        android:text="@string/share_name"
-        android:textColor="@color/text_secondary"
-        android:textSize="@dimen/text_secondary_size"/>
+        android:scrollbars="vertical"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/share_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/view_margin"
-        android:textColor="@color/text_primary"
-        android:textSize="@dimen/text_primary_size" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/share_name"
+            android:text="@string/share_name"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/view_margin"
-        android:labelFor="@id/share_alias"
-        android:text="@string/share_alias"
-        android:textColor="@color/text_secondary"
-        android:textSize="@dimen/text_secondary_size"/>
+        <TextView
+            android:id="@+id/share_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size" />
 
-    <AutoCompleteTextView
-        android:id="@+id/share_alias"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/view_margin"
-        android:imeOptions="actionDone"
-        android:inputType="text|textNoSuggestions"
-        android:textColor="@color/text_primary"
-        android:textSize="@dimen/text_primary_size" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/share_alias"
+            android:text="@string/share_alias"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/view_margin"
-        android:text="@string/share_document_label"
-        android:textColor="@color/text_secondary"
-        android:textSize="@dimen/text_secondary_size" />
+        <AutoCompleteTextView
+            android:id="@+id/share_alias"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:imeOptions="actionDone"
+            android:inputType="text|textNoSuggestions"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size" />
 
-</LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:text="@string/share_document_label"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size" />
+
+    </LinearLayout>
+
+</ScrollView>

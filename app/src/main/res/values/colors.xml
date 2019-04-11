@@ -28,6 +28,7 @@ limitations under the License.
     <color name="divider">#BDBDBD</color>
     <color name="warning">#FF0000</color>
     -->
+    <color name="background">#000000</color>
     <color name="primary">#000000</color>
     <color name="primary_dark">#000000</color>
     <color name="primary_light">#FFFFFF</color>

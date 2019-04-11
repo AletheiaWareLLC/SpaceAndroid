@@ -24,6 +24,7 @@ import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Record;
 import com.aletheiaware.bc.BCProto.Reference;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
@@ -123,18 +124,22 @@ public abstract class MetaLoader implements RecordCallback {
     }
 
     private void loadMeta() throws IOException {
+        final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+        final File cache = context.getCacheDir();
+        final String alias = BCAndroidUtils.getAlias();
+        final KeyPair keys = BCAndroidUtils.getKeyPair();
         if (shared) {
-            SpaceUtils.readShares(SpaceAndroidUtils.getSpaceHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), null, metaRecordHash, this, null);
+            SpaceUtils.readShares(host, cache, alias, keys, null, metaRecordHash, this, null);
         } else {
-            SpaceUtils.readMetas(SpaceAndroidUtils.getSpaceHost(), context.getCacheDir(), SpaceAndroidUtils.getAlias(), SpaceAndroidUtils.getKeyPair(), metaRecordHash, this);
+            SpaceUtils.readMetas(host, cache, alias, keys, metaRecordHash, this);
         }
     }
 
     public void readFile(RecordCallback callback) throws IOException {
         final InetAddress host = SpaceAndroidUtils.getSpaceHost();
         final File cache = context.getCacheDir();
-        final String alias = SpaceAndroidUtils.getAlias();
-        final KeyPair keys = SpaceAndroidUtils.getKeyPair();
+        final String alias = BCAndroidUtils.getAlias();
+        final KeyPair keys = BCAndroidUtils.getKeyPair();
         if (shared) {
             SpaceUtils.readShares(host, cache, alias, keys, null, metaRecordHash, null, callback);
         } else if (references != null) {

@@ -49,6 +49,9 @@ import com.aletheiaware.bc.BC.Node;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Reference;
+import com.aletheiaware.bc.android.ui.StripeDialog;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils.RegistrationCallback;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.finance.FinanceProto.Customer;
 import com.aletheiaware.finance.utils.FinanceUtils;
@@ -60,6 +63,7 @@ import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.stripe.android.model.Token;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -75,8 +79,8 @@ import java.util.Map;
 
 public class SpaceAndroidUtils {
 
-    public static final int ACCESS_ACTIVITY = 100;
-    public static final int ACCOUNT_ACTIVITY = 101;
+    public static final int ACCESS_ACTIVITY = BCAndroidUtils.ACCESS_ACTIVITY;
+    public static final int ACCOUNT_ACTIVITY = BCAndroidUtils.ACCOUNT_ACTIVITY;
     public static final int CAPTURE_IMAGE_ACTIVITY = 102;
     public static final int CAPTURE_VIDEO_ACTIVITY = 103;
     public static final int COMPOSE_ACTIVITY = 104;
@@ -84,16 +88,12 @@ public class SpaceAndroidUtils {
     public static final int DOWNLOAD_ACTIVITY = 106;
     public static final int OPEN_ACTIVITY = 107;
     public static final int SETTINGS_ACTIVITY = 108;
-    public static final int STRIPE_ACTIVITY = 109;
-    public static final int UPLOAD_ACTIVITY = 110;
+    public static final int UPLOAD_ACTIVITY = 109;
 
     public static final String DATA_EXTRA = "data";
-    public static final String EMAIL_EXTRA = "email";
     public static final String HASH_EXTRA = "hash";
     public static final String META_EXTRA = "meta";
     public static final String SHARED_EXTRA = "shared";
-    public static final String STRIPE_AMOUNT_EXTRA = "stripe-amount";
-    public static final String STRIPE_TOKEN_EXTRA = "stripe-token";
     public static final String LOCAL_CHANNEL_ID = "Local Mining Channel";
     public static final String REMOTE_CHANNEL_ID = "Remote Mining Channel";
     public static final String DOWNLOAD_CHANNEL_ID = "Download Channel";
@@ -102,33 +102,8 @@ public class SpaceAndroidUtils {
     public static final int DOWNLOAD_NOTIFICATION_ID = 3;
     public static final int NOTIFICATION_TIMEOUT = 5 * 60 * 1000;// 5 minutes
 
-    private static String alias = null;
-    private static KeyPair keyPair = null;
-    private static Node node = null;
     private static Uri tempURI = null;
     private static String tempURIType = null;
-
-    public static boolean isInitialized() {
-        return alias != null && keyPair != null;
-    }
-
-    public static void initialize(String alias, KeyPair keyPair) {
-        SpaceAndroidUtils.alias = alias;
-        SpaceAndroidUtils.keyPair = keyPair;
-        node = new Node(alias, keyPair);
-    }
-
-    public static String getAlias() {
-        return alias;
-    }
-
-    public static KeyPair getKeyPair() {
-        return keyPair;
-    }
-
-    public static Node getNode() {
-        return node;
-    }
 
     public static InetAddress getSpaceHost() {
         try {
@@ -174,7 +149,7 @@ public class SpaceAndroidUtils {
                                 if (parent.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
                                     takePicture(parent);
                                 } else {
-                                    showErrorDialog(parent, R.string.error_no_camera, new Exception("Device missing camera feature"));
+                                    BCAndroidUtils.showErrorDialog(parent, R.string.error_no_camera, new Exception("Device missing camera feature"));
                                 }
                                 break;
                             case 3:
@@ -182,7 +157,7 @@ public class SpaceAndroidUtils {
                                 if (parent.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
                                     recordVideo(parent);
                                 } else {
-                                    showErrorDialog(parent, R.string.error_no_camera, new Exception("Device missing camera feature"));
+                                    BCAndroidUtils.showErrorDialog(parent, R.string.error_no_camera, new Exception("Device missing camera feature"));
                                 }
                                 break;
                         }
@@ -237,26 +212,6 @@ public class SpaceAndroidUtils {
         tempURIType = SpaceUtils.DEFAULT_VIDEO_TYPE;
         i.putExtra(MediaStore.EXTRA_OUTPUT, tempURI);
         parent.startActivityForResult(i, SpaceAndroidUtils.CAPTURE_VIDEO_ACTIVITY);
-    }
-
-    public static boolean isCustomer(File cache) throws IOException {
-        final Channel customers = new Channel(FinanceUtils.CUSTOMER_CHANNEL, BCUtils.THRESHOLD_STANDARD, cache, getSpaceHost());
-        final Customer.Builder cb = Customer.newBuilder();
-        customers.read(alias, keyPair, null, new RecordCallback() {
-            @Override
-            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                try {
-                    cb.mergeFrom(payload);
-                    return false;
-                } catch (InvalidProtocolBufferException e) {
-                    e.printStackTrace();
-                }
-                return true;
-            }
-        });
-        final Customer customer = cb.build();
-        String customerId = customer.getCustomerId();
-        return customerId != null && !customerId.isEmpty();
     }
 
     public static byte[] createPreview(String type, byte[] data) {
@@ -317,114 +272,6 @@ public class SpaceAndroidUtils {
             }
         }
         return name;
-    }
-
-    public static void showDeleteKeysDialog(final Activity parent, final DialogInterface.OnClickListener listener) {
-        parent.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                AlertDialog.Builder ab = new AlertDialog.Builder(parent, R.style.AlertDialogTheme);
-                ab.setTitle(R.string.delete_keys);
-                ab.setMessage(R.string.delete_keys_legalese);
-                ab.setPositiveButton(R.string.delete_keys_action, listener);
-                ab.show();
-            }
-        });
-    }
-
-    public static void showErrorDialog(final Activity parent, final int resource, final Exception exception) {
-        exception.printStackTrace();
-        parent.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                createErrorDialog(parent)
-                        .setNeutralButton(R.string.error_report, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int id) {
-                                StringBuilder sb = new StringBuilder();
-                                sb.append("======== Exception ========");
-                                StringWriter sw = new StringWriter();
-                                exception.printStackTrace(new PrintWriter(sw));
-                                sb.append(sw.toString());
-                                support(parent, sb);
-                            }
-                        })
-                        .setMessage(resource)
-                        .show();
-            }
-        });
-    }
-
-    public static void showErrorDialog(final Activity parent, final String message) {
-        parent.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                createErrorDialog(parent)
-                        .setMessage(message)
-                        .show();
-            }
-        });
-    }
-
-    private static AlertDialog.Builder createErrorDialog(Activity parent) {
-        return new AlertDialog.Builder(parent, R.style.AlertDialogTheme)
-                .setTitle(R.string.title_dialog_error)
-                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        dialog.dismiss();
-                    }
-                });
-    }
-
-    @SuppressWarnings("deprecation")
-    public static void support(Activity parent, StringBuilder content) {
-        content.append("\n\n\n");
-        content.append("======== Account Info ========\n");
-        content.append("Alias: ").append(getAlias()).append("\n");
-        // TODO content.append("Public Key: ").append(getPublicKey()).append("\n");
-        // TODO content.append("Customer ID: ").append(getCustomerId()).append("\n");
-        // TODO content.append("Subscription ID: ").append(getSubscriptionId()).append("\n");
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
-        Map<String, ?> map = sharedPrefs.getAll();
-        content.append("======== Preferences ========\n");
-        for (String key : map.keySet()) {
-            content.append(key).append(":").append(map.get(key)).append("\n");
-        }
-        content.append("======== App Info ========\n");
-        content.append("Build: ").append(BuildConfig.BUILD_TYPE).append("\n");
-        content.append("App ID: ").append(BuildConfig.APPLICATION_ID).append("\n");
-        content.append("Version: ").append(BuildConfig.VERSION_NAME).append("\n");
-        content.append("======== Device Info ========\n");
-        content.append("Board: ").append(Build.BOARD).append("\n");
-        content.append("Bootloader: ").append(Build.BOOTLOADER).append("\n");
-        content.append("Brand: ").append(Build.BRAND).append("\n");
-        content.append("Build ID: ").append(Build.ID).append("\n");
-        content.append("Device: ").append(Build.DEVICE).append("\n");
-        content.append("Display: ").append(Build.DISPLAY).append("\n");
-        content.append("Fingerprint: ").append(Build.FINGERPRINT).append("\n");
-        content.append("Hardware: ").append(Build.HARDWARE).append("\n");
-        content.append("Host: ").append(Build.HOST).append("\n");
-        content.append("Manufacturer: ").append(Build.MANUFACTURER).append("\n");
-        content.append("Model: ").append(Build.MODEL).append("\n");
-        content.append("Product: ").append(Build.PRODUCT).append("\n");
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            content.append("CPU ABI: ").append(Build.CPU_ABI).append("\n");
-            content.append("CPU ABI2: ").append(Build.CPU_ABI2).append("\n");
-        } else {
-            content.append("Supported ABIs: ").append(Arrays.toString(Build.SUPPORTED_ABIS)).append("\n");
-        }
-        content.append("Tags: ").append(Build.TAGS).append("\n");
-        content.append("Type: ").append(Build.TYPE).append("\n");
-        content.append("User: ").append(Build.USER).append("\n");
-        content.append("\n\n\n");
-        Log.d(SpaceUtils.TAG, content.toString());
-        Intent intent = new Intent(Intent.ACTION_SENDTO);
-        intent.setData(Uri.parse("mailto:"));
-        intent.putExtra(Intent.EXTRA_EMAIL, new String[]{parent.getString(R.string.support_email)});
-        intent.putExtra(Intent.EXTRA_SUBJECT, "SPACE Support");
-        intent.putExtra(Intent.EXTRA_TEXT, content.toString());
-        parent.startActivity(intent);
     }
 
     private static long calculateSize(File file) {
@@ -518,13 +365,31 @@ public class SpaceAndroidUtils {
             @Override
             public void onMineLocally() {
                 MinerUtils.mineFileLocally(parent, name, type, preview, in);
-                okAndFinish(parent);
+                finishParent(parent, Activity.RESULT_OK);
             }
 
             @Override
             public void onMineRemotely() {
-                MinerUtils.mineFileRemotely(parent, name, type, preview, in);
-                okAndFinish(parent);
+                final int[] result = {Activity.RESULT_CANCELED};
+                try {
+                    if (BCAndroidUtils.isCustomer(parent.getCacheDir())) {
+                        MinerUtils.mineFileRemotely(parent, name, type, preview, in);
+                        result[0] = Activity.RESULT_OK;
+                    } else {
+                        BCAndroidUtils.registerCustomer(parent, new RegistrationCallback() {
+                            @Override
+                            public void onRegistered(String customerId) {
+                                Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
+                                MinerUtils.mineFileRemotely(parent, name, type, preview, in);
+                                result[0] = Activity.RESULT_OK;
+                            }
+                        });
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    finishParent(parent, result[0]);
+                }
             }
         });
     }
@@ -534,13 +399,31 @@ public class SpaceAndroidUtils {
             @Override
             public void onMineLocally() {
                 MinerUtils.mineShareLocally(parent, recipient, recipientKey, share);
-                okAndFinish(parent);
+                finishParent(parent, Activity.RESULT_OK);
             }
 
             @Override
             public void onMineRemotely() {
-                MinerUtils.mineShareRemotely(parent, recipient, recipientKey, share);
-                okAndFinish(parent);
+                final int[] result = {Activity.RESULT_CANCELED};
+                try {
+                    if (BCAndroidUtils.isCustomer(parent.getCacheDir())) {
+                        MinerUtils.mineShareRemotely(parent, recipient, recipientKey, share);
+                        result[0] = Activity.RESULT_OK;
+                    } else {
+                        BCAndroidUtils.registerCustomer(parent, new RegistrationCallback() {
+                            @Override
+                            public void onRegistered(String customerId) {
+                                Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
+                                MinerUtils.mineShareRemotely(parent, recipient, recipientKey, share);
+                                result[0] = Activity.RESULT_OK;
+                            }
+                        });
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    finishParent(parent, result[0]);
+                }
             }
         });
     }
@@ -550,22 +433,40 @@ public class SpaceAndroidUtils {
             @Override
             public void onMineLocally() {
                 MinerUtils.mineTagLocally(parent, meta, tag);
-                okAndFinish(parent);
+                finishParent(parent, Activity.RESULT_OK);
             }
 
             @Override
             public void onMineRemotely() {
-                MinerUtils.mineTagRemotely(parent, meta, tag);
-                okAndFinish(parent);
+                final int[] result = {Activity.RESULT_CANCELED};
+                try {
+                    if (BCAndroidUtils.isCustomer(parent.getCacheDir())) {
+                        MinerUtils.mineTagRemotely(parent, meta, tag);
+                        result[0] = Activity.RESULT_OK;
+                    } else {
+                        BCAndroidUtils.registerCustomer(parent, new RegistrationCallback() {
+                            @Override
+                            public void onRegistered(String customerId) {
+                                Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
+                                MinerUtils.mineTagRemotely(parent, meta, tag);
+                                result[0] = Activity.RESULT_OK;
+                            }
+                        });
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    finishParent(parent, result[0]);
+                }
             }
         });
     }
 
-    private static void okAndFinish(final Activity parent) {
+    private static void finishParent(final Activity parent, final int result) {
         parent.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                parent.setResult(Activity.RESULT_OK);
+                parent.setResult(result);
                 parent.finish();
             }
         });

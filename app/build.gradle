@@ -7,8 +7,8 @@ android {
         minSdkVersion 19
         targetSdkVersion 28
         vectorDrawables.useSupportLibrary = true
-        versionCode 17
-        versionName "1.7"
+        versionCode 18
+        versionName "1.8"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -18,6 +18,8 @@ android {
             resValue "string", "app_name", "\"S P A C E\""
             resValue "string", "file_provider_authority", "\"com.aletheiaware.space.android.fileprovider\""
             resValue "string", "stripe_publishable_key", "\"pk_live_HnBAuZFfX6Rkd1UizHWJ5VTn\""
+            resValue "string", "register_account_address", "\"https://space.aletheiaware.com/space-register\""
+            resValue "string", "subscribe_account_address", "\"https://space.aletheiaware.com/space-subscribe\""
         }
         debug {
             minifyEnabled false
@@ -26,17 +28,16 @@ android {
             resValue "string", "app_name", "\"S P A C E D\""
             resValue "string", "file_provider_authority", "\"com.aletheiaware.space.android.debug.fileprovider\""
             resValue "string", "stripe_publishable_key", "\"pk_test_gvdQJ2CsMiwE0gARM6nGUbUb\""
+            resValue "string", "register_account_address", "\"https://test-space.aletheiaware.com/space-register\""
+            resValue "string", "subscribe_account_address", "\"https://test-space.aletheiaware.com/space-subscribe\""
         }
     }
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation files('libs/AliasJava.jar')
-    implementation files('libs/BCJava.jar')
-    implementation files('libs/FinanceJava.jar')
     implementation files('libs/SpaceJava.jar')
-    implementation files('libs/protobuf-lite-3.0.1.jar')
+    implementation project(':bc-android')
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
     implementation 'com.android.support:design:28.0.0'

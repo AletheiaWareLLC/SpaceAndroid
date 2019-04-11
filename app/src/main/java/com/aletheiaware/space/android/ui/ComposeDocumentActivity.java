@@ -29,6 +29,8 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.aletheiaware.bc.android.ui.AccessActivity;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.R;
@@ -117,7 +119,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        if (SpaceAndroidUtils.isInitialized()) {
+        if (BCAndroidUtils.isInitialized()) {
             Intent intent = getIntent();
             if (intent != null) {
                 Log.d(SpaceUtils.TAG, intent.toString());
@@ -139,47 +141,6 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                     case RESULT_CANCELED:
                         setResult(RESULT_CANCELED);
                         finish();
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case SpaceAndroidUtils.STRIPE_ACTIVITY:
-                switch (resultCode) {
-                    case RESULT_OK:
-                        final String name = nameEditText.getText().toString();
-                        Log.d(SpaceUtils.TAG, "Name: " + name);
-                        final String type = typeSpinner.getSelectedItem().toString();
-                        Log.d(SpaceUtils.TAG, "Type: " + type);
-                        String text = contentEditText.getText().toString();
-                        final Preview preview = Preview.newBuilder()
-                                .setType(SpaceUtils.TEXT_PLAIN_TYPE)
-                                .setData(ByteString.copyFromUtf8(text.substring(0, Math.min(text.length(), SpaceUtils.PREVIEW_TEXT_LENGTH))))
-                                .build();
-                        final ByteArrayInputStream in = new ByteArrayInputStream(text.getBytes(Charset.defaultCharset()));
-                        final String website = SpaceAndroidUtils.getSpaceWebsite();
-                        final String alias = SpaceAndroidUtils.getAlias();
-                        final String email = intent.getStringExtra(SpaceAndroidUtils.EMAIL_EXTRA);
-                        Log.d(SpaceUtils.TAG, "Email: " + email);
-                        final String paymentId = intent.getStringExtra(SpaceAndroidUtils.STRIPE_TOKEN_EXTRA);
-                        Log.d(SpaceUtils.TAG, "PaymentId: " + paymentId);
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                String customerId = null;
-                                try {
-                                    customerId = BCUtils.register(website+"/space-register", alias, email, paymentId);
-                                } catch (IOException e) {
-                                    SpaceAndroidUtils.showErrorDialog(ComposeDocumentActivity.this, R.string.error_registering, e);
-                                }
-                                if (customerId != null && !customerId.isEmpty()) {
-                                    Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
-                                    SpaceAndroidUtils.mineFile(ComposeDocumentActivity.this, name, type, preview, in);
-                                }
-                            }
-                        }.start();
-                        break;
-                    case RESULT_CANCELED:
                         break;
                     default:
                         break;

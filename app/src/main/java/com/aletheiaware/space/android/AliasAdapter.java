@@ -26,6 +26,7 @@ import com.aletheiaware.bc.BC.Channel;
 import com.aletheiaware.bc.BC.Channel.EntryCallback;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.google.protobuf.ByteString;
@@ -68,7 +69,7 @@ public class AliasAdapter extends ArrayAdapter<String> implements Filterable {
                         }
                     });
                 } catch (IOException e) {
-                    SpaceAndroidUtils.showErrorDialog(activity, R.string.error_alias_read_failed, e);
+                    BCAndroidUtils.showErrorDialog(activity, R.string.error_read_alias_failed, e);
                 }
                 activity.runOnUiThread(new Runnable() {
                     @Override

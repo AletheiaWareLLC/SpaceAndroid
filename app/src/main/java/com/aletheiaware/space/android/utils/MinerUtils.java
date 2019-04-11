@@ -18,7 +18,6 @@ package com.aletheiaware.space.android.utils;
 
 import android.app.Activity;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AlertDialog;
@@ -31,13 +30,13 @@ import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Record;
 import com.aletheiaware.bc.BCProto.Reference;
+import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
+import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.SpaceProto.Tag;
-import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.R;
-import com.aletheiaware.space.android.ui.StripeActivity;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 
@@ -121,9 +120,9 @@ public class MinerUtils {
             @Override
             public void run() {
                 try {
-                    final String alias = SpaceAndroidUtils.getAlias();
-                    final KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                    final Node node = SpaceAndroidUtils.getNode();
+                    final String alias = BCAndroidUtils.getAlias();
+                    final KeyPair keys = BCAndroidUtils.getKeyPair();
+                    final Node node = BCAndroidUtils.getNode();
                     final InetAddress host = SpaceAndroidUtils.getSpaceHost();
                     final Channel metas = new Channel(SpaceUtils.SPACE_PREFIX_META + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Channel files = new Channel(SpaceUtils.SPACE_PREFIX_FILE + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
@@ -152,7 +151,7 @@ public class MinerUtils {
                                         .build());
                                 Log.d(SpaceUtils.TAG, "Mined File " + new String(BCUtils.encodeBase64URL(result.a)));
                             } catch (BadPaddingException | IOException | NoSuchAlgorithmException e) {
-                                SpaceAndroidUtils.showErrorDialog(parent, R.string.error_mining, e);
+                                BCAndroidUtils.showErrorDialog(parent, R.string.error_mining, e);
                             }
                         }
                     });
@@ -193,7 +192,7 @@ public class MinerUtils {
                         Log.d(SpaceUtils.TAG, "Mined Preview " + new String(BCUtils.encodeBase64URL(previewResult.a)));
                     }
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_mining, e);
+                    BCAndroidUtils.showErrorDialog(parent, R.string.error_mining, e);
                 } finally {
                     parent.runOnUiThread(new Runnable() {
                         @Override
@@ -213,94 +212,84 @@ public class MinerUtils {
             @Override
             public void run() {
                 try {
-                    if (SpaceAndroidUtils.isCustomer(parent.getCacheDir())) {
-                        final String alias = SpaceAndroidUtils.getAlias();
-                        final KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                        final String website = SpaceAndroidUtils.getSpaceWebsite();
-                        final Map<String, PublicKey> acl = new HashMap<>();
-                        acl.put(alias, keys.getPublic());
-                        final List<Reference> metaReferences = new ArrayList<>();
-                        long size = BCUtils.createEntries(alias, keys, acl, new ArrayList<Reference>(), in, new BCUtils.RecordCallback() {
-                            @Override
-                            public void onRecord(Record record) {
-                                Reference fileReference = null;
-                                for (int i = 0; fileReference == null && i < 5; i++) {
-                                    try {
-                                        fileReference = SpaceUtils.postRecord(website, "file", record);
-                                    } catch (IOException e) {
-                                        /* Ignored */
-                                        e.printStackTrace();
-                                    }
-                                }
-                                if (fileReference == null) {
-                                    // FIXME
-                                    System.err.println("Failed to post file record 5 times");
-                                    return;
-                                }
-                                metaReferences.add(fileReference);
-                                Log.d(SpaceUtils.TAG, "Uploaded File " + new String(BCUtils.encodeBase64URL(fileReference.getRecordHash().toByteArray())));
-                            }
-                        });
-                        final Meta meta = Meta.newBuilder()
-                                .setName(name)
-                                .setType(type)
-                                .setSize(size)
-                                .build();
-                        Log.d(SpaceUtils.TAG, "Meta " + meta);
-                        Record metaRecord = BCUtils.createRecord(alias, keys, acl, metaReferences, meta.toByteArray());
-                        Reference metaReference = null;
-                        for (int i = 0; metaReference == null && i < 5; i++) {
-                            try {
-                                metaReference = SpaceUtils.postRecord(website, "meta", metaRecord);
-                            } catch (IOException e) {
-                                /* Ignored */
-                                e.printStackTrace();
-                            }
-                        }
-                        if (metaReference == null) {
-                            // FIXME
-                            System.err.println("Failed to post meta record 5 times");
-                            return;
-                        }
-                        Log.d(SpaceUtils.TAG, "Uploaded Meta " + new String(BCUtils.encodeBase64URL(metaReference.getRecordHash().toByteArray())));
-                        if (preview != null) {
-                            Log.d(SpaceUtils.TAG, "Preview " + preview);
-                            final List<Reference> previewReferences = new ArrayList<>();
-                            previewReferences.add(Reference.newBuilder()
-                                    .setTimestamp(metaReference.getTimestamp())
-                                    .setChannelName(metaReference.getChannelName())
-                                    .setRecordHash(metaReference.getRecordHash())
-                                    .build());
-                            Record previewRecord = BCUtils.createRecord(alias, keys, acl, previewReferences, preview.toByteArray());
-                            Reference previewReference = null;
-                            for (int i = 0; previewReference == null && i < 5; i++) {
+                    final String alias = BCAndroidUtils.getAlias();
+                    final KeyPair keys = BCAndroidUtils.getKeyPair();
+                    final String website = SpaceAndroidUtils.getSpaceWebsite();
+                    final Map<String, PublicKey> acl = new HashMap<>();
+                    acl.put(alias, keys.getPublic());
+                    final List<Reference> metaReferences = new ArrayList<>();
+                    long size = BCUtils.createEntries(alias, keys, acl, new ArrayList<Reference>(), in, new BCUtils.RecordCallback() {
+                        @Override
+                        public void onRecord(Record record) {
+                            Reference fileReference = null;
+                            for (int i = 0; fileReference == null && i < 5; i++) {
                                 try {
-                                    previewReference = SpaceUtils.postRecord(website, "preview", previewRecord);
+                                    fileReference = SpaceUtils.postRecord(website, "file", record);
                                 } catch (IOException e) {
                                     /* Ignored */
                                     e.printStackTrace();
                                 }
                             }
-                            if (previewReference == null) {
+                            if (fileReference == null) {
                                 // FIXME
-                                System.err.println("Failed to post preview record 5 times");
+                                System.err.println("Failed to post file record 5 times");
                                 return;
                             }
-                            Log.d(SpaceUtils.TAG, "Uploaded Preview " + new String(BCUtils.encodeBase64URL(previewReference.getRecordHash().toByteArray())));
+                            metaReferences.add(fileReference);
+                            Log.d(SpaceUtils.TAG, "Uploaded File " + new String(BCUtils.encodeBase64URL(fileReference.getRecordHash().toByteArray())));
                         }
-                    } else {
-                        parent.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Intent intent = new Intent(parent, StripeActivity.class);
-                                parent.startActivityForResult(intent, SpaceAndroidUtils.STRIPE_ACTIVITY);
+                    });
+                    final Meta meta = Meta.newBuilder()
+                            .setName(name)
+                            .setType(type)
+                            .setSize(size)
+                            .build();
+                    Log.d(SpaceUtils.TAG, "Meta " + meta);
+                    Record metaRecord = BCUtils.createRecord(alias, keys, acl, metaReferences, meta.toByteArray());
+                    Reference metaReference = null;
+                    for (int i = 0; metaReference == null && i < 5; i++) {
+                        try {
+                            metaReference = SpaceUtils.postRecord(website, "meta", metaRecord);
+                        } catch (IOException e) {
+                            /* Ignored */
+                            e.printStackTrace();
+                        }
+                    }
+                    if (metaReference == null) {
+                        // FIXME
+                        System.err.println("Failed to post meta record 5 times");
+                        return;
+                    }
+                    Log.d(SpaceUtils.TAG, "Uploaded Meta " + new String(BCUtils.encodeBase64URL(metaReference.getRecordHash().toByteArray())));
+                    if (preview != null) {
+                        Log.d(SpaceUtils.TAG, "Preview " + preview);
+                        final List<Reference> previewReferences = new ArrayList<>();
+                        previewReferences.add(Reference.newBuilder()
+                                .setTimestamp(metaReference.getTimestamp())
+                                .setChannelName(metaReference.getChannelName())
+                                .setRecordHash(metaReference.getRecordHash())
+                                .build());
+                        Record previewRecord = BCUtils.createRecord(alias, keys, acl, previewReferences, preview.toByteArray());
+                        Reference previewReference = null;
+                        for (int i = 0; previewReference == null && i < 5; i++) {
+                            try {
+                                previewReference = SpaceUtils.postRecord(website, "preview", previewRecord);
+                            } catch (IOException e) {
+                                /* Ignored */
+                                e.printStackTrace();
                             }
-                        });
+                        }
+                        if (previewReference == null) {
+                            // FIXME
+                            System.err.println("Failed to post preview record 5 times");
+                            return;
+                        }
+                        Log.d(SpaceUtils.TAG, "Uploaded Preview " + new String(BCUtils.encodeBase64URL(previewReference.getRecordHash().toByteArray())));
                     }
                 } catch (SocketException | SocketTimeoutException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_connection, e);
+                    BCAndroidUtils.showErrorDialog(parent, R.string.error_connection, e);
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
+                    BCAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
                 } finally {
                     parent.runOnUiThread(new Runnable() {
                         @Override
@@ -320,9 +309,9 @@ public class MinerUtils {
             @Override
             public void run() {
                 try {
-                    final String alias = SpaceAndroidUtils.getAlias();
-                    final KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                    final Node node = SpaceAndroidUtils.getNode();
+                    final String alias = BCAndroidUtils.getAlias();
+                    final KeyPair keys = BCAndroidUtils.getKeyPair();
+                    final Node node = BCAndroidUtils.getNode();
                     final InetAddress host = SpaceAndroidUtils.getSpaceHost();
                     final Channel shares = new Channel(SpaceUtils.SPACE_PREFIX_SHARE + recipientAlias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Map<String, PublicKey> acl = new HashMap<>();
@@ -340,7 +329,7 @@ public class MinerUtils {
                     BCUtils.Pair<byte[], Block> shareResult = node.mine(shares, shareEntries);
                     Log.d(SpaceUtils.TAG, "Mined Share " + new String(BCUtils.encodeBase64URL(shareResult.a)));
                 } catch (IOException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_mining, e);
+                    BCAndroidUtils.showErrorDialog(parent, R.string.error_mining, e);
                 } finally {
                     parent.runOnUiThread(new Runnable() {
                         @Override
@@ -360,38 +349,28 @@ public class MinerUtils {
             @Override
             public void run() {
                 try {
-                    if (SpaceAndroidUtils.isCustomer(parent.getCacheDir())) {
-                        final String alias = SpaceAndroidUtils.getAlias();
-                        final KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                        final String website = SpaceAndroidUtils.getSpaceWebsite();
-                        final Map<String, PublicKey> acl = new HashMap<>();
-                        acl.put(recipientAlias, recipientKey);// Recipient first
-                        acl.put(alias, keys.getPublic());// Sender second
-                        final List<Reference> shareReferences = new ArrayList<>();
-                        Record shareRecord = BCUtils.createRecord(alias, keys, acl, shareReferences, share.toByteArray());
-                        Reference shareReference = null;
-                        for (int i = 0; shareReference == null && i < 5; i++) {
-                            shareReference = SpaceUtils.postRecord(website, "share", shareRecord);
-                        }
-                        if (shareReference == null) {
-                            // FIXME
-                            System.err.println("Failed to post share record 5 times");
-                            return;
-                        }
-                        Log.d(SpaceUtils.TAG, "Uploaded Share " + new String(BCUtils.encodeBase64URL(shareReference.getRecordHash().toByteArray())));
-                    } else {
-                        parent.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Intent intent = new Intent(parent, StripeActivity.class);
-                                parent.startActivityForResult(intent, SpaceAndroidUtils.STRIPE_ACTIVITY);
-                            }
-                        });
+                    final String alias = BCAndroidUtils.getAlias();
+                    final KeyPair keys = BCAndroidUtils.getKeyPair();
+                    final String website = SpaceAndroidUtils.getSpaceWebsite();
+                    final Map<String, PublicKey> acl = new HashMap<>();
+                    acl.put(recipientAlias, recipientKey);// Recipient first
+                    acl.put(alias, keys.getPublic());// Sender second
+                    final List<Reference> shareReferences = new ArrayList<>();
+                    Record shareRecord = BCUtils.createRecord(alias, keys, acl, shareReferences, share.toByteArray());
+                    Reference shareReference = null;
+                    for (int i = 0; shareReference == null && i < 5; i++) {
+                        shareReference = SpaceUtils.postRecord(website, "share", shareRecord);
                     }
+                    if (shareReference == null) {
+                        // FIXME
+                        System.err.println("Failed to post share record 5 times");
+                        return;
+                    }
+                    Log.d(SpaceUtils.TAG, "Uploaded Share " + new String(BCUtils.encodeBase64URL(shareReference.getRecordHash().toByteArray())));
                 } catch (SocketException | SocketTimeoutException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_connection, e);
+                    BCAndroidUtils.showErrorDialog(parent, R.string.error_connection, e);
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
+                    BCAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
                 } finally {
                     parent.runOnUiThread(new Runnable() {
                         @Override
@@ -411,9 +390,9 @@ public class MinerUtils {
             @Override
             public void run() {
                 try {
-                    final String alias = SpaceAndroidUtils.getAlias();
-                    final KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                    final Node node = SpaceAndroidUtils.getNode();
+                    final String alias = BCAndroidUtils.getAlias();
+                    final KeyPair keys = BCAndroidUtils.getKeyPair();
+                    final Node node = BCAndroidUtils.getNode();
                     final InetAddress host = SpaceAndroidUtils.getSpaceHost();
                     byte[] metaRecordHashBytes = meta.getRecordHash().toByteArray();
                     final Channel tags = new Channel(SpaceUtils.SPACE_PREFIX_TAG + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
@@ -432,7 +411,7 @@ public class MinerUtils {
                     BCUtils.Pair<byte[], Block> tagResult = node.mine(tags, tagEntries);
                     Log.d(SpaceUtils.TAG, "Mined Tag " + new String(BCUtils.encodeBase64URL(tagResult.a)));
                 } catch (IOException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_mining, e);
+                    BCAndroidUtils.showErrorDialog(parent, R.string.error_mining, e);
                 } finally {
                     parent.runOnUiThread(new Runnable() {
                         @Override
@@ -452,38 +431,28 @@ public class MinerUtils {
             @Override
             public void run() {
                 try {
-                    if (SpaceAndroidUtils.isCustomer(parent.getCacheDir())) {
-                        final String alias = SpaceAndroidUtils.getAlias();
-                        final KeyPair keys = SpaceAndroidUtils.getKeyPair();
-                        final String website = SpaceAndroidUtils.getSpaceWebsite();
-                        final Map<String, PublicKey> acl = new HashMap<>();
-                        acl.put(alias, keys.getPublic());
-                        final List<Reference> tagReferences = new ArrayList<>();
-                        tagReferences.add(meta);
-                        Record tagRecord = BCUtils.createRecord(alias, keys, acl, tagReferences, tag.toByteArray());
-                        Reference tagReference = null;
-                        for (int i = 0; tagReference == null && i < 5; i++) {
-                            tagReference = SpaceUtils.postRecord(website, "tag", tagRecord);
-                        }
-                        if (tagReference == null) {
-                            // FIXME
-                            System.err.println("Failed to post tag record 5 times");
-                            return;
-                        }
-                        Log.d(SpaceUtils.TAG, "Uploaded Tag " + new String(BCUtils.encodeBase64URL(tagReference.getRecordHash().toByteArray())));
-                    } else {
-                        parent.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Intent intent = new Intent(parent, StripeActivity.class);
-                                parent.startActivityForResult(intent, SpaceAndroidUtils.STRIPE_ACTIVITY);
-                            }
-                        });
+                    final String alias = BCAndroidUtils.getAlias();
+                    final KeyPair keys = BCAndroidUtils.getKeyPair();
+                    final String website = SpaceAndroidUtils.getSpaceWebsite();
+                    final Map<String, PublicKey> acl = new HashMap<>();
+                    acl.put(alias, keys.getPublic());
+                    final List<Reference> tagReferences = new ArrayList<>();
+                    tagReferences.add(meta);
+                    Record tagRecord = BCUtils.createRecord(alias, keys, acl, tagReferences, tag.toByteArray());
+                    Reference tagReference = null;
+                    for (int i = 0; tagReference == null && i < 5; i++) {
+                        tagReference = SpaceUtils.postRecord(website, "tag", tagRecord);
                     }
+                    if (tagReference == null) {
+                        // FIXME
+                        System.err.println("Failed to post tag record 5 times");
+                        return;
+                    }
+                    Log.d(SpaceUtils.TAG, "Uploaded Tag " + new String(BCUtils.encodeBase64URL(tagReference.getRecordHash().toByteArray())));
                 } catch (SocketException | SocketTimeoutException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_connection, e);
+                    BCAndroidUtils.showErrorDialog(parent, R.string.error_connection, e);
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    SpaceAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
+                    BCAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
                 } finally {
                     parent.runOnUiThread(new Runnable() {
                         @Override
