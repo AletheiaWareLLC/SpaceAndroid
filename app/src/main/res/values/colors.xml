@@ -15,20 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <resources>
-    <!--
-    <color name="primary">#03A9F4</color>
-    <color name="primary_dark">#0288D1</color>
-    <color name="primary_light">#B3E5FC</color>
-    <color name="accent">#FF5722</color>
-    <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#DEDEDE</color>
-    <color name="text">#8A8A8A</color>
-    <color name="black">#000000</color>
-    <color name="white">#FFFFFF</color>
-    <color name="divider">#BDBDBD</color>
-    <color name="warning">#FF0000</color>
-    -->
     <color name="background">#000000</color>
+    <color name="foreground">#FFFFFF</color>
     <color name="primary">#000000</color>
     <color name="primary_dark">#000000</color>
     <color name="primary_light">#FFFFFF</color>
@@ -36,6 +24,5 @@ limitations under the License.
     <color name="text_primary">#FFFFFF</color>
     <color name="text_secondary">#DEDEDE</color>
     <color name="text">#8A8A8A</color>
-    <color name="divider">#BDBDBD</color>
     <color name="warning">#FF0000</color>
 </resources>

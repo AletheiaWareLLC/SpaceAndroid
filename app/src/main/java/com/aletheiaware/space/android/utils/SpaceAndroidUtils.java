@@ -24,7 +24,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -35,6 +34,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
+import android.support.annotation.WorkerThread;
 import android.support.media.ExifInterface;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
@@ -43,39 +43,22 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
 
-import com.aletheiaware.bc.BC.Channel;
-import com.aletheiaware.bc.BC.Channel.RecordCallback;
-import com.aletheiaware.bc.BC.Node;
-import com.aletheiaware.bc.BCProto.Block;
-import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Reference;
-import com.aletheiaware.bc.android.ui.StripeDialog;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils.RegistrationCallback;
-import com.aletheiaware.bc.utils.BCUtils;
-import com.aletheiaware.finance.FinanceProto.Customer;
-import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.SpaceProto;
-import com.aletheiaware.space.android.BuildConfig;
+import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.ui.ComposeDocumentActivity;
 import com.aletheiaware.space.android.ui.MainActivity;
-import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.utils.SpaceUtils;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.stripe.android.model.Token;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.InetAddress;
-import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.Arrays;
-import java.util.Map;
 
 public class SpaceAndroidUtils {
 
@@ -105,9 +88,10 @@ public class SpaceAndroidUtils {
     private static Uri tempURI = null;
     private static String tempURIType = null;
 
-    public static InetAddress getSpaceHost() {
+    @WorkerThread
+    public static InetAddress getHostAddress(Context context) {
         try {
-            return InetAddress.getByName(BuildConfig.DEBUG ? SpaceUtils.SPACE_HOST_TEST : SpaceUtils.SPACE_HOST);
+            return InetAddress.getByName(getHostPreference(context));
         } catch (Exception e) {
             /* Ignored */
             e.printStackTrace();
@@ -115,8 +99,8 @@ public class SpaceAndroidUtils {
         return null;
     }
 
-    public static String getSpaceWebsite() {
-        return BuildConfig.DEBUG ? SpaceUtils.SPACE_WEBSITE_TEST : SpaceUtils.SPACE_WEBSITE;
+    public static String getHostWebsite(Context context) {
+        return "https://" + getHostPreference(context);
     }
 
     public static Uri getTempURI() {
@@ -172,12 +156,12 @@ public class SpaceAndroidUtils {
                 .show();
     }
 
-    private static void composeDocument(final Activity parent) {
+    private static void composeDocument(Activity parent) {
         Intent i = new Intent(parent, ComposeDocumentActivity.class);
         parent.startActivityForResult(i, SpaceAndroidUtils.COMPOSE_ACTIVITY);
     }
 
-    private static void uploadFile(final Activity parent) {
+    private static void uploadFile(Activity parent) {
         Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         i.addCategory(Intent.CATEGORY_OPENABLE);
         i.setType("*/*");
@@ -272,50 +256,6 @@ public class SpaceAndroidUtils {
             }
         }
         return name;
-    }
-
-    private static long calculateSize(File file) {
-        if (file.isDirectory()) {
-            long sum = 0L;
-            for (File f : file.listFiles()) {
-                sum += calculateSize(f);
-            }
-            return sum;
-        }
-        return file.length();
-    }
-
-    private static boolean recursiveDelete(File file) {
-        if (file.isDirectory()) {
-            for (File f : file.listFiles()) {
-                if (!recursiveDelete(f)) {
-                    return false;
-                }
-            }
-        } else {
-            return file.delete();
-        }
-        return true;
-    }
-
-    public static long getCacheSize(Context context) {
-        if (context != null) {
-            File cache = context.getCacheDir();
-            if (cache != null) {
-                return calculateSize(cache);
-            }
-        }
-        return 0L;
-    }
-
-    public static boolean purgeCache(Context context) {
-        if (context != null) {
-            File cache = context.getCacheDir();
-            if (cache != null) {
-                return recursiveDelete(cache);
-            }
-        }
-        return false;
     }
 
     public static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
@@ -472,25 +412,37 @@ public class SpaceAndroidUtils {
         });
     }
 
-    @SuppressLint("ApplySharedPref")
-    public static void setSortPreference(Activity parent, String value) {
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
-        SharedPreferences.Editor editor = sharedPrefs.edit();
-        String key = parent.getString(R.string.preference_sort_key);
-        editor.putString(key, value);
-        editor.commit();
+    public static void setSortPreference(Context context, String value) {
+        BCAndroidUtils.setPreference(context, context.getString(R.string.preference_sort_key), value);
     }
 
-    public static String getSortPreference(Activity parent) {
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
-        String key = parent.getString(R.string.preference_sort_key);
+    public static String getSortPreference(Context context) {
         // 1 - chronological
         // 2 - reverse-chronological
-        String value = sharedPrefs.getString(key, "2");
-        if (value == null) {
+        String value = BCAndroidUtils.getPreference(context, context.getString(R.string.preference_sort_key), "2");
+        if (value == null || value.isEmpty()) {
             value = "2";
         }
         return value;
+    }
+
+    public static void setHostPreference(Context context, String value) {
+        BCAndroidUtils.setPreference(context, context.getString(R.string.preference_hostname_key), value);
+    }
+
+    public static String getHostPreference(Context context) {
+        String value = BCAndroidUtils.getPreference(context, context.getString(R.string.preference_host_key), "1");
+        if (value == null || value.isEmpty()) {
+            value = "1";
+        }
+        switch (value) {
+            case "-1":
+                return BCAndroidUtils.getPreference(context, context.getString(R.string.preference_hostname_key), context.getString(R.string.space_host));
+            case "1":
+                return context.getString(R.string.space_host);
+            default:
+                return null;
+        }
     }
 
     public static void createNotificationChannels(Context context) {

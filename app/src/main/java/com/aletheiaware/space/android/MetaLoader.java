@@ -124,7 +124,7 @@ public abstract class MetaLoader implements RecordCallback {
     }
 
     private void loadMeta() throws IOException {
-        final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+        final InetAddress host = SpaceAndroidUtils.getHostAddress(context);
         final File cache = context.getCacheDir();
         final String alias = BCAndroidUtils.getAlias();
         final KeyPair keys = BCAndroidUtils.getKeyPair();
@@ -136,7 +136,7 @@ public abstract class MetaLoader implements RecordCallback {
     }
 
     public void readFile(RecordCallback callback) throws IOException {
-        final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+        final InetAddress host = SpaceAndroidUtils.getHostAddress(context);
         final File cache = context.getCacheDir();
         final String alias = BCAndroidUtils.getAlias();
         final KeyPair keys = BCAndroidUtils.getKeyPair();

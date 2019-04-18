@@ -88,7 +88,7 @@ limitations under the License.
             android:layout_gravity="center"
             android:layout_margin="@dimen/view_margin"
             android:background="@color/accent"
-            android:padding="10dp"
+            android:padding="@dimen/view_padding"
             android:textColor="@color/text_primary"
             android:textSize="@dimen/text_primary_size"
             android:text="@string/mine_action"

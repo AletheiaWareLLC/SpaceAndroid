@@ -51,6 +51,7 @@ import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
+import com.aletheiaware.bc.android.utils.CopyToClipboardListener;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Share;
@@ -303,6 +304,7 @@ public class DetailActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    contentTextView.setOnClickListener(new CopyToClipboardListener(contentTextView, meta.getName()));
                     contentTextView.setText(text);
                     contentTextView.setVisibility(View.VISIBLE);
                     contentTextView.requestLayout();
@@ -504,7 +506,7 @@ public class DetailActivity extends AppCompatActivity {
                         final String alias = BCAndroidUtils.getAlias();
                         final KeyPair keys = BCAndroidUtils.getKeyPair();
                         final File cache = getCacheDir();
-                        final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+                        final InetAddress host = SpaceAndroidUtils.getHostAddress(DetailActivity.this);
                         final Channel aliases = new Channel(AliasUtils.ALIAS_CHANNEL, BCUtils.THRESHOLD_STANDARD, cache, host);
                         try {
                             final PublicKey recipientKey = AliasUtils.getPublicKey(aliases, recipient.getAlias());

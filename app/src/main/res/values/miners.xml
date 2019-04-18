@@ -15,18 +15,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <resources>
-    <string-array name="miner_options">
+    <string-array name="mining_location_options">
         <item>@string/preference_mine_locally</item>
         <item>@string/preference_mine_remotely</item>
     </string-array>
-    <string-array name="preference_miner_options">
+    <string-array name="preference_mining_location_options">
         <item>@string/preference_ask_each_time</item>
         <item>@string/preference_mine_locally</item>
         <item>@string/preference_mine_remotely</item>
     </string-array>
-    <string-array name="preference_miner_values">
+    <string-array name="preference_mining_location_values">
         <item>1</item>
         <item>2</item>
         <item>3</item>
+    </string-array>
+    <string-array name="preference_hosts_options">
+        <item>@string/space_host</item>
+        <item>@string/preference_host_custom</item>
+    </string-array>
+    <string-array name="preference_hosts_values">
+        <item>1</item>
+        <item>-1</item>
     </string-array>
 </resources>

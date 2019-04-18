@@ -29,15 +29,14 @@ import android.support.v7.preference.PreferenceFragmentCompat;
 
 import com.aletheiaware.bc.android.ui.PasswordUnlockDialog;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
+import com.aletheiaware.bc.android.utils.BiometricUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.R;
-import com.aletheiaware.bc.android.utils.BiometricUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
@@ -67,7 +66,8 @@ public class SettingsActivity extends AppCompatActivity {
     // Possible solutions are a) use SQLite or b) store files prefixed with alias or c) store in blockchain, either way don't rely on SharedPreferences
     public static class SettingsPreferenceFragment extends PreferenceFragmentCompat {
         private ListPreference sortPreference;
-        private ListPreference minerPreference;
+        private ListPreference miningLocationPreference;
+        private ListPreference hostPreference;
         private Preference cacheSizePreference;
         private Preference cachePurgePreference;
         private CheckBoxPreference biometricPreference;
@@ -86,10 +86,31 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             });
 
-            minerPreference = (ListPreference) findPreference(getString(R.string.preference_miner_key));
-            minerPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            miningLocationPreference = (ListPreference) findPreference(getString(R.string.preference_mining_location_key));
+            miningLocationPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object o) {
+                    return true;
+                }
+            });
+
+            hostPreference = (ListPreference) findPreference(getString(R.string.preference_host_key));
+            hostPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object o) {
+                    if (o.equals("-1")) {
+                        final FragmentActivity activity = getActivity();
+                        if (activity == null) {
+                            return false;
+                        }
+                        String defaultHostname = SpaceAndroidUtils.getHostPreference(activity);
+                        new CustomHostDialog(activity, defaultHostname) {
+                            @Override
+                            protected void onCustomHostname(String hostname) {
+                                SpaceAndroidUtils.setHostPreference(activity, hostname);
+                            }
+                        }.create();
+                    }
                     return true;
                 }
             });
@@ -103,7 +124,7 @@ public class SettingsActivity extends AppCompatActivity {
             cachePurgePreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
-                    boolean result = SpaceAndroidUtils.purgeCache(getContext());
+                    boolean result = BCAndroidUtils.purgeCache(getContext());
                     update();
                     return result;
                 }
@@ -147,7 +168,11 @@ public class SettingsActivity extends AppCompatActivity {
             supportPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
-                    BCAndroidUtils.support(getActivity(), new StringBuilder());
+                    final FragmentActivity activity = getActivity();
+                    if (activity == null) {
+                        return false;
+                    }
+                    BCAndroidUtils.support(activity, new StringBuilder());
                     return true;
                 }
             });
@@ -157,9 +182,12 @@ public class SettingsActivity extends AppCompatActivity {
 
         public void update() {
             final FragmentActivity activity = getActivity();
+            if (activity == null) {
+                return;
+            }
             final String alias = BCAndroidUtils.getAlias();
 
-            long size = SpaceAndroidUtils.getCacheSize(activity);
+            long size = BCAndroidUtils.getCacheSize(activity);
             cacheSizePreference.setSummary(BCUtils.sizeToString(size));
             cachePurgePreference.setEnabled(size > 0L);
 

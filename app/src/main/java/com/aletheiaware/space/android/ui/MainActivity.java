@@ -286,7 +286,7 @@ public class MainActivity extends AppCompatActivity {
         new Thread() {
             @Override
             public void run() {
-                final InetAddress address = SpaceAndroidUtils.getSpaceHost();
+                final InetAddress address = SpaceAndroidUtils.getHostAddress(MainActivity.this);
                 final File cache = getCacheDir();
                 final String alias = BCAndroidUtils.getAlias();
                 final KeyPair keys = BCAndroidUtils.getKeyPair();

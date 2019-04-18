@@ -28,17 +28,23 @@ limitations under the License.
 
     </android.support.v7.preference.PreferenceCategory>
 
-    <android.support.v7.preference.PreferenceCategory android:title="@string/preference_mining_title">
+    <android.support.v7.preference.PreferenceCategory android:title="@string/preference_network_title">
 
         <android.support.v7.preference.ListPreference
             android:defaultValue="1"
-            android:entries="@array/preference_miner_options"
-            android:entryValues="@array/preference_miner_values"
-            android:key="@string/preference_miner_key"
-            android:summary="@string/preference_miner_description"
-            android:title="@string/preference_miner_title" />
+            android:entries="@array/preference_mining_location_options"
+            android:entryValues="@array/preference_mining_location_values"
+            android:key="@string/preference_mining_location_key"
+            android:summary="@string/preference_mining_location_description"
+            android:title="@string/preference_mining_location_title" />
 
-        <!-- TODO add default miner hostname -->
+        <android.support.v7.preference.ListPreference
+            android:defaultValue="1"
+            android:entries="@array/preference_hosts_options"
+            android:entryValues="@array/preference_hosts_values"
+            android:key="@string/preference_host_key"
+            android:summary="@string/preference_host_description"
+            android:title="@string/preference_host_title" />
 
     </android.support.v7.preference.PreferenceCategory>
 

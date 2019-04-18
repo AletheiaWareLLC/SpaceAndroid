@@ -64,14 +64,16 @@ public class MinerUtils {
 
     public interface MinerSelectionCallback {
         void onMineLocally();
+
         void onMineRemotely();
     }
 
-    private MinerUtils() {}
+    private MinerUtils() {
+    }
 
     public static void getMinerSelection(final Activity parent, final MinerSelectionCallback callback) {
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(parent);
-        String key = parent.getString(R.string.preference_miner_key);
+        String key = parent.getString(R.string.preference_mining_location_key);
         // 1 - ask each time
         // 2 - local
         // 3 - remote
@@ -83,15 +85,28 @@ public class MinerUtils {
             case "1":
                 new AlertDialog.Builder(parent, R.style.AlertDialogTheme)
                         .setTitle(R.string.title_dialog_select_miner)
-                        .setItems(R.array.miner_options, new DialogInterface.OnClickListener() {
+                        // TODO show estimates of:
+                        // - memory and cpu usage, battery, and time to mine locally
+                        // - network usage, cost, and time to upload and mine remotely
+                        .setItems(R.array.mining_location_options, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 switch (which) {
                                     case 0:
-                                        callback.onMineLocally();
+                                        new Thread() {
+                                            @Override
+                                            public void run() {
+                                                callback.onMineLocally();
+                                            }
+                                        }.start();
                                         break;
                                     case 1:
-                                        callback.onMineRemotely();
+                                        new Thread() {
+                                            @Override
+                                            public void run() {
+                                                callback.onMineRemotely();
+                                            }
+                                        }.start();
                                         break;
                                 }
                             }
@@ -105,10 +120,20 @@ public class MinerUtils {
                         .show();
                 break;
             case "2":
-                callback.onMineLocally();
+                new Thread() {
+                    @Override
+                    public void run() {
+                        callback.onMineLocally();
+                    }
+                }.start();
                 break;
             case "3":
-                callback.onMineRemotely();
+                new Thread() {
+                    @Override
+                    public void run() {
+                        callback.onMineRemotely();
+                    }
+                }.start();
                 break;
         }
     }
@@ -123,7 +148,7 @@ public class MinerUtils {
                     final String alias = BCAndroidUtils.getAlias();
                     final KeyPair keys = BCAndroidUtils.getKeyPair();
                     final Node node = BCAndroidUtils.getNode();
-                    final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+                    final InetAddress host = SpaceAndroidUtils.getHostAddress(parent);
                     final Channel metas = new Channel(SpaceUtils.SPACE_PREFIX_META + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Channel files = new Channel(SpaceUtils.SPACE_PREFIX_FILE + alias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Map<String, PublicKey> acl = new HashMap<>();
@@ -214,7 +239,7 @@ public class MinerUtils {
                 try {
                     final String alias = BCAndroidUtils.getAlias();
                     final KeyPair keys = BCAndroidUtils.getKeyPair();
-                    final String website = SpaceAndroidUtils.getSpaceWebsite();
+                    final String website = SpaceAndroidUtils.getHostWebsite(parent);
                     final Map<String, PublicKey> acl = new HashMap<>();
                     acl.put(alias, keys.getPublic());
                     final List<Reference> metaReferences = new ArrayList<>();
@@ -312,11 +337,11 @@ public class MinerUtils {
                     final String alias = BCAndroidUtils.getAlias();
                     final KeyPair keys = BCAndroidUtils.getKeyPair();
                     final Node node = BCAndroidUtils.getNode();
-                    final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+                    final InetAddress host = SpaceAndroidUtils.getHostAddress(parent);
                     final Channel shares = new Channel(SpaceUtils.SPACE_PREFIX_SHARE + recipientAlias, BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Map<String, PublicKey> acl = new HashMap<>();
-                    acl.put(recipientAlias, recipientKey);// Recipient first
-                    acl.put(alias, keys.getPublic());// Sender second
+                    acl.put(recipientAlias, recipientKey);
+                    acl.put(alias, keys.getPublic());
                     final List<Reference> shareReferences = new ArrayList<>();
                     Record shareRecord = BCUtils.createRecord(alias, keys, acl, shareReferences, share.toByteArray());
                     byte[] shareRecordHashBytes = BCUtils.getHash(shareRecord.toByteArray());
@@ -351,10 +376,10 @@ public class MinerUtils {
                 try {
                     final String alias = BCAndroidUtils.getAlias();
                     final KeyPair keys = BCAndroidUtils.getKeyPair();
-                    final String website = SpaceAndroidUtils.getSpaceWebsite();
+                    final String website = SpaceAndroidUtils.getHostWebsite(parent);
                     final Map<String, PublicKey> acl = new HashMap<>();
-                    acl.put(recipientAlias, recipientKey);// Recipient first
-                    acl.put(alias, keys.getPublic());// Sender second
+                    acl.put(recipientAlias, recipientKey);
+                    acl.put(alias, keys.getPublic());
                     final List<Reference> shareReferences = new ArrayList<>();
                     Record shareRecord = BCUtils.createRecord(alias, keys, acl, shareReferences, share.toByteArray());
                     Reference shareReference = null;
@@ -393,7 +418,7 @@ public class MinerUtils {
                     final String alias = BCAndroidUtils.getAlias();
                     final KeyPair keys = BCAndroidUtils.getKeyPair();
                     final Node node = BCAndroidUtils.getNode();
-                    final InetAddress host = SpaceAndroidUtils.getSpaceHost();
+                    final InetAddress host = SpaceAndroidUtils.getHostAddress(parent);
                     byte[] metaRecordHashBytes = meta.getRecordHash().toByteArray();
                     final Channel tags = new Channel(SpaceUtils.SPACE_PREFIX_TAG + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, parent.getCacheDir(), host);
                     final Map<String, PublicKey> acl = new HashMap<>();
@@ -433,7 +458,7 @@ public class MinerUtils {
                 try {
                     final String alias = BCAndroidUtils.getAlias();
                     final KeyPair keys = BCAndroidUtils.getKeyPair();
-                    final String website = SpaceAndroidUtils.getSpaceWebsite();
+                    final String website = SpaceAndroidUtils.getHostWebsite(parent);
                     final Map<String, PublicKey> acl = new HashMap<>();
                     acl.put(alias, keys.getPublic());
                     final List<Reference> tagReferences = new ArrayList<>();

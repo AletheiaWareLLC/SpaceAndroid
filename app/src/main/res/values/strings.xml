@@ -77,6 +77,7 @@ limitations under the License.
     <string name="title_dialog_preview">Preview</string>
     <string name="title_dialog_share">Share</string>
     <string name="title_dialog_tag">Tag</string>
+    <string name="title_dialog_custom_host">Custom Host</string>
     <string name="title_notification_local">Mining Locally</string>
     <string name="title_notification_remote">Mining Remotely</string>
     <string name="title_notification_download">Downloading</string>
@@ -102,6 +103,10 @@ limitations under the License.
     <string name="tag_reason">Reason</string>
     <string name="tag_document_label">Tags are used to search and filter documents</string>
 
+    <string name="custom_hostname">Hostname</string>
+    <string name="custom_host_action">Set</string>
+    <string name="custom_host_label">Hosts provide storage and offer Remote Mining Services to save battery by mining data remotely for a fee.</string>
+
     <string name="preference_ask_each_time">Ask Each Time</string>
     <string name="preference_general_title">General</string>
     <string name="preference_sort_key">list_sort_preference</string>
@@ -117,12 +122,17 @@ limitations under the License.
     <string name="preference_cache_purge_title">Purge Cache</string>
     <string name="preference_cache_purge_description">Delete all data from cache</string>
 
-    <string name="preference_mining_title">Mining</string>
-    <string name="preference_miner_key">miner_preference</string>
-    <string name="preference_miner_title">Default Miner</string>
-    <string name="preference_miner_description">Determines where blocks are mined</string>
+    <string name="preference_network_title">Network</string>
+    <string name="preference_mining_location_key">mining_location_preference</string>
+    <string name="preference_mining_location_title">Default Mining Location</string>
+    <string name="preference_mining_location_description">Determines where blocks are mined</string>
     <string name="preference_mine_locally">Mine locally using this device</string>
-    <string name="preference_mine_remotely">Mine remotely using Aletheia Ware\'s Remote Mining Service</string>
+    <string name="preference_mine_remotely">Mine remotely using a Remote Mining Service</string>
+    <string name="preference_host_key">host_preference</string>
+    <string name="preference_host_title">Default Host</string>
+    <string name="preference_host_description">Determines who mines blocks</string>
+    <string name="preference_host_custom">Custom Host</string>
+    <string name="preference_hostname_key">hostname_preference</string>
 
     <string name="preference_security_title">Security</string>
     <string name="preference_biometric_key">biometric_preference</string>

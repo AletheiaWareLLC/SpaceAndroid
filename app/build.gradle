@@ -7,8 +7,8 @@ android {
         minSdkVersion 19
         targetSdkVersion 28
         vectorDrawables.useSupportLibrary = true
-        versionCode 18
-        versionName "1.8"
+        versionCode 19
+        versionName "1.9"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -16,6 +16,7 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             resValue "string", "app_name", "\"S P A C E\""
+            resValue "string", "space_host", "\"space.aletheiaware.com\""
             resValue "string", "file_provider_authority", "\"com.aletheiaware.space.android.fileprovider\""
             resValue "string", "stripe_publishable_key", "\"pk_live_HnBAuZFfX6Rkd1UizHWJ5VTn\""
             resValue "string", "register_account_address", "\"https://space.aletheiaware.com/space-register\""
@@ -26,6 +27,7 @@ android {
             applicationIdSuffix '.debug'
             versionNameSuffix '-DEBUG'
             resValue "string", "app_name", "\"S P A C E D\""
+            resValue "string", "space_host", "\"test-space.aletheiaware.com\""
             resValue "string", "file_provider_authority", "\"com.aletheiaware.space.android.debug.fileprovider\""
             resValue "string", "stripe_publishable_key", "\"pk_test_gvdQJ2CsMiwE0gARM6nGUbUb\""
             resValue "string", "register_account_address", "\"https://test-space.aletheiaware.com/space-register\""

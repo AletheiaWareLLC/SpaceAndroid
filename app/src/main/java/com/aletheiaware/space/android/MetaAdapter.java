@@ -123,7 +123,7 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
             Long time = timestamps.get(hash);
             Meta meta = metas.get(hash);
             if (!previews.containsKey(hash)) {
-                PreviewUtils.loadPreview(activity.getCacheDir(), hash, isShared(hash), new PreviewCallback() {
+                PreviewUtils.loadPreview(activity, hash, isShared(hash), new PreviewCallback() {
                     @Override
                     public void onPreview(ByteString metaRecordHash, boolean shared, Preview preview) {
                         if (preview != null) {

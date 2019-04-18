@@ -42,7 +42,7 @@ public class TagAdapter extends ArrayAdapter<String> implements Filterable {
         new Thread() {
             @Override
             public void run() {
-                Channel tags = new Channel(SpaceUtils.SPACE_PREFIX_TAG + new String(BCUtils.encodeBase64URL(metaRecordHash)), BCUtils.THRESHOLD_STANDARD, activity.getCacheDir(), SpaceAndroidUtils.getSpaceHost());
+                Channel tags = new Channel(SpaceUtils.SPACE_PREFIX_TAG + new String(BCUtils.encodeBase64URL(metaRecordHash)), BCUtils.THRESHOLD_STANDARD, activity.getCacheDir(), SpaceAndroidUtils.getHostAddress(activity));
                 try {
                     tags.sync();
                 } catch (IOException | NoSuchAlgorithmException e) {

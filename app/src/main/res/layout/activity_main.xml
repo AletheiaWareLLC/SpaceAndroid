@@ -74,6 +74,7 @@ limitations under the License.
         android:layout_margin="@dimen/view_margin"
         android:background="@color/accent"
         android:drawableStart="@drawable/icon_add"
+        android:padding="@dimen/view_padding"
         android:text="@string/main_add"
         android:textColor="@color/text_primary"
         android:textSize="@dimen/text_primary_size" />
