@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/provider_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/text_primary_size" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/provider_registration_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_secondary_size"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/provider_subscription_storage_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_secondary_size"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/provider_subscription_mining_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/view_margin"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_secondary_size"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageButton
+                android:id="@+id/provider_subscription_storage_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_margin="@dimen/view_margin"
+                android:padding="@dimen/view_padding"
+                android:background="@color/background"
+                android:contentDescription="@string/subscription_storage"
+                app:srcCompat="@drawable/bc_storage" />
+
+            <ImageButton
+                android:id="@+id/provider_subscription_mining_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_margin="@dimen/view_margin"
+                android:padding="@dimen/view_padding"
+                android:background="@color/background"
+                android:contentDescription="@string/subscription_mining"
+                app:srcCompat="@drawable/bc_mine" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

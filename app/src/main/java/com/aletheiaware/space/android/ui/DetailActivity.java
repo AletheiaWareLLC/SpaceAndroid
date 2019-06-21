@@ -16,6 +16,7 @@
 
 package com.aletheiaware.space.android.ui;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -23,11 +24,13 @@ import android.content.Intent;
 import android.graphics.ImageDecoder;
 import android.graphics.drawable.AnimatedImageDrawable;
 import android.graphics.drawable.Drawable;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.UiThread;
+import android.support.annotation.WorkerThread;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.FileProvider;
@@ -36,28 +39,28 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
-import android.widget.MediaController;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.VideoView;
 
 import com.aletheiaware.alias.AliasProto;
 import com.aletheiaware.alias.utils.AliasUtils;
-import com.aletheiaware.bc.BC.Channel;
-import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Reference;
+import com.aletheiaware.bc.Cache;
+import com.aletheiaware.bc.Channel.RecordCallback;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
-import com.aletheiaware.bc.android.utils.CopyToClipboardListener;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.finance.FinanceProto;
+import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.SpaceProto.Tag;
 import com.aletheiaware.space.android.MetaLoader;
 import com.aletheiaware.space.android.R;
+import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -65,17 +68,23 @@ import com.google.protobuf.ByteString;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.InetAddress;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public class DetailActivity extends AppCompatActivity {
 
+    private Cache cache;
+    private Network network;
     private MetaLoader loader;
 
-    private ImageView contentImageView;
-    private VideoView contentVideoView;
-    private TextView contentTextView;
     private TextView nameTextView;
     private TextView typeTextView;
     private TextView sizeTextView;
@@ -86,17 +95,10 @@ public class DetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         SpaceAndroidUtils.createNotificationChannels(this);
 
+        cache = BCAndroidUtils.getCache();
+
         // Setup UI
         setContentView(R.layout.activity_detail);
-
-        // Content VideoView
-        contentVideoView = findViewById(R.id.detail_video_view);
-
-        // Content ImageView
-        contentImageView = findViewById(R.id.detail_image_view);
-
-        // Content TextView
-        contentTextView = findViewById(R.id.detail_text_view);
 
         // Name TextView
         nameTextView = findViewById(R.id.detail_name);
@@ -115,6 +117,14 @@ public class DetailActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         if (BCAndroidUtils.isInitialized()) {
+            final String alias = BCAndroidUtils.getAlias();
+            final KeyPair keys = BCAndroidUtils.getKeyPair();
+            new Thread() {
+                @Override
+                public void run() {
+                    network = SpaceAndroidUtils.getStorageNetwork(DetailActivity.this, alias);
+                }
+            }.start();
             byte[] metaRecordHash = null;
             boolean shared = false;
             final Intent intent = getIntent();
@@ -126,12 +136,15 @@ public class DetailActivity extends AppCompatActivity {
                 }
             }
             if (metaRecordHash != null) {
-                loader = new MetaLoader(this, metaRecordHash, shared) {
-                    @Override
-                    public void onMetaLoaded() {
-                        loadUI();
-                    }
-                };
+                ByteString metaRecordHashByteString = ByteString.copyFrom(metaRecordHash);
+                if (loader == null || !loader.getMetaRecordHash().equals(metaRecordHashByteString)) {
+                    loader = new MetaLoader(this, alias, keys, cache, metaRecordHashByteString, shared) {
+                        @Override
+                        public void onMetaLoaded() {
+                            loadUI();
+                        }
+                    };
+                }
             }
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
@@ -148,23 +161,13 @@ public class DetailActivity extends AppCompatActivity {
             return;
         }
         final String type = meta.getType();
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                setTitle(meta.getName());
-                nameTextView.setText(meta.getName());
-                typeTextView.setText(type);
-                sizeTextView.setText(BCUtils.sizeToString(meta.getSize()));
-                timestampTextView.setText(BCUtils.timeToString(loader.getTimestamp()));
-            }
-        });
         if (SpaceUtils.isVideo(type)) {
             Log.d(SpaceUtils.TAG, "Setting Video");
             File videos = new File(getCacheDir(), "video");
             if (!videos.exists() &&!videos.mkdirs()) {
                 Log.e(SpaceUtils.TAG, "Error making video directory");
             }
-            File f = new File(videos, new String(BCUtils.encodeBase64URL(loader.getMetaRecordHash())));
+            File f = new File(videos, new String(BCUtils.encodeBase64URL(loader.getMetaRecordHash().toByteArray())));
             Log.d(SpaceUtils.TAG, "File");
             Log.d(SpaceUtils.TAG, "Path: " + f.getAbsolutePath());
             final Uri uri = FileProvider.getUriForFile(DetailActivity.this, getString(R.string.file_provider_authority), f);
@@ -175,53 +178,12 @@ public class DetailActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    contentVideoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                        @Override
-                        public void onCompletion(MediaPlayer mp) {
-                            Log.d(SpaceUtils.TAG, "onCompletion");
-                        }
-                    });
-                    contentVideoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                        @Override
-                        public boolean onError(MediaPlayer mp, int what, int extra) {
-                            Log.d(SpaceUtils.TAG, "onError " + what + " " + extra);
-                            return true;
-                        }
-                    });
-                    contentVideoView.setOnInfoListener(new MediaPlayer.OnInfoListener() {
-                        @Override
-                        public boolean onInfo(MediaPlayer mp, int what, int extra) {
-                            Log.d(SpaceUtils.TAG, "onInfo " + what + " " + extra);
-                            return true;
-                        }
-                    });
-                    contentVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                        @Override
-                        public void onPrepared(MediaPlayer mp) {
-                            Log.d(SpaceUtils.TAG, "onPrepared");
-                        }
-                    });
-                    contentVideoView.setVisibility(View.VISIBLE);
-                    contentVideoView.requestFocus();
-                    final MediaController controller = new MediaController(DetailActivity.this);
-                    controller.setMediaPlayer(contentVideoView);
-                    controller.setAnchorView(contentVideoView);
-                    contentVideoView.setMediaController(controller);
-                    contentVideoView.setVideoURI(uri);
-                    contentVideoView.setZOrderOnTop(true);
-                    contentVideoView.start();
-                    contentVideoView.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            if (controller.isShowing()) {
-                                controller.hide();
-                            } else {
-                                controller.show();
-                            }
-                        }
-                    });
-                    contentVideoView.requestLayout();
-                    controller.show(3 * 1000);// Show for 3 seconds in ms
+                    VideoViewFragment fragment = new VideoViewFragment();
+                    fragment.setup(DetailActivity.this, uri);
+                    fragment.name = meta.getName();
+                    fragment.type = meta.getType();
+                    fragment.size = meta.getSize();
+                    setContentFragment(fragment);
                 }
             });
         } else if (SpaceUtils.isImage(type)) {
@@ -230,7 +192,7 @@ public class DetailActivity extends AppCompatActivity {
             if (!images.exists() && !images.mkdirs()) {
                 Log.e(SpaceUtils.TAG, "Error making image directory");
             }
-            File f = new File(images, new String(BCUtils.encodeBase64URL(loader.getMetaRecordHash())));
+            File f = new File(images, new String(BCUtils.encodeBase64URL(loader.getMetaRecordHash().toByteArray())));
             Log.d(SpaceUtils.TAG, "File");
             Log.d(SpaceUtils.TAG, "Path: " + f.getAbsolutePath());
             final Uri uri = FileProvider.getUriForFile(DetailActivity.this, getString(R.string.file_provider_authority), f);
@@ -266,24 +228,45 @@ public class DetailActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    contentImageView.setVisibility(View.VISIBLE);
+                    ImageViewFragment fragment = new ImageViewFragment();
+                    fragment.setup(DetailActivity.this, uri);
+                    fragment.name = meta.getName();
+                    fragment.type = meta.getType();
+                    fragment.size = meta.getSize();
+                    setContentFragment(fragment);
                     if (drawable != null) {
                         Log.d(SpaceUtils.TAG, "Setting Drawable:" + drawable);
-                        contentImageView.setImageDrawable(drawable);
+                        fragment.drawable = drawable;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                             if (drawable instanceof AnimatedImageDrawable) {
                                 ((AnimatedImageDrawable) drawable).start();
                             }
                         }
-                    } else {
-                        Log.d(SpaceUtils.TAG, "Setting URI:" + uri);
-                        contentImageView.setImageURI(uri);
                     }
-                    contentImageView.requestLayout();
                 }
             });
         } else if (SpaceUtils.isText(type)) {
             Log.d(SpaceUtils.TAG, "Setting Text");
+            final double size = meta.getSize();
+            final double[] progress = {0};
+            final ProgressBar[] progressBar = new ProgressBar[1];
+            final Dialog[] dialog = new Dialog[1];
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    View progressView = View.inflate(DetailActivity.this, R.layout.dialog_progress, null);
+                    progressBar[0] = progressView.findViewById(R.id.progress);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        progressBar[0].setMin(0);
+                    }
+                    progressBar[0].setMax(100);
+                    dialog[0] = new AlertDialog.Builder(DetailActivity.this, R.style.AlertDialogTheme)
+                            .setTitle(R.string.title_dialog_loading_document)
+                            .setCancelable(false)
+                            .setView(progressBar[0])
+                            .show();
+                }
+            });
             final StringBuilder sb = new StringBuilder();
             try {
                 loader.readFile(new RecordCallback() {
@@ -291,6 +274,14 @@ public class DetailActivity extends AppCompatActivity {
                     public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                         if (payload != null && payload.length > 0) {
                             sb.append(new String(payload));
+                            progress[0] += payload.length;
+                            final double percent = (progress[0] / size) * 100.0;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressBar[0].setProgress((int) percent);
+                                }
+                            });
                         }
                         return true;
                     }
@@ -298,16 +289,24 @@ public class DetailActivity extends AppCompatActivity {
             } catch (IOException ex) {
                 /* Ignored */
                 ex.printStackTrace();
+            } finally {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (dialog[0].isShowing()) {
+                            dialog[0].dismiss();
+                        }
+                    }
+                });
             }
             final String text = sb.toString();
             Log.d(SpaceUtils.TAG, "Text: " + text);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    contentTextView.setOnClickListener(new CopyToClipboardListener(contentTextView, meta.getName()));
-                    contentTextView.setText(text);
-                    contentTextView.setVisibility(View.VISIBLE);
-                    contentTextView.requestLayout();
+                    TextViewFragment fragment = new TextViewFragment();
+                    fragment.setup(meta.getName(), meta.getType(), meta.getSize(), text);
+                    setContentFragment(fragment);
                 }
             });
         }
@@ -315,8 +314,21 @@ public class DetailActivity extends AppCompatActivity {
         // TODO show previews - display current previews for document
     }
 
+    private void setContentFragment(ContentFragment fragment) {
+        setTitle(fragment.getName());
+        nameTextView.setText(fragment.getName());
+        typeTextView.setText(fragment.getType());
+        sizeTextView.setText(BCUtils.sizeToString(fragment.getSize()));
+        timestampTextView.setText(BCUtils.timeToString(loader.getTimestamp()));
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(R.id.detail_content_frame, fragment);
+        ft.commit();
+    }
+
+    @WorkerThread
     private void writeFileToURI(Uri uri) {
         final double size = loader.getMeta().getSize();
+        final double[] progress = {0};
         final ProgressBar[] progressBar = new ProgressBar[1];
         final Dialog[] dialog = new Dialog[1];
         runOnUiThread(new Runnable() {
@@ -344,7 +356,8 @@ public class DetailActivity extends AppCompatActivity {
                         try {
                             Log.d(SpaceUtils.TAG, "Writing: " + payload.length);
                             out.write(payload);
-                            final double percent = (payload.length / size) * 100.0;
+                            progress[0] += payload.length;
+                            final double percent = (progress[0] / size) * 100.0;
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -408,19 +421,21 @@ public class DetailActivity extends AppCompatActivity {
                             notificationManager.notify(SpaceAndroidUtils.DOWNLOAD_NOTIFICATION_ID, builder.build());
 
                             final double size = loader.getMeta().getSize();
+                            final long[] count = {0L};
                             new Thread() {
                                 @Override
                                 public void run() {
                                     try (OutputStream out = getContentResolver().openOutputStream(uri)) {
-                                        Log.d(SpaceUtils.TAG, "Downloading to: " + uri.toString());
                                         if (out != null) {
+                                            Log.d(SpaceUtils.TAG, "Downloading to: " + uri.toString());
                                             loader.readFile(new RecordCallback() {
                                                 @Override
                                                 public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                                                     try {
-                                                        Log.d(SpaceUtils.TAG, "Downloading: " + payload.length);
+                                                        Log.d(SpaceUtils.TAG, "Writing: " + BCUtils.sizeToString(payload.length));
                                                         out.write(payload);
-                                                        final double percent = (payload.length / size) * 100.0;
+                                                        count[0] += payload.length;
+                                                        final double percent = (count[0] / size) * 100.0;
                                                         runOnUiThread(new Runnable() {
                                                             @Override
                                                             public void run() {
@@ -435,6 +450,7 @@ public class DetailActivity extends AppCompatActivity {
                                                     return true;
                                                 }
                                             });
+                                            Log.d(SpaceUtils.TAG, "Downloaded: " + BCUtils.sizeToString(count[0]));
                                         }
                                     } catch (IOException ex) {
                                         /* Ignored */
@@ -496,8 +512,9 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
+    @UiThread
     private void share() {
-        new ShareDialog(DetailActivity.this, loader.getMetaRecordHash(), loader.getMeta(), loader.isShared()) {
+        new ShareDialog(DetailActivity.this, cache, network, loader.getMeta(), loader.isShared()) {
             @Override
             public void onShare(DialogInterface dialog, final AliasProto.Alias recipient) {
                 new Thread() {
@@ -505,14 +522,11 @@ public class DetailActivity extends AppCompatActivity {
                     public void run() {
                         final String alias = BCAndroidUtils.getAlias();
                         final KeyPair keys = BCAndroidUtils.getKeyPair();
-                        final File cache = getCacheDir();
-                        final InetAddress host = SpaceAndroidUtils.getHostAddress(DetailActivity.this);
-                        final Channel aliases = new Channel(AliasUtils.ALIAS_CHANNEL, BCUtils.THRESHOLD_STANDARD, cache, host);
                         try {
-                            final PublicKey recipientKey = AliasUtils.getPublicKey(aliases, recipient.getAlias());
+                            final PublicKey recipientKey = AliasUtils.getPublicKey(cache, network, recipient.getAlias());
                             final Share.Builder sb = Share.newBuilder();
                             if (loader.isShared()) {
-                                SpaceUtils.readShares(host, cache, alias, keys, null, loader.getMetaRecordHash(), new RecordCallback() {
+                                SpaceUtils.readShares(cache, network, alias, keys, null, loader.getMetaRecordHash(), null, new RecordCallback() {
                                     @Override
                                     public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                                         sb.setMetaReference(Reference.newBuilder()
@@ -530,13 +544,12 @@ public class DetailActivity extends AppCompatActivity {
                                     }
                                 });
                             } else {
-                                final Channel files = new Channel(SpaceUtils.SPACE_PREFIX_FILE + alias, BCUtils.THRESHOLD_STANDARD, cache, host);
-                                SpaceUtils.readMetas(host, cache, alias, keys, loader.getMetaRecordHash(), new RecordCallback() {
+                                SpaceUtils.readMetas(cache, network, alias, keys, loader.getMetaRecordHash(), new RecordCallback() {
                                     @Override
                                     public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                                         for (Reference r : blockEntry.getRecord().getReferenceList()) {
                                             try {
-                                                files.read(alias, keys, r.getRecordHash().toByteArray(), new RecordCallback() {
+                                                SpaceUtils.readFiles(cache, network, alias, keys, r.getRecordHash(), new RecordCallback() {
                                                     @Override
                                                     public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                                                         sb.addChunkKey(ByteString.copyFrom(key));
@@ -556,7 +569,7 @@ public class DetailActivity extends AppCompatActivity {
                                     }
                                 });
                             }
-                            SpaceUtils.readPreviews(host, cache, alias, keys, null, loader.getMetaRecordHash(), new RecordCallback() {
+                            SpaceUtils.readPreviews(cache, network, alias, keys, null, loader.getMetaRecordHash(), new RecordCallback() {
                                 @Override
                                 public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                                     sb.addPreviewReference(Reference.newBuilder()
@@ -569,13 +582,13 @@ public class DetailActivity extends AppCompatActivity {
                             });
                             final Share share = sb.build();
                             Log.d(SpaceUtils.TAG, "Share: " + share);
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    SpaceAndroidUtils.mineShare(DetailActivity.this, recipient.getAlias(), recipientKey, share);
-                                }
-                            });
-                        } catch (IOException e) {
+                            String provider = SpaceAndroidUtils.getRemoteMinerPreference(DetailActivity.this, alias);
+                            if (provider == null || provider.isEmpty()) {
+                                showShareProviderPicker(alias, keys, cache, recipient.getAlias(), recipientKey, share);
+                            } else {
+                                share(alias, keys, cache, provider, recipient.getAlias(), recipientKey, share);
+                            }
+                        } catch (IOException | InvalidKeySpecException | NoSuchAlgorithmException e) {
                             e.printStackTrace();
                         }
                     }
@@ -584,10 +597,53 @@ public class DetailActivity extends AppCompatActivity {
         }.create();
     }
 
+    @WorkerThread
+    private void share(final String alias, final KeyPair keys, final Cache cache, String provider, final String recipientAlias, final PublicKey recipientKey, final Share share) {
+        try {
+            final Network network = SpaceAndroidUtils.getStorageNetwork(DetailActivity.this, alias);
+            final FinanceProto.Registration registration = FinanceUtils.getRegistration(cache, network, provider, null, alias, keys);
+            if (registration == null) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        showShareProviderPicker(alias, keys, cache, recipientAlias, recipientKey, share);
+                    }
+                });
+            } else {
+                MinerUtils.mineShare(DetailActivity.this, "https://" + provider, recipientAlias, recipientKey, share);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setResult(Activity.RESULT_OK);
+                        finish();
+                    }
+                });
+            }
+        } catch (IOException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchPaddingException | BadPaddingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @UiThread
+    private void showShareProviderPicker(final String alias, final KeyPair keys, final Cache cache, final String recipientAlias, final PublicKey recipientKey, final Share share) {
+        SpaceAndroidUtils.showProviderPicker(DetailActivity.this, alias, new SpaceAndroidUtils.ProviderCallback() {
+            @Override
+            public void onProviderSelected(String provider) {
+                share(alias, keys, cache, provider, recipientAlias, recipientKey, share);
+            }
+
+            @Override
+            public void onCancelSelection() {
+                // TODO
+            }
+        });
+    }
+
+    @UiThread
     private void tag() {
         final String alias = BCAndroidUtils.getAlias();
         final KeyPair keys = BCAndroidUtils.getKeyPair();
-        new TagDialog(this, alias, keys, loader.getMetaRecordHash(), loader.getMeta(), loader.isShared()) {
+        new TagDialog(this, alias, keys, cache, network, loader.getMetaRecordHash(), loader.getMeta()) {
             @Override
             public void onTag(DialogInterface dialog, String value, String reason) {
                 Tag.Builder tb = Tag.newBuilder()
@@ -603,13 +659,55 @@ public class DetailActivity extends AppCompatActivity {
                         .setRecordHash(loader.getRecordHash())
                         .build();
                 Log.d(SpaceUtils.TAG, "Tagging " + reference + " with " + tag);
+                String provider = SpaceAndroidUtils.getRemoteMinerPreference(DetailActivity.this, alias);
+                if (provider == null || provider.isEmpty()) {
+                    showTagProviderPicker(alias, keys, cache, reference, tag);
+                } else {
+                    tag(alias, keys, cache, provider, reference, tag);
+                }
+            }
+        }.create();
+    }
+
+    @WorkerThread
+    private void tag(final String alias, final KeyPair keys, final Cache cache, String provider, final Reference reference, final Tag tag) {
+        try {
+            final Network network = SpaceAndroidUtils.getStorageNetwork(DetailActivity.this, alias);
+            final FinanceProto.Registration registration = FinanceUtils.getRegistration(cache, network, provider, null, alias, keys);
+            if (registration == null) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        SpaceAndroidUtils.mineTag(DetailActivity.this, reference, tag);
+                        showTagProviderPicker(alias, keys, cache, reference, tag);
+                    }
+                });
+            } else {
+                MinerUtils.mineTag(DetailActivity.this, "https://" + provider, reference, tag);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setResult(Activity.RESULT_OK);
+                        finish();
                     }
                 });
             }
-        }.create();
+        } catch (IOException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchPaddingException | BadPaddingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @UiThread
+    private void showTagProviderPicker(final String alias, final KeyPair keys, final Cache cache, final Reference reference, final Tag tag) {
+        SpaceAndroidUtils.showProviderPicker(DetailActivity.this, alias, new SpaceAndroidUtils.ProviderCallback() {
+            @Override
+            public void onProviderSelected(String provider) {
+                tag(alias, keys, cache, provider, reference, tag);
+            }
+
+            @Override
+            public void onCancelSelection() {
+                // TODO
+            }
+        });
     }
 }

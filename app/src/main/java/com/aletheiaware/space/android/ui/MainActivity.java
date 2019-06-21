@@ -33,9 +33,11 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 
-import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
+import com.aletheiaware.bc.Cache;
+import com.aletheiaware.bc.Channel.RecordCallback;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.ui.AccountActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
@@ -47,9 +49,7 @@ import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.security.KeyPair;
 
 public class MainActivity extends AppCompatActivity {
@@ -78,8 +78,10 @@ public class MainActivity extends AppCompatActivity {
                 new Thread() {
                     @Override
                     public void run() {
-                        SpaceAndroidUtils.setSortPreference(MainActivity.this, value);
-                        adapter.sort();
+                        SpaceAndroidUtils.setSortPreference(MainActivity.this, BCAndroidUtils.getAlias(), value);
+                        if (adapter != null) {
+                            adapter.sort();
+                        }
                     }
                 }.start();
             }
@@ -109,26 +111,45 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         if (BCAndroidUtils.isInitialized()) {
             final String alias = BCAndroidUtils.getAlias();
-            if (adapter == null || !alias.equals(adapter.getAlias())) {
-                // Adapter
-                adapter = new MetaAdapter(this, alias) {
-                    @Override
-                    public void onSelection(ByteString hash, Meta meta) {
-                        Intent i = new Intent(MainActivity.this, DetailActivity.class);
-                        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, hash.toByteArray());
-                        i.putExtra(SpaceAndroidUtils.META_EXTRA, meta.toByteArray());
-                        i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, isShared(hash));
-                        startActivityForResult(i, SpaceAndroidUtils.DETAIL_ACTIVITY);
+            final KeyPair keys = BCAndroidUtils.getKeyPair();
+            final Cache cache = BCAndroidUtils.getCache();
+            new Thread() {
+                @Override
+                public void run() {
+                    if (adapter == null || !alias.equals(adapter.getAlias())) {
+                        Network network = SpaceAndroidUtils.getStorageNetwork(MainActivity.this, alias);
+                        // Adapter
+                        adapter = new MetaAdapter(MainActivity.this, cache, network, alias, keys) {
+                            @Override
+                            public void onSelection(ByteString hash, Meta meta) {
+                                Intent i = new Intent(MainActivity.this, DetailActivity.class);
+                                i.putExtra(SpaceAndroidUtils.HASH_EXTRA, hash.toByteArray());
+                                i.putExtra(SpaceAndroidUtils.META_EXTRA, meta.toByteArray());
+                                i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, isShared(hash));
+                                startActivityForResult(i, SpaceAndroidUtils.DETAIL_ACTIVITY);
+                            }
+                        };
+                        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+                            @Override
+                            public void onChanged() {
+                                sortSpinner.setVisibility(adapter.isEmpty() ? View.GONE : View.VISIBLE);
+                            }
+                        });
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                // TODO visually show files that are still getting mined
+                                recyclerView.setAdapter(adapter);
+                                recyclerView.requestLayout();
+                            }
+                        });
                     }
-                };
-                // TODO visually show files that are still getting mined
-                recyclerView.setAdapter(adapter);
-            }
-            if (adapter.isEmpty()) {
-                refresh();
-            }
-            // TODO hide sortSpinner if adapter is empty
-            switch (SpaceAndroidUtils.getSortPreference(this)) {
+                    if (adapter.isEmpty()) {
+                        refresh();
+                    }
+                }
+            }.start();
+            switch (SpaceAndroidUtils.getSortPreference(this, alias)) {
                 case "1":
                     sortSpinner.setSelection(0);
                     break;
@@ -238,6 +259,19 @@ public class MainActivity extends AppCompatActivity {
                         break;
                 }
                 break;
+            case SpaceAndroidUtils.PROVIDERS_ACTIVITY:
+                switch (resultCode) {
+                    case RESULT_OK:
+                        break;
+                    case RESULT_CANCELED:
+                        // TODO
+                        break;
+                    default:
+                        break;
+                }
+                adapter = null; // Clear adapter to reload from new providers
+                refresh();
+                break;
             case SpaceAndroidUtils.SETTINGS_ACTIVITY:
                 switch (resultCode) {
                     case RESULT_OK:
@@ -273,6 +307,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_account:
                 account();
                 return true;
+            case R.id.menu_providers:
+                providers();
+                return true;
             case R.id.menu_settings:
                 settings();
                 return true;
@@ -282,63 +319,70 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void refresh() {
-        // TODO start refresh menu animate
-        new Thread() {
-            @Override
-            public void run() {
-                final InetAddress address = SpaceAndroidUtils.getHostAddress(MainActivity.this);
-                final File cache = getCacheDir();
-                final String alias = BCAndroidUtils.getAlias();
-                final KeyPair keys = BCAndroidUtils.getKeyPair();
-                try {
-                    SpaceUtils.readMetas(address, cache, alias, keys, null, new RecordCallback() {
-                        @Override
-                        public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                            try {
-                                Meta meta = Meta.newBuilder().mergeFrom(payload).build();
-                                Log.d(SpaceUtils.TAG, "Meta: " + meta);
-                                adapter.addMeta(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, false);
-                            } catch (InvalidProtocolBufferException e) {
-                                /* Ignored */
-                                e.printStackTrace();
+        if (BCAndroidUtils.isInitialized()) {
+            // TODO start refresh menu animate
+            new Thread() {
+                @Override
+                public void run() {
+                    final String alias = BCAndroidUtils.getAlias();
+                    final KeyPair keys = BCAndroidUtils.getKeyPair();
+                    final Cache cache = BCAndroidUtils.getCache();
+                    final Network network = SpaceAndroidUtils.getStorageNetwork(MainActivity.this, alias);
+                    try {
+                        SpaceUtils.readMetas(cache, network, alias, keys, null, new RecordCallback() {
+                            @Override
+                            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                try {
+                                    Meta meta = Meta.newBuilder().mergeFrom(payload).build();
+                                    Log.d(SpaceUtils.TAG, "Meta: " + meta);
+                                    adapter.addMeta(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, false);
+                                } catch (InvalidProtocolBufferException e) {
+                                    /* Ignored */
+                                    e.printStackTrace();
+                                }
+                                return true;
                             }
-                            return true;
+                        });
+                    } catch (IOException e) {
+                        BCAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_meta_read_failed, e);
+                    }
+                    try {
+                        SpaceUtils.readShares(cache, network, alias, keys, null, null, null, new RecordCallback() {
+                            @Override
+                            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                try {
+                                    Meta meta = Meta.newBuilder().mergeFrom(payload).build();
+                                    Log.d(SpaceUtils.TAG, "Shared Meta: " + meta);
+                                    adapter.addMeta(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, true);
+                                } catch (InvalidProtocolBufferException e) {
+                                    /* Ignored */
+                                    e.printStackTrace();
+                                }
+                                return true;
+                            }
+                        }, null);
+                    } catch (IOException e) {
+                        BCAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_shared_meta_read_failed, e);
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // TODO stop refresh menu animate
                         }
                     });
-                } catch (IOException e) {
-                    BCAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_meta_read_failed, e);
                 }
-                try {
-                    SpaceUtils.readShares(address, cache, alias, keys, null, null, new RecordCallback() {
-                        @Override
-                        public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                            try {
-                                Meta meta = Meta.newBuilder().mergeFrom(payload).build();
-                                Log.d(SpaceUtils.TAG, "Shared Meta: " + meta);
-                                adapter.addMeta(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, true);
-                            } catch (InvalidProtocolBufferException e) {
-                                /* Ignored */
-                                e.printStackTrace();
-                            }
-                            return true;
-                        }
-                    }, null);
-                } catch (IOException e) {
-                    BCAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_shared_meta_read_failed, e);
-                }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        // TODO stop refresh menu animate
-                    }
-                });
-            }
-        }.start();
+            }.start();
+        }
     }
 
     private void account() {
         Intent i = new Intent(this, AccountActivity.class);
         startActivityForResult(i, SpaceAndroidUtils.ACCOUNT_ACTIVITY);
+    }
+
+    private void providers() {
+        Intent i = new Intent(this, ProvidersActivity.class);
+        startActivityForResult(i, SpaceAndroidUtils.PROVIDERS_ACTIVITY);
     }
 
     private void settings() {

@@ -20,51 +20,33 @@ import android.app.Activity;
 import android.content.DialogInterface;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
-import android.widget.TextView;
 
-import com.aletheiaware.bc.Cache;
-import com.aletheiaware.bc.Network;
-import com.aletheiaware.space.SpaceProto.Meta;
-import com.aletheiaware.space.android.AliasAdapter;
 import com.aletheiaware.space.android.R;
 
-public abstract class PreviewDialog {
+public abstract class DeleteProviderDialog {
 
     private final Activity activity;
-    private final AliasAdapter adapter;
-    private final byte[] metaRecordHash;
-    private final Meta meta;
-    private final boolean shared;
     private AlertDialog dialog;
 
-    public PreviewDialog(Activity activity, Cache cache, Network network, byte[] metaRecordHash, Meta meta, boolean shared) {
+    public DeleteProviderDialog(Activity activity) {
         this.activity = activity;
-        adapter = new AliasAdapter(activity, cache, network);
-        this.metaRecordHash = metaRecordHash;
-        this.meta = meta;
-        this.shared = shared;
     }
 
     public void create() {
-        View previewView = View.inflate(activity, R.layout.dialog_preview, null);
-        // Name TextView
-        final TextView nameText = previewView.findViewById(R.id.preview_name);
-        nameText.setText(meta.getName());
-        // TODO add spinner to select preview size
-        // TODO add option to share preview
+        View deleteView = View.inflate(activity, R.layout.dialog_delete_provider, null);
         AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
-        ab.setTitle(R.string.title_dialog_preview);
-        ab.setView(previewView);
-        ab.setPositiveButton(R.string.preview_action, new DialogInterface.OnClickListener() {
+        ab.setTitle(R.string.delete_provider);
+        ab.setView(deleteView);
+        ab.setPositiveButton(R.string.delete_provider_action, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                onPreview();
+                onDelete(dialog);
             }
         });
         dialog = ab.show();
     }
 
-    protected abstract void onPreview();
+    public abstract void onDelete(DialogInterface dialog);
 
     public AlertDialog getDialog() {
         return dialog;

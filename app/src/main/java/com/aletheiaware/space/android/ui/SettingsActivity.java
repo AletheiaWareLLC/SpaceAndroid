@@ -16,16 +16,19 @@
 
 package com.aletheiaware.space.android.ui;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.CheckBoxPreference;
 import android.support.v7.preference.ListPreference;
 import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceCategory;
 import android.support.v7.preference.PreferenceFragmentCompat;
+import android.support.v7.preference.PreferenceScreen;
+import android.util.Log;
 
 import com.aletheiaware.bc.android.ui.PasswordUnlockDialog;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
@@ -33,7 +36,7 @@ import com.aletheiaware.bc.android.utils.BiometricUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.R;
-import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
+import com.aletheiaware.space.utils.SpaceUtils;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -44,6 +47,8 @@ import javax.crypto.NoSuchPaddingException;
 
 public class SettingsActivity extends AppCompatActivity {
 
+    private SettingsPreferenceFragment fragment;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,85 +57,54 @@ public class SettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_settings);
 
         if (savedInstanceState == null) {
-            Fragment preferenceFragment = new SettingsPreferenceFragment();
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-            ft.add(R.id.preference_frame, preferenceFragment);
+            fragment = new SettingsPreferenceFragment();
+            ft.add(R.id.preference_frame, fragment);
             ft.commit();
         }
     }
 
-    // FIXME these settings are shared between all accounts
-    // ie. if one user changes sort, all users will have it changed
-    // ie. if one user changes miner, all users will have it changed
-    // ie. if one user disables biometric unlock, all users will have it disabled
-    // Possible solutions are a) use SQLite or b) store files prefixed with alias or c) store in blockchain, either way don't rely on SharedPreferences
+    @Override
+    protected void onResume() {
+        super.onResume();
+        fragment.update();
+    }
+
     public static class SettingsPreferenceFragment extends PreferenceFragmentCompat {
+        private PreferenceCategory general;
+        private PreferenceCategory security;
+        private PreferenceCategory cache;
+        private PreferenceCategory about;
         private ListPreference sortPreference;
-        private ListPreference miningLocationPreference;
-        private ListPreference hostPreference;
+        private CheckBoxPreference biometricPreference;
         private Preference cacheSizePreference;
         private Preference cachePurgePreference;
-        private CheckBoxPreference biometricPreference;
         private Preference appVersionPreference;
         private Preference supportPreference;
 
         @Override
-        public void onCreatePreferences(Bundle bundle, String s) {
-            addPreferencesFromResource(R.xml.fragment_preference);
+        public void onCreatePreferences(Bundle bundle, String key) {
+            Context context = getPreferenceManager().getContext();
+            PreferenceScreen screen = getPreferenceManager().createPreferenceScreen(context);
 
-            sortPreference = (ListPreference) findPreference(getString(R.string.preference_sort_key));
-            sortPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object o) {
-                    return true;
-                }
-            });
+            general = new PreferenceCategory(context);
+            general.setTitle(R.string.preference_general_title);
+            screen.addPreference(general);
 
-            miningLocationPreference = (ListPreference) findPreference(getString(R.string.preference_mining_location_key));
-            miningLocationPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object o) {
-                    return true;
-                }
-            });
+            sortPreference = new ListPreference(context);
+            sortPreference.setTitle(R.string.preference_sort_title);
+            sortPreference.setSummary(R.string.preference_sort_description);
+            sortPreference.setEntries(R.array.preference_sort_options);
+            sortPreference.setEntryValues(R.array.preference_sort_values);
+            general.addPreference(sortPreference);
 
-            hostPreference = (ListPreference) findPreference(getString(R.string.preference_host_key));
-            hostPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                @Override
-                public boolean onPreferenceChange(Preference preference, Object o) {
-                    if (o.equals("-1")) {
-                        final FragmentActivity activity = getActivity();
-                        if (activity == null) {
-                            return false;
-                        }
-                        String defaultHostname = SpaceAndroidUtils.getHostPreference(activity);
-                        new CustomHostDialog(activity, defaultHostname) {
-                            @Override
-                            protected void onCustomHostname(String hostname) {
-                                SpaceAndroidUtils.setHostPreference(activity, hostname);
-                            }
-                        }.create();
-                    }
-                    return true;
-                }
-            });
+            security = new PreferenceCategory(context);
+            security.setTitle(R.string.preference_security_title);
+            screen.addPreference(security);
 
-            cacheSizePreference = findPreference(getString(R.string.preference_cache_size_key));
-            cacheSizePreference.setShouldDisableView(true);
-            cacheSizePreference.setEnabled(false);
-            cacheSizePreference.setSelectable(false);
-
-            cachePurgePreference = findPreference(getString(R.string.preference_cache_purge_key));
-            cachePurgePreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    boolean result = BCAndroidUtils.purgeCache(getContext());
-                    update();
-                    return result;
-                }
-            });
-
-            biometricPreference = (CheckBoxPreference) findPreference(getString(R.string.preference_biometric_key));
+            biometricPreference = new CheckBoxPreference(context);
+            biometricPreference.setTitle(R.string.preference_biometric_title);
+            biometricPreference.setSummary(R.string.preference_biometric_description);
             biometricPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object o) {
@@ -146,6 +120,7 @@ public class SettingsActivity extends AppCompatActivity {
                                 dialog.dismiss();
                                 try {
                                     BiometricUtils.enableBiometricUnlock(activity, alias, password);
+                                    // TODO update after biometric callback success
                                     update();
                                 } catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | NoSuchProviderException e) {
                                     BCAndroidUtils.showErrorDialog(activity, R.string.error_biometric_enroll, e);
@@ -158,13 +133,46 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 }
             });
+            security.addPreference(biometricPreference);
 
-            appVersionPreference = findPreference(getString(R.string.preference_app_version_key));
+            cache = new PreferenceCategory(context);
+            cache.setTitle(R.string.preference_cache_title);
+            screen.addPreference(cache);
+
+            cacheSizePreference = new Preference(context);
+            cacheSizePreference.setTitle(R.string.preference_cache_size_title);
+            cacheSizePreference.setShouldDisableView(true);
+            cacheSizePreference.setEnabled(false);
+            cacheSizePreference.setSelectable(false);
+            cache.addPreference(cacheSizePreference);
+
+            cachePurgePreference = new Preference(context);
+            cachePurgePreference.setTitle(R.string.preference_cache_purge_title);
+            cachePurgePreference.setSummary(R.string.preference_cache_purge_description);
+            cachePurgePreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    boolean result = BCAndroidUtils.purgeCache(getContext());
+                    update();
+                    return result;
+                }
+            });
+            cache.addPreference(cachePurgePreference);
+
+            about = new PreferenceCategory(context);
+            about.setTitle(R.string.preference_about_title);
+            screen.addPreference(about);
+
+            appVersionPreference = new Preference(context);
+            appVersionPreference.setTitle(R.string.preference_app_version_title);
             appVersionPreference.setShouldDisableView(true);
             appVersionPreference.setEnabled(false);
             appVersionPreference.setSelectable(false);
+            about.addPreference(appVersionPreference);
 
-            supportPreference = findPreference(getString(R.string.preference_support_key));
+            supportPreference = new Preference(context);
+            supportPreference.setTitle(R.string.preference_support_title);
+            supportPreference.setSummary(R.string.preference_support_description);
             supportPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
@@ -176,26 +184,38 @@ public class SettingsActivity extends AppCompatActivity {
                     return true;
                 }
             });
+            about.addPreference(supportPreference);
 
-            update();
+            setPreferenceScreen(screen);
         }
 
         public void update() {
+            String alias = BCAndroidUtils.getAlias();
+            Log.d(SpaceUtils.TAG, "Setting Alias: " + alias);
+            if (alias == null || alias.isEmpty()) {
+                sortPreference.setVisible(false);
+            } else {
+                sortPreference.setVisible(true);
+                sortPreference.setKey(getString(R.string.preference_sort_key, alias));
+                biometricPreference.setKey(getString(R.string.preference_biometric_key, alias));
+            }
+
             final FragmentActivity activity = getActivity();
             if (activity == null) {
                 return;
             }
-            final String alias = BCAndroidUtils.getAlias();
-
-            long size = BCAndroidUtils.getCacheSize(activity);
-            cacheSizePreference.setSummary(BCUtils.sizeToString(size));
-            cachePurgePreference.setEnabled(size > 0L);
-
             boolean available = BiometricUtils.isBiometricUnlockAvailable(activity);
+            Log.d(SpaceUtils.TAG, "Biometric Available: " + available);
+            security.setVisible(available);
             biometricPreference.setEnabled(available);
             biometricPreference.setSelectable(available);
             biometricPreference.setVisible(available);
             biometricPreference.setChecked(BiometricUtils.isBiometricUnlockEnabled(activity, alias));
+
+            long size = BCAndroidUtils.getCacheSize(activity);
+            Log.d(SpaceUtils.TAG, "Cache Size: " + size);
+            cacheSizePreference.setSummary(BCUtils.sizeToString(size));
+            cachePurgePreference.setEnabled(size > 0L);
 
             appVersionPreference.setSummary(BuildConfig.BUILD_TYPE + "-" + BuildConfig.VERSION_NAME);
         }

@@ -29,6 +29,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.aletheiaware.bc.Cache;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Preview;
@@ -38,6 +40,7 @@ import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 
+import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,17 +52,23 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
 
     private final Activity activity;
     private final LayoutInflater inflater;
+    private final Cache cache;
+    private final Network network;
     private final String alias;
+    private final KeyPair keys;
     private final Map<ByteString, Meta> metas = new HashMap<>();
     private final Map<ByteString, Preview> previews = new HashMap<>();
     private final Map<ByteString, Long> timestamps = new HashMap<>();
     private final Set<ByteString> shared = new HashSet<>();
     private final List<ByteString> sorted = new ArrayList<>();
 
-    public MetaAdapter(Activity activity, String alias) {
+    public MetaAdapter(Activity activity, Cache cache, Network network, String alias, KeyPair keys) {
         this.activity = activity;
         this.inflater = activity.getLayoutInflater();
+        this.cache = cache;
+        this.network = network;
         this.alias = alias;
+        this.keys = keys;
     }
 
     public String getAlias() {
@@ -81,7 +90,7 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
     }
 
     public synchronized void sort() {
-        String value = SpaceAndroidUtils.getSortPreference(activity);
+        String value = SpaceAndroidUtils.getSortPreference(activity, alias);
         boolean chronological = "1".equals(value);
         SpaceUtils.sort(sorted, timestamps, chronological);
         activity.runOnUiThread(new Runnable() {
@@ -119,15 +128,15 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
         if (sorted.isEmpty()) {
             holder.setEmptyView();
         } else {
-            ByteString hash = sorted.get(position);
+            final ByteString hash = sorted.get(position);
             Long time = timestamps.get(hash);
             Meta meta = metas.get(hash);
             if (!previews.containsKey(hash)) {
-                PreviewUtils.loadPreview(activity, hash, isShared(hash), new PreviewCallback() {
+                PreviewUtils.loadPreview(cache, network, alias, keys, hash, isShared(hash), new PreviewCallback() {
                     @Override
-                    public void onPreview(ByteString metaRecordHash, boolean shared, Preview preview) {
+                    public void onPreview(Preview preview) {
                         if (preview != null) {
-                            previews.put(metaRecordHash, preview);
+                            previews.put(hash, preview);
                             activity.runOnUiThread(new Runnable() {
                                 public void run() {
                                     notifyDataSetChanged();

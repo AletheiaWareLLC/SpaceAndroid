@@ -25,10 +25,13 @@ import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.aletheiaware.bc.Cache;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.TagAdapter;
 import com.aletheiaware.space.utils.SpaceUtils;
+import com.google.protobuf.ByteString;
 
 import java.security.KeyPair;
 
@@ -36,17 +39,13 @@ public abstract class TagDialog {
 
     private final Activity activity;
     private final TagAdapter adapter;
-    private final byte[] metaRecordHash;
     private final Meta meta;
-    private final boolean shared;
     private AlertDialog dialog;
 
-    public TagDialog(Activity activity, String alias, KeyPair keys, byte[] metaRecordHash, Meta meta, boolean shared) {
+    public TagDialog(Activity activity, String alias, KeyPair keys, Cache cache, Network network, ByteString metaRecordHash, Meta meta) {
         this.activity = activity;
-        adapter = new TagAdapter(activity, alias, keys, metaRecordHash, shared);
-        this.metaRecordHash = metaRecordHash;
+        adapter = new TagAdapter(activity, alias, keys, metaRecordHash, cache, network);
         this.meta = meta;
-        this.shared = shared;
     }
 
     public void create() {

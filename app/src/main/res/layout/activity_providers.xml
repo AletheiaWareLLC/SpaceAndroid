@@ -15,43 +15,40 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    android:padding="@dimen/activity_padding">
+    android:padding="@dimen/activity_padding"
+    tools:context=".ui.ProvidersActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scrollbars="vertical"
+        android:layout_margin="@dimen/view_margin"
+        android:padding="@dimen/view_padding"
+        android:gravity="center"
         android:orientation="vertical">
 
-        <TextView
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/providers_recycler"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_margin="@dimen/view_margin"
-            android:labelFor="@id/custom_hostname"
-            android:text="@string/custom_hostname"
-            android:textColor="@color/text_secondary"
-            android:textSize="@dimen/text_secondary_size"/>
+            android:scrollbars="vertical" />
 
-        <EditText
-            android:id="@+id/custom_hostname"
+        <Button
+            android:id="@+id/providers_add_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:layout_margin="@dimen/view_margin"
-            android:imeOptions="actionDone"
-            android:inputType="text|textNoSuggestions"
+            android:background="@color/accent"
+            android:drawableStart="@drawable/icon_add"
+            android:padding="@dimen/view_padding"
+            android:text="@string/add_provider"
             android:textColor="@color/text_primary"
             android:textSize="@dimen/text_primary_size" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:text="@string/custom_host_label"
-            android:textColor="@color/text_secondary"
-            android:textSize="@dimen/text_secondary_size" />
 
     </LinearLayout>
 

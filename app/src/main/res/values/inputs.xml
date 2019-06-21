@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <resources>
-    <string-array name="inputs">
+    <string-array name="add_options">
         <item>Compose Document</item>
         <item>Upload File</item>
         <item>Take Picture</item>

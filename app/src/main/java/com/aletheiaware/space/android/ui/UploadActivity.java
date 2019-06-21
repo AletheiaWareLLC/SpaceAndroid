@@ -16,48 +16,55 @@
 
 package com.aletheiaware.space.android.ui;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.MediaMetadataRetriever;
-import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.media.ExifInterface;
+import android.support.annotation.UiThread;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
+import android.widget.FrameLayout;
 import android.widget.TextView;
-import android.widget.VideoView;
 
+import com.aletheiaware.bc.Cache;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.finance.FinanceProto.Registration;
+import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.R;
+import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
-import com.google.protobuf.ByteString;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public class UploadActivity extends AppCompatActivity {
 
     private EditText nameEditText;
     private TextView typeTextView;
     private TextView sizeTextView;
-    private TextView contentTextView;
-    private ImageView contentImageView;
-    private VideoView contentVideoView;
+    private FrameLayout contentFrame;
+    private ContentFragment contentFragment;
 
-    private Preview preview;
-    private InputStream in;
     private Button uploadButton;
 
     @Override
@@ -68,6 +75,7 @@ public class UploadActivity extends AppCompatActivity {
         // TODO add menu items
         // TODO - Preview - choose which preview sizes to generate and mine after meta. Consider adding default preview sizes to settings
         // TODO - Tag - choose which tags to apply and mine after meta.
+
         // Setup UI
         setContentView(R.layout.activity_upload);
 
@@ -80,14 +88,8 @@ public class UploadActivity extends AppCompatActivity {
         // Size TextView
         sizeTextView = findViewById(R.id.upload_size);
 
-        // Content TextView
-        contentTextView = findViewById(R.id.upload_text_view);
-
-        // Content ImageView
-        contentImageView = findViewById(R.id.upload_image_view);
-
-        // Content VideoView
-        contentVideoView = findViewById(R.id.upload_video_view);
+        // Content Frame
+        contentFrame = findViewById(R.id.upload_content_frame);
 
         // TODO Add access spinner - choose from private, public, or a list of recipients with whom to grant access and mine after meta.
 
@@ -96,21 +98,92 @@ public class UploadActivity extends AppCompatActivity {
         uploadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                uploadButton.setVisibility(View.GONE);
-                uploadButton.setEnabled(false);
-                nameEditText.setEnabled(false);
-                typeTextView.setEnabled(false);
-                sizeTextView.setEnabled(false);
-                contentTextView.setEnabled(false);
-                contentImageView.setEnabled(false);
-                contentVideoView.setEnabled(false);
+                setEditable(false);
+                String alias = BCAndroidUtils.getAlias();
+                KeyPair keys = BCAndroidUtils.getKeyPair();
+                Cache cache = BCAndroidUtils.getCache();
                 String name = nameEditText.getText().toString();
                 String type = typeTextView.getText().toString();
-                if (in != null) {
-                    SpaceAndroidUtils.mineFile(UploadActivity.this, name, type, preview, in);
+                InputStream in = contentFragment.getInputStream();
+                Preview preview = contentFragment.getPreview();
+                String provider = SpaceAndroidUtils.getRemoteMinerPreference(UploadActivity.this, alias);
+                if (provider == null || provider.isEmpty()) {
+                    showProviderPicker(alias, keys, cache, name, type, preview, in);
+                } else {
+                    upload(alias, keys, cache, provider, name, type, preview, in);
                 }
             }
         });
+        uploadButton.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                setEditable(false);
+                String alias = BCAndroidUtils.getAlias();
+                KeyPair keys = BCAndroidUtils.getKeyPair();
+                Cache cache = BCAndroidUtils.getCache();
+                String name = nameEditText.getText().toString();
+                String type = typeTextView.getText().toString();
+                InputStream in = contentFragment.getInputStream();
+                Preview preview = contentFragment.getPreview();
+                showProviderPicker(alias, keys, cache, name, type, preview, in);
+                return true;
+            }
+        });
+    }
+
+    private void upload(final String alias, final KeyPair keys, final Cache cache, final String provider, final String name, final String type, final Preview preview, final InputStream in) {
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    final Network network = SpaceAndroidUtils.getStorageNetwork(UploadActivity.this, alias);
+                    final Registration registration = FinanceUtils.getRegistration(cache, network, provider, null, alias, keys);
+                    if (registration == null) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                showProviderPicker(alias, keys, cache, name, type, preview, in);
+                            }
+                        });
+                    } else {
+                        MinerUtils.mineFile(UploadActivity.this, "https://" + provider, name, type, preview, in);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                setResult(Activity.RESULT_OK);
+                                finish();
+                            }
+                        });
+                    }
+                } catch (IOException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchPaddingException | BadPaddingException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+    }
+
+    @UiThread
+    private void showProviderPicker(final String alias, final KeyPair keys, final Cache cache, final String name, final String type, final Preview preview, final InputStream in) {
+        SpaceAndroidUtils.showProviderPicker(UploadActivity.this, alias, new SpaceAndroidUtils.ProviderCallback() {
+            @Override
+            public void onProviderSelected(String provider) {
+                upload(alias, keys, cache, provider, name, type, preview, in);
+            }
+
+            @Override
+            public void onCancelSelection() {
+                setEditable(true);
+            }
+        });
+    }
+
+    private void setEditable(boolean editable) {
+        uploadButton.setVisibility(editable ? View.VISIBLE : View.GONE);
+        uploadButton.setEnabled(editable);
+        nameEditText.setEnabled(editable);
+        typeTextView.setEnabled(editable);
+        sizeTextView.setEnabled(editable);
+        contentFrame.setEnabled(editable);
     }
 
     @Override
@@ -149,108 +222,65 @@ public class UploadActivity extends AppCompatActivity {
                 typeTextView.setText(type);
 
                 if (SpaceUtils.isText(type)) {
-                    // Precomplete EditText with generated name
-                    String generatedName = "Document" + System.currentTimeMillis();
-                    nameEditText.setText(generatedName);
                     String text = intent.getStringExtra(Intent.EXTRA_TEXT);
-                    if (text == null) {
-                        text = "";
-                    }
-                    contentTextView.setText(text);
-                    contentTextView.setVisibility(View.VISIBLE);
-                    preview = Preview.newBuilder()
-                            .setType(SpaceUtils.TEXT_PLAIN_TYPE)
-                            .setData(ByteString.copyFromUtf8(text.substring(0, Math.min(text.length(), SpaceUtils.PREVIEW_TEXT_LENGTH))))
-                            .build();
-                    byte[] bytes = text.getBytes();
-                    in = new ByteArrayInputStream(bytes);
-                    sizeTextView.setText(BCUtils.sizeToString(bytes.length));
-                    uploadButton.setVisibility(View.VISIBLE);
-                } else if (uri != null) {
-                    nameEditText.setText(SpaceAndroidUtils.getName(this, uri));
-                    try {
-                        in = getContentResolver().openInputStream(uri);
-                    } catch (IOException e) {
-                        BCAndroidUtils.showErrorDialog(this, R.string.error_reading_uri, e);
-                    }
-                    if (in == null) {
-                        contentTextView.setText(getString(R.string.no_data));
-                        contentTextView.setVisibility(View.VISIBLE);
-                    } else {
-                        try {
-                            sizeTextView.setText(BCUtils.sizeToString(in.available()));
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                    EditTextFragment fragment = new EditTextFragment();
+                    fragment.setup(text, new TextWatcher() {
+                        @Override
+                        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
                         }
-                        Bitmap bitmap = null;
-                        if (SpaceUtils.isImage(type)) {
-                            // ImageView
-                            contentImageView.setImageURI(uri);
-                            contentImageView.setVisibility(View.VISIBLE);
-                            Bundle extras = intent.getExtras();
-                            if (extras != null) {
-                                Log.d(SpaceUtils.TAG, "Getting preview from intent");
-                                bitmap = (Bitmap) extras.get(SpaceAndroidUtils.DATA_EXTRA);
-                            }
-                            if (bitmap == null) {
-                                Log.d(SpaceUtils.TAG, "Extracting thumbnail from image");
-                                try (InputStream in = getContentResolver().openInputStream(uri)) {
-                                    Bitmap image = BitmapFactory.decodeStream(in);
-                                    bitmap = ThumbnailUtils.extractThumbnail(image, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                                    try (InputStream in = getContentResolver().openInputStream(uri)) {
-                                        if (in != null) {
-                                            ExifInterface exif = new ExifInterface(in);
-                                            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
-                                            bitmap = SpaceAndroidUtils.rotateBitmap(bitmap, orientation);
-                                        }
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                        } else if (SpaceUtils.isVideo(type)) {
-                            // VideoView
-                            contentVideoView.setVideoURI(uri);
-                            contentVideoView.setVisibility(View.VISIBLE);
-                            MediaMetadataRetriever retriever = null;
-                            try {
-                                retriever = new MediaMetadataRetriever();
-                                retriever.setDataSource(this, uri);
-                                bitmap = retriever.getFrameAtTime();
-                            } catch (Exception e) {
-                                /* Ignored */
-                                e.printStackTrace();
-                            } finally {
-                                if (retriever != null) {
-                                    retriever.release();
-                                }
-                            }
+
+                        @Override
+                        public void onTextChanged(CharSequence s, int start, int before, int count) {
+
                         }
-                        if (bitmap != null) {
-                            if (bitmap.getWidth() > SpaceUtils.PREVIEW_IMAGE_SIZE || bitmap.getHeight() > SpaceUtils.PREVIEW_IMAGE_SIZE) {
-                                bitmap = Bitmap.createScaledBitmap(bitmap, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE, false);
-                            }
-                            ByteArrayOutputStream os = new ByteArrayOutputStream();
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os);
-                            preview = Preview.newBuilder()
-                                    .setType(SpaceUtils.IMAGE_JPEG_TYPE)
-                                    .setData(ByteString.copyFrom(os.toByteArray()))
-                                    .setWidth(bitmap.getWidth())
-                                    .setHeight(bitmap.getHeight())
-                                    .build();
+
+                        @Override
+                        public void afterTextChanged(Editable s) {
+                            updateSize(s.length() * 2);// 16bit char == 2 * 8bit byte
                         }
-                        uploadButton.setVisibility(View.VISIBLE);
+                    });
+                    setContentFragment(fragment);
+                } else if (SpaceUtils.isImage(type)) {
+                    ImageViewFragment fragment = new ImageViewFragment();
+                    fragment.setup(this, uri);
+                    Bundle extras = intent.getExtras();
+                    if (extras != null) {
+                        fragment.bitmap = (Bitmap) extras.get(SpaceAndroidUtils.DATA_EXTRA);
                     }
+                    setContentFragment(fragment);
+                } else if (SpaceUtils.isVideo(type)) {
+                    VideoViewFragment fragment = new VideoViewFragment();
+                    fragment.setup(this, uri);
+                    Bundle extras = intent.getExtras();
+                    if (extras != null) {
+                        fragment.bitmap = (Bitmap) extras.get(SpaceAndroidUtils.DATA_EXTRA);
+                    }
+                    setContentFragment(fragment);
+                } else {
+                    BCAndroidUtils.showErrorDialog(this, getString(R.string.error_unsupported_type, type));
+                    return;
                 }
+                uploadButton.setVisibility(View.VISIBLE);
             }
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
             startActivityForResult(intent, SpaceAndroidUtils.ACCESS_ACTIVITY);
         }
+    }
+
+    private void setContentFragment(ContentFragment fragment) {
+        contentFragment = fragment;
+        nameEditText.setText(contentFragment.getName());
+        typeTextView.setText(contentFragment.getType());
+        updateSize(contentFragment.getSize());
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(R.id.upload_content_frame, fragment);
+        ft.commit();
+    }
+
+    public void updateSize(long size) {
+        sizeTextView.setText(BCUtils.sizeToString(size));
     }
 
     @Override

@@ -16,30 +16,24 @@
 
 package com.aletheiaware.space.android.utils;
 
-import android.content.Context;
-
-import com.aletheiaware.bc.BC;
-import com.aletheiaware.bc.BC.Channel;
-import com.aletheiaware.bc.BC.Channel.RecordCallback;
-import com.aletheiaware.bc.BCProto;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
-import com.aletheiaware.bc.android.utils.BCAndroidUtils;
-import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.bc.BCProto.Reference;
+import com.aletheiaware.bc.Cache;
+import com.aletheiaware.bc.Channel.RecordCallback;
+import com.aletheiaware.bc.Crypto;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -49,109 +43,85 @@ public class PreviewUtils {
     private PreviewUtils() {}
 
     public interface PreviewCallback {
-        void onPreview(ByteString metaRecordHash, boolean shared, Preview preview);
+        void onPreview(Preview preview);
     }
 
-    public static void loadPreview(final Context context, final ByteString metaRecordHash, final boolean shared, final PreviewCallback callback) {
-        if (BCAndroidUtils.isInitialized()) {
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        final String alias = BCAndroidUtils.getAlias();
-                        final KeyPair keys = BCAndroidUtils.getKeyPair();
-                        final InetAddress host = SpaceAndroidUtils.getHostAddress(context);
-                        final File cacheDir = context.getCacheDir();
-                        final byte[] metaRecordHashBytes = metaRecordHash.toByteArray();
-                        final Channel previews = new Channel(SpaceUtils.SPACE_PREFIX_PREVIEW + new String(BCUtils.encodeBase64URL(metaRecordHashBytes)), BCUtils.THRESHOLD_STANDARD, cacheDir, host);
-                        try {
-                            previews.sync();
-                        } catch (IOException | NoSuchAlgorithmException e) {
-                            /* Ignored */
-                            e.printStackTrace();
-                        }
-                        if (shared) {
-                            final Channel shares = new Channel(SpaceUtils.SPACE_PREFIX_SHARE + alias, BCUtils.THRESHOLD_STANDARD, cacheDir, host);
-                            try {
-                                shares.sync();
-                            } catch (IOException | NoSuchAlgorithmException e) {
-                                /* Ignored */
-                                e.printStackTrace();
-                            }
-                            shares.read(alias, keys, null, new RecordCallback() {
-                                @Override
-                                public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                    Share.Builder sb = Share.newBuilder();
-                                    try {
-                                        sb.mergeFrom(payload);
-                                    } catch (InvalidProtocolBufferException e) {
-                                        e.printStackTrace();
-                                    }
-                                    Share share = sb.build();
-                                    BCProto.Reference sharedMetaReference = share.getMetaReference();
-                                    if (Arrays.equals(sharedMetaReference.getRecordHash().toByteArray(), metaRecordHashBytes)) {
-                                        int count = Math.min(share.getPreviewKeyCount(), share.getPreviewReferenceCount());
-                                        Preview preview = null;
-                                        for (int i = 0; i < count; i++) {
-                                            Block b = null;
-                                            try {
-                                                b = BCUtils.getBlock(host, share.getPreviewReference(i));
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
-                                            if (b != null) {
-                                                for (BlockEntry e : b.getEntryList()) {
-                                                    try {
-                                                        byte[] previewKey = share.getPreviewKey(i).toByteArray();
-                                                        byte[] decryptedPayload = BCUtils.decryptAES(previewKey, e.getRecord().getPayload().toByteArray());
-                                                        Preview p = Preview.newBuilder().mergeFrom(decryptedPayload).build();
-                                                        // TODO choose best preview for screen size
-                                                        if (preview == null) {
-                                                            preview = p;
-                                                        }
-                                                    } catch (InvalidProtocolBufferException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException ex) {
-                                                        ex.printStackTrace();
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        if (preview != null) {
-                                            callback.onPreview(metaRecordHash, shared, preview);
-                                        }
-                                    }
-                                    return true;
+    public static void loadPreview(final Cache cache, final Network network, final String alias, final KeyPair keys, final ByteString metaRecordHash, final boolean shared, final PreviewCallback callback) {
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    if (shared) {
+                        SpaceUtils.readShares(cache, network, alias, keys, null, metaRecordHash, new RecordCallback() {
+                            @Override
+                            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                Share.Builder sb = Share.newBuilder();
+                                try {
+                                    sb.mergeFrom(payload);
+                                } catch (InvalidProtocolBufferException e) {
+                                    e.printStackTrace();
                                 }
-                            });
-                        } else {
-                            previews.read(alias, keys, null, new BC.Channel.RecordCallback() {
-                                @Override
-                                public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                Share share = sb.build();
+                                Reference sharedMetaReference = share.getMetaReference();
+                                if (sharedMetaReference.getRecordHash().equals(metaRecordHash)) {
+                                    int count = Math.min(share.getPreviewKeyCount(), share.getPreviewReferenceCount());
                                     Preview preview = null;
-                                    for (BCProto.Reference r : blockEntry.getRecord().getReferenceList()) {
-                                        if (r.getRecordHash().equals(metaRecordHash)) {
-                                            try {
-                                                Preview p = Preview.newBuilder().mergeFrom(payload).build();
-                                                // TODO choose best preview for screen size
-                                                if (preview == null) {
-                                                    preview = p;
+                                    for (int i = 0; i < count; i++) {
+                                        Reference r = share.getPreviewReference(i);
+                                        Block b = network.getBlock(r);
+                                        if (b != null) {
+                                            for (BlockEntry e : b.getEntryList()) {
+                                                try {
+                                                    byte[] previewKey = share.getPreviewKey(i).toByteArray();
+                                                    byte[] decryptedPayload = Crypto.decryptAES(previewKey, e.getRecord().getPayload().toByteArray());
+                                                    Preview p = Preview.newBuilder().mergeFrom(decryptedPayload).build();
+                                                    // TODO choose best preview for screen size
+                                                    if (preview == null) {
+                                                        preview = p;
+                                                    }
+                                                } catch (InvalidProtocolBufferException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException ex) {
+                                                    ex.printStackTrace();
                                                 }
-                                            } catch (InvalidProtocolBufferException e) {
-                                                e.printStackTrace();
                                             }
                                         }
                                     }
                                     if (preview != null) {
-                                        callback.onPreview(metaRecordHash, shared, preview);
+                                        callback.onPreview(preview);
                                     }
-                                    return true;
                                 }
-                            });
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                                return true;
+                            }
+                        }, null, null);
+                    } else {
+                        SpaceUtils.readPreviews(cache, network, alias, keys, null, metaRecordHash, new RecordCallback() {
+                            @Override
+                            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                Preview preview = null;
+                                for (Reference r : blockEntry.getRecord().getReferenceList()) {
+                                    if (r.getRecordHash().equals(metaRecordHash)) {
+                                        try {
+                                            Preview p = Preview.newBuilder().mergeFrom(payload).build();
+                                            // TODO choose best preview for screen size
+                                            if (preview == null) {
+                                                preview = p;
+                                            }
+                                        } catch (InvalidProtocolBufferException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                                if (preview != null) {
+                                    callback.onPreview(preview);
+                                    return false;
+                                }
+                                return true;
+                            }
+                        });
                     }
+                } catch (IOException | IllegalArgumentException e) {
+                    e.printStackTrace();
                 }
-            }.start();
-        }
+            }
+        }.start();
     }
 }

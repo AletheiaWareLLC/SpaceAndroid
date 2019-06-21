@@ -19,22 +19,22 @@ package com.aletheiaware.space.android;
 import android.content.Context;
 import android.util.Log;
 
-import com.aletheiaware.bc.BC.Channel.RecordCallback;
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Record;
 import com.aletheiaware.bc.BCProto.Reference;
+import com.aletheiaware.bc.Cache;
+import com.aletheiaware.bc.Channel.RecordCallback;
+import com.aletheiaware.bc.Crypto;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
-import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -47,8 +47,13 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public abstract class MetaLoader implements RecordCallback {
+
     private final Context context;
-    private final byte[] metaRecordHash;
+    private final String alias;
+    private final KeyPair keys;
+    private final Cache cache;
+    private Network network;
+    private final ByteString metaRecordHash;
     private final boolean shared;
     private ByteString blockHash;
     private String channelName;
@@ -57,14 +62,18 @@ public abstract class MetaLoader implements RecordCallback {
     private Meta meta;
     private List<Reference> references;
 
-    public MetaLoader(Context context, byte[] metaRecordHash, boolean shared) {
+    public MetaLoader(final Context context, final String alias, final KeyPair keys, Cache cache, ByteString metaRecordHash, boolean shared) {
         this.context = context;
+        this.alias = alias;
+        this.keys = keys;
+        this.cache = cache;
         this.metaRecordHash = metaRecordHash;
         this.shared = shared;
         new Thread() {
             @Override
             public void run() {
                 try {
+                    network = SpaceAndroidUtils.getStorageNetwork(context, alias);
                     loadMeta();
                 } catch (IOException e) {
                     /* Ignored */
@@ -74,7 +83,7 @@ public abstract class MetaLoader implements RecordCallback {
         }.start();
     }
 
-    public byte[] getMetaRecordHash() {
+    public ByteString getMetaRecordHash() {
         return metaRecordHash;
     }
 
@@ -124,35 +133,28 @@ public abstract class MetaLoader implements RecordCallback {
     }
 
     private void loadMeta() throws IOException {
-        final InetAddress host = SpaceAndroidUtils.getHostAddress(context);
-        final File cache = context.getCacheDir();
-        final String alias = BCAndroidUtils.getAlias();
-        final KeyPair keys = BCAndroidUtils.getKeyPair();
         if (shared) {
-            SpaceUtils.readShares(host, cache, alias, keys, null, metaRecordHash, this, null);
+            SpaceUtils.readShares(cache, network, alias, keys, null, metaRecordHash, null,this, null);
         } else {
-            SpaceUtils.readMetas(host, cache, alias, keys, metaRecordHash, this);
+            SpaceUtils.readMetas(cache, network, alias, keys, metaRecordHash, this);
         }
     }
 
     public void readFile(RecordCallback callback) throws IOException {
-        final InetAddress host = SpaceAndroidUtils.getHostAddress(context);
-        final File cache = context.getCacheDir();
-        final String alias = BCAndroidUtils.getAlias();
-        final KeyPair keys = BCAndroidUtils.getKeyPair();
         if (shared) {
-            SpaceUtils.readShares(host, cache, alias, keys, null, metaRecordHash, null, callback);
+            SpaceUtils.readShares(cache, network, alias, keys, null, metaRecordHash, null, null, callback);
         } else if (references != null) {
             // TODO maintain mapping of record to parent block stored under cache/record/<record-hash>
             // So records can be loaded from cache if block exists, currently have to request from server each time
             for (Reference reference : references) {
                 // SpaceUtils.readFiles(host, cache, alias, keys, reference.getRecordHash().toByteArray(), callback);
-                Block block = BCUtils.getBlock(host, reference);
+                Log.d(SpaceUtils.TAG, "Reading: " + reference);
+                Block block = network.getBlock(reference);
                 if (block == null) {
                     break;
                 }
                 try {
-                    ByteString hash = ByteString.copyFrom(BCUtils.getHash(block.toByteArray()));
+                    ByteString hash = ByteString.copyFrom(Crypto.getProtobufHash(block));
                     for (BlockEntry entry : block.getEntryList()) {
                         final ByteString rh = entry.getRecordHash();
                         if (Arrays.equals(rh.toByteArray(), reference.getRecordHash().toByteArray())) {
@@ -160,8 +162,8 @@ public abstract class MetaLoader implements RecordCallback {
                             for (Record.Access a : record.getAccessList()) {
                                 if (a.getAlias().equals(alias)) {
                                     byte[] key = a.getSecretKey().toByteArray();
-                                    byte[] decryptedKey = BCUtils.decryptRSA(keys.getPrivate(), key);
-                                    byte[] decryptedPayload = BCUtils.decryptAES(decryptedKey, record.getPayload().toByteArray());
+                                    byte[] decryptedKey = Crypto.decryptRSA(keys.getPrivate(), key);
+                                    byte[] decryptedPayload = Crypto.decryptAES(decryptedKey, record.getPayload().toByteArray());
                                     if (!callback.onRecord(hash, block, entry, decryptedKey, decryptedPayload)) {
                                         return;
                                     }

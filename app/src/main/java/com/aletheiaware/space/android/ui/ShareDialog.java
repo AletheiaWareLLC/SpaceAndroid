@@ -25,6 +25,8 @@ import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 
 import com.aletheiaware.alias.AliasProto.Alias;
+import com.aletheiaware.bc.Cache;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.AliasAdapter;
 import com.aletheiaware.space.android.R;
@@ -34,17 +36,13 @@ public abstract class ShareDialog {
 
     private final Activity activity;
     private final AliasAdapter adapter;
-    private final byte[] metaRecordHash;
     private final Meta meta;
-    private final boolean shared;
     private AlertDialog dialog;
 
-    public ShareDialog(Activity activity, byte[] metaRecordHash, Meta meta, boolean shared) {
+    public ShareDialog(Activity activity, Cache cache, Network network, Meta meta, boolean shared) {
         this.activity = activity;
-        adapter = new AliasAdapter(activity);
-        this.metaRecordHash = metaRecordHash;
+        adapter = new AliasAdapter(activity, cache, network);
         this.meta = meta;
-        this.shared = shared;
     }
 
     public void create() {

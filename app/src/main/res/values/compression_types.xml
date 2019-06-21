@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-Copyright 2018 Aletheia Ware LLC
+Copyright 2019 Aletheia Ware LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,15 +14,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportHeight="48"
-    android:viewportWidth="48">
-
-    <path
-        android:fillColor="#000000"
-        android:pathData="M 0 0 H 48 V 48 H 0 V 0 Z"
-        android:strokeColor="#000000"
-        android:strokeWidth="1" />
-</vector>
+<resources>
+    <string-array name="compression_types">
+        <item>No Compression</item>
+    </string-array>
+</resources>

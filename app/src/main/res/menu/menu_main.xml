@@ -29,6 +29,12 @@ limitations under the License.
         android:title="@string/menu_account">
     </item>
     <item
+        android:id="@+id/menu_providers"
+        android:icon="@drawable/providers"
+        app:showAsAction="ifRoom"
+        android:title="@string/menu_providers">
+    </item>
+    <item
         android:id="@+id/menu_settings"
         android:icon="@drawable/settings"
         app:showAsAction="ifRoom"

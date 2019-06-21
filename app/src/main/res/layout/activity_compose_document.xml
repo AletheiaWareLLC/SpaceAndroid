@@ -53,16 +53,10 @@ limitations under the License.
             android:textColor="@color/text_secondary"
             android:textSize="@dimen/text_secondary_size" />
 
-        <EditText
-            android:id="@+id/compose_document_content"
+        <FrameLayout
+            android:id="@+id/compose_document_content_frame"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_margin="@dimen/view_margin"
-            android:inputType="text|textMultiLine"
-            android:minLines="4"
-            android:scrollbars="vertical"
-            android:textColor="@color/text"
-            android:textSize="@dimen/text_primary_size" />
+            android:layout_height="match_parent"/>
 
         <Button
             android:id="@+id/compose_document_button"

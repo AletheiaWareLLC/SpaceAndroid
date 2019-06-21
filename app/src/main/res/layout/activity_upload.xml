@@ -53,33 +53,10 @@ limitations under the License.
             android:textColor="@color/text_secondary"
             android:textSize="@dimen/text_secondary_size" />
 
-        <VideoView
-            android:id="@+id/upload_video_view"
+        <FrameLayout
+            android:id="@+id/upload_content_frame"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:adjustViewBounds="true"
-            android:contentDescription="@string/upload_video"
-            android:visibility="gone" />
-
-        <ImageView
-            android:id="@+id/upload_image_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:adjustViewBounds="true"
-            android:contentDescription="@string/upload_image"
-            android:scaleType="centerInside"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/upload_text_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:textColor="@color/text"
-            android:textSize="@dimen/text_primary_size"
-            android:visibility="gone" />
+            android:layout_height="match_parent"/>
 
         <Button
             android:id="@+id/upload_button"
