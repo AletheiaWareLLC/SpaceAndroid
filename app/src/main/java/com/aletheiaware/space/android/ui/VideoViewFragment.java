@@ -16,77 +16,113 @@
 
 package com.aletheiaware.space.android.ui;
 
+import android.app.Activity;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
+import android.media.MediaPlayer.OnErrorListener;
+import android.media.MediaPlayer.OnInfoListener;
+import android.media.MediaPlayer.OnPreparedListener;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.MediaController;
 import android.widget.VideoView;
 
-import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.utils.SpaceUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
+public class VideoViewFragment extends UriContentFragment implements OnClickListener, OnPreparedListener, OnCompletionListener, OnErrorListener, OnInfoListener {
 
-public class VideoViewFragment extends UriContentFragment {
+    private VideoView contentVideoView;
+    private MediaController controller;
 
     public VideoViewFragment() {
         super();
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_video_view, container, false);
-        VideoView contentVideoView = view.findViewById(R.id.fragment_video_view);
-        contentVideoView.requestFocus();
-        final MediaController controller = new MediaController(inflater.getContext());
+    public View onCreateView(@NonNull LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
+        Log.i(SpaceUtils.TAG, "On Create View");
+        contentVideoView = (VideoView) inflater.inflate(R.layout.fragment_video_view, container, false);
+        contentVideoView.setOnClickListener(this);
+        contentVideoView.setOnPreparedListener(this);
+        contentVideoView.setOnCompletionListener(this);
+        contentVideoView.setOnInfoListener(this);
+        contentVideoView.setOnErrorListener(this);
+        return contentVideoView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.i(SpaceUtils.TAG, "On Resume");
+        Log.i(SpaceUtils.TAG, "Parent: " + getActivity());
+        controller = new MediaController(getActivity());
         controller.setMediaPlayer(contentVideoView);
         controller.setAnchorView(contentVideoView);
         contentVideoView.setMediaController(controller);
         contentVideoView.setVideoURI(uri);
         contentVideoView.setZOrderOnTop(true);
-        contentVideoView.start();
-        contentVideoView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (controller.isShowing()) {
-                    controller.hide();
-                } else {
-                    controller.show();
-                }
-            }
-        });
+        contentVideoView.requestFocus();
         contentVideoView.requestLayout();
-        controller.show(3 * 1000);// Show for 3 seconds in ms
-        return view;
+        contentVideoView.start();
     }
 
     @Override
-    public String getType() {
+    public void onClick(View v) {
+        Log.i(SpaceUtils.TAG, "On Click");
+        if (controller != null) {
+            if (controller.isShowing()) {
+                controller.hide();
+            } else {
+                controller.show();
+            }
+        }
+    }
+
+    @Override
+    public void onPrepared(MediaPlayer mp) {
+        Log.i(SpaceUtils.TAG, "On Prepared");
+        Log.i(SpaceUtils.TAG, "Duration: " + contentVideoView.getDuration());
+        if (controller != null) {
+            controller.show(3 * 1000);// Show for 3 seconds in ms
+        }
+    }
+
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+        Log.i(SpaceUtils.TAG, "On Completion");
+    }
+
+    @Override
+    public boolean onInfo(MediaPlayer mp, int what, int extra) {
+        Log.i(SpaceUtils.TAG, "On Info " + what + " " + extra);
+        return false;
+    }
+
+    @Override
+    public boolean onError(MediaPlayer mp, int what, int extra) {
+        Log.e(SpaceUtils.TAG, "On Error " + what + " " + extra);
+        return false;
+    }
+
+    @Override
+    public String getType(Activity parent) {
         if (type == null) {
             // TODO update based on uri
             type = SpaceUtils.DEFAULT_VIDEO_TYPE;
         }
-        return type;
+        return super.getType(parent);
     }
 
     @Override
-    public InputStream getInputStream() {
-        try {
-            return parent.getContentResolver().openInputStream(uri);
-        } catch (IOException e) {
-            BCAndroidUtils.showErrorDialog(parent, R.string.error_reading_uri, e);
-        }
-        return null;
-    }
-
-    @Override
-    public Preview getPreview() {
+    public Preview getPreview(Activity parent) {
         if (bitmap == null) {
             MediaMetadataRetriever retriever = null;
             try {
@@ -102,6 +138,6 @@ public class VideoViewFragment extends UriContentFragment {
                 }
             }
         }
-        return super.getPreview();
+        return super.getPreview(parent);
     }
 }

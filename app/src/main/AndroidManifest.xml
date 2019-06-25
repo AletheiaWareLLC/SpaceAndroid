@@ -28,6 +28,7 @@ limitations under the License.
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
@@ -42,16 +43,6 @@ limitations under the License.
             android:name=".ui.ComposeDocumentActivity"
             android:label="@string/title_activity_compose_document"
             android:theme="@style/AppTheme" />
-        <activity android:name=".ui.CreateAccountActivity"
-            android:label="@string/title_activity_create_account"
-            android:theme="@style/AppTheme"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.aletheiaware.bc.android.CREATE_ACCOUNT"/>
-
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
         <activity
             android:name=".ui.DetailActivity"
             android:label="@string/title_activity_detail"

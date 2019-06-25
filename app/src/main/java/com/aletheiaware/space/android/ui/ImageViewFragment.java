@@ -16,6 +16,7 @@
 
 package com.aletheiaware.space.android.ui;
 
+import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
@@ -46,18 +47,17 @@ public class ImageViewFragment extends UriContentFragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_image_view, container, false);
-        ImageView contentImageView = view.findViewById(R.id.fragment_image_view);
+        ImageView contentImageView = (ImageView) inflater.inflate(R.layout.fragment_image_view, container, false);
         if (drawable != null) {
             contentImageView.setImageDrawable(drawable);
         } else {
             contentImageView.setImageURI(uri);
         }
-        return view;
+        return contentImageView;
     }
 
     @Override
-    public String getType() {
+    public String getType(Activity parent) {
         if (type == null) {
             // TODO update based on uri
             type = SpaceUtils.DEFAULT_IMAGE_TYPE;
@@ -66,16 +66,16 @@ public class ImageViewFragment extends UriContentFragment {
     }
 
     @Override
-    public Preview getPreview() {
+    public Preview getPreview(Activity parent) {
         if (bitmap == null) {
-            try (InputStream in = parent.getContentResolver().openInputStream(uri)) {
+            try (InputStream in = getInputStream(parent)) {
                 Bitmap image = BitmapFactory.decodeStream(in);
                 bitmap = ThumbnailUtils.extractThumbnail(image, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE);
             } catch (IOException e) {
                 e.printStackTrace();
             }
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                try (InputStream in = parent.getContentResolver().openInputStream(uri)) {
+                try (InputStream in = getInputStream(parent)) {
                     if (in != null) {
                         ExifInterface exif = new ExifInterface(in);
                         int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
@@ -86,6 +86,6 @@ public class ImageViewFragment extends UriContentFragment {
                 }
             }
         }
-        return super.getPreview();
+        return super.getPreview(parent);
     }
 }

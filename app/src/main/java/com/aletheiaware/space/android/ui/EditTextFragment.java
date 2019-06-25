@@ -16,6 +16,7 @@
 
 package com.aletheiaware.space.android.ui;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.text.TextWatcher;
@@ -43,13 +44,12 @@ public class EditTextFragment extends TextContentFragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_edit_text, container, false);
-        contentEditText = view.findViewById(R.id.fragment_edit_text);
+        contentEditText = (EditText) inflater.inflate(R.layout.fragment_edit_text, container, false);
         if (watcher != null) {
             contentEditText.addTextChangedListener(watcher);
         }
         contentEditText.setText(getText());
-        return view;
+        return contentEditText;
     }
 
     @Override
@@ -58,18 +58,18 @@ public class EditTextFragment extends TextContentFragment {
     }
 
     @Override
-    public String getName() {
+    public String getName(Activity parent) {
         // Generate name
         return "Document" + System.currentTimeMillis();
     }
 
     @Override
-    public String getType() {
+    public String getType(Activity parent) {
         return SpaceUtils.TEXT_PLAIN_TYPE;
     }
 
     @Override
-    public long getSize() {
+    public long getSize(Activity parent) {
         return getText().length();
     }
 }

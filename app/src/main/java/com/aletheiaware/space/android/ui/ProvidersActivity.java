@@ -28,7 +28,6 @@ import android.widget.Button;
 
 import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Network;
-import com.aletheiaware.bc.android.ui.StripeDialog;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.finance.FinanceProto.Registration;
@@ -37,8 +36,9 @@ import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.android.ProvidersAdapter;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils.RegistrationCallback;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils.SubscriptionCallback;
 import com.aletheiaware.space.utils.SpaceUtils;
-import com.stripe.android.model.Token;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -132,9 +132,15 @@ public class ProvidersActivity extends AppCompatActivity {
                             }
 
                             @Override
-                            public void onClickProviderRegistration(String provider, String registrationId) {
+                            public void onClickProviderRegistration(final String provider, final String registrationId) {
                                 if (registrationId == null || registrationId.isEmpty()) {
-                                    register(provider, "Space Registration", "/space-register");
+                                    SpaceAndroidUtils.registerSpaceCustomer(ProvidersActivity.this, provider, alias, new RegistrationCallback() {
+                                        @Override
+                                        public void onRegistered(String customerId) {
+                                            Log.d(BCUtils.TAG, "Registration ID: " + customerId);
+                                            refresh(provider);
+                                        }
+                                    });
                                 } else {
                                     // TODO show recent bills, charges, usage, etc
                                     // TODO unregister()?
@@ -142,9 +148,20 @@ public class ProvidersActivity extends AppCompatActivity {
                             }
 
                             @Override
-                            public void onClickProviderStorage(String provider, String registrationId, String subscriptionId) {
+                            public void onClickProviderStorage(final String provider, final String registrationId, String subscriptionId) {
                                 if (subscriptionId == null || subscriptionId.isEmpty()) {
-                                    subscribe(provider, "/space-subscribe-storage", registrationId);
+                                    new Thread() {
+                                        @Override
+                                        public void run() {
+                                            SpaceAndroidUtils.subscribeSpaceStorageCustomer(ProvidersActivity.this, provider, alias, registrationId, new SubscriptionCallback() {
+                                                @Override
+                                                public void onSubscribed(String subscriptionId) {
+                                                    Log.d(BCUtils.TAG, "Space Storage Subscription ID" + subscriptionId);
+                                                    refresh(provider);
+                                                }
+                                            });
+                                        }
+                                    }.start();
                                 } else {
                                     // TODO unsubscribe()?
                                 }
@@ -152,9 +169,20 @@ public class ProvidersActivity extends AppCompatActivity {
                             }
 
                             @Override
-                            public void onClickProviderMining(String provider, String registrationId, String subscriptionId) {
+                            public void onClickProviderMining(final String provider, final String registrationId, String subscriptionId) {
                                 if (subscriptionId == null || subscriptionId.isEmpty()) {
-                                    subscribe(provider, "/space-subscribe-mining", registrationId);
+                                    new Thread() {
+                                        @Override
+                                        public void run() {
+                                            SpaceAndroidUtils.subscribeSpaceMiningCustomer(ProvidersActivity.this, provider, alias, registrationId, new SubscriptionCallback() {
+                                                @Override
+                                                public void onSubscribed(String subscriptionId) {
+                                                    Log.d(BCUtils.TAG, "Space Mining Subscription ID" + subscriptionId);
+                                                    refresh(provider);
+                                                }
+                                            });
+                                        }
+                                    }.start();
                                 } else {
                                     // TODO unsubscribe()?
                                 }
@@ -174,43 +202,6 @@ public class ProvidersActivity extends AppCompatActivity {
                 }
             }.start();
         }
-    }
-
-    private void register(final String provider, final String description, final String path) {
-        new StripeDialog(this, description, null) {
-            @Override
-            public void onSubmit(final String email, final Token token) {
-                new Thread() {
-                    @Override
-                    public void run() {
-                        try {
-                            String alias = BCAndroidUtils.getAlias();
-                            String registrationId = BCUtils.register("https://" + provider + path, alias, email, token.getId());
-                            Log.d(BCUtils.TAG, "Registration ID: " + registrationId);
-                            refresh(provider);
-                        } catch (IOException e) {
-                            BCAndroidUtils.showErrorDialog(ProvidersActivity.this, R.string.error_registering, e);
-                        }
-                    }
-                }.start();
-            }
-        }.create();
-    }
-
-    private void subscribe(final String provider, final String path, final String customerId) {
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    String alias = BCAndroidUtils.getAlias();
-                    String subscriptionId = BCUtils.subscribe("https://" + provider + path, alias, customerId);
-                    Log.d(BCUtils.TAG, "Subscription ID" + subscriptionId);
-                    refresh(provider);
-                } catch (Exception e) {
-                    BCAndroidUtils.showErrorDialog(ProvidersActivity.this, R.string.error_subscribing, e);
-                }
-            }
-        }.start();
     }
 
     private void refresh() {

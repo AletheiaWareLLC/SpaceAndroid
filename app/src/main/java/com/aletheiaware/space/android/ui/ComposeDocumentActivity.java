@@ -40,11 +40,15 @@ import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.finance.FinanceProto.Registration;
+import com.aletheiaware.finance.FinanceProto.Subscription;
 import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils.ProviderCallback;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils.RegistrationCallback;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils.SubscriptionCallback;
 import com.aletheiaware.space.utils.SpaceUtils;
 
 import java.io.IOException;
@@ -124,8 +128,8 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                 Cache cache = BCAndroidUtils.getCache();
                 String name = nameEditText.getText().toString();
                 String type = typeSpinner.getSelectedItem().toString();
-                InputStream in = contentFragment.getInputStream();
-                Preview preview = contentFragment.getPreview();
+                InputStream in = contentFragment.getInputStream(ComposeDocumentActivity.this);
+                Preview preview = contentFragment.getPreview(ComposeDocumentActivity.this);
                 String provider = SpaceAndroidUtils.getRemoteMinerPreference(ComposeDocumentActivity.this, alias);
                 if (provider == null || provider.isEmpty()) {
                     showProviderPicker(alias, keys, cache, name, type, preview, in);
@@ -143,8 +147,8 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                 Cache cache = BCAndroidUtils.getCache();
                 String name = nameEditText.getText().toString();
                 String type = typeSpinner.getSelectedItem().toString();
-                InputStream in = contentFragment.getInputStream();
-                Preview preview = contentFragment.getPreview();
+                InputStream in = contentFragment.getInputStream(ComposeDocumentActivity.this);
+                Preview preview = contentFragment.getPreview(ComposeDocumentActivity.this);
                 showProviderPicker(alias, keys, cache, name, type, preview, in);
                 return true;
             }
@@ -160,11 +164,38 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                 try {
                     final Network network = SpaceAndroidUtils.getStorageNetwork(ComposeDocumentActivity.this, alias);
                     final Registration registration = FinanceUtils.getRegistration(cache, network, provider, null, alias, keys);
+                    Log.d(SpaceUtils.TAG, "Registration: " + registration);
+                    final Subscription subscriptionStorage = FinanceUtils.getSubscription(cache, network, provider, null, alias, keys, getString(R.string.stripe_subscription_storage_product), getString(R.string.stripe_subscription_storage_plan));
+                    Log.d(SpaceUtils.TAG, "Storage Subscription: " + subscriptionStorage);
+                    final Subscription subscriptionMining = FinanceUtils.getSubscription(cache, network, provider, null, alias, keys, getString(R.string.stripe_subscription_mining_product), getString(R.string.stripe_subscription_mining_plan));
+                    Log.d(SpaceUtils.TAG, "Mining Subscription: " + subscriptionMining);
                     if (registration == null) {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                showProviderPicker(alias, keys, cache, name, type, preview, in);
+                                SpaceAndroidUtils.registerSpaceCustomer(ComposeDocumentActivity.this, provider, alias, new RegistrationCallback() {
+                                    @Override
+                                    public void onRegistered(final String customerId) {
+                                        Log.d(SpaceUtils.TAG, "Space Customer ID: " + customerId);
+                                        compose(alias, keys, cache, provider, name, type, preview, in);
+                                    }
+                                });
+                            }
+                        });
+                    } else if (subscriptionStorage == null) {
+                        SpaceAndroidUtils.subscribeSpaceStorageCustomer(ComposeDocumentActivity.this, provider, alias, registration.getCustomerId(), new SubscriptionCallback() {
+                            @Override
+                            public void onSubscribed(String subscriptionId) {
+                                Log.d(SpaceUtils.TAG, "Space Storage Subscription ID: " + subscriptionId);
+                                compose(alias, keys, cache, provider, name, type, preview, in);
+                            }
+                        });
+                    } else if (subscriptionMining == null) {
+                        SpaceAndroidUtils.subscribeSpaceMiningCustomer(ComposeDocumentActivity.this, provider, alias, registration.getCustomerId(), new SubscriptionCallback() {
+                            @Override
+                            public void onSubscribed(String subscriptionId) {
+                                Log.d(SpaceUtils.TAG, "Space Mining Subscription ID: " + subscriptionId);
+                                compose(alias, keys, cache, provider, name, type, preview, in);
                             }
                         });
                     } else {
@@ -186,7 +217,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
 
     @UiThread
     private void showProviderPicker(final String alias, final KeyPair keys, final Cache cache, final String name, final String type, final Preview preview, final InputStream in) {
-        SpaceAndroidUtils.showProviderPicker(ComposeDocumentActivity.this, alias, new SpaceAndroidUtils.ProviderCallback() {
+        SpaceAndroidUtils.showProviderPicker(ComposeDocumentActivity.this, alias, new ProviderCallback() {
             @Override
             public void onProviderSelected(String provider) {
                 compose(alias, keys, cache, provider, name, type, preview, in);
@@ -264,7 +295,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
 
     private void setContentFragment(ContentFragment fragment) {
         contentFragment = fragment;
-        typeSpinner.setSelection(typeAdapter.getPosition(contentFragment.getType()));
+        typeSpinner.setSelection(typeAdapter.getPosition(contentFragment.getType(this)));
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.compose_document_content_frame, fragment);
         ft.commit();

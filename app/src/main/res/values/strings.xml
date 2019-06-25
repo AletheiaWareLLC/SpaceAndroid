@@ -25,18 +25,7 @@ limitations under the License.
 
     <string name="backdrop_description">Backdrop</string>
 
-    <string name="create_account">Create Account</string>
-    <string name="create_account_action">Create</string>
-    <string name="create_account_label">Create a new account</string>
-    <string name="create_account_choose_alias">Choose Alias</string>
-    <string name="create_account_choose_password">Choose Password</string>
-    <string name="create_account_confirm_password">Confirm Password</string>
-    <string name="create_account_step_1">Step 1: Legal</string>
-    <string name="create_account_step_2">Step 2: Alias</string>
-    <string name="create_account_step_3">Step 3: Password</string>
-
     <string name="error_connection">Failed to connect to %s</string>
-    <string name="error_create_account">Failed to create account</string>
     <string name="error_decoding_image">Failed to decode image</string>
     <string name="error_decoding_video">Failed to decode video</string>
     <string name="error_downloading">Failed to download file</string>
@@ -89,8 +78,6 @@ limitations under the License.
     <string name="title_activity_providers">Providers</string>
     <string name="title_activity_settings">Settings</string>
     <string name="title_activity_upload">Upload File</string>
-    <string name="title_activity_create_account">Create Account</string>
-    <string name="title_dialog_creating_account">Creating Account</string>
     <string name="title_dialog_error">Error</string>
     <string name="title_dialog_add_record">Add Record</string>
     <string name="title_dialog_select_miner">Select Miner</string>

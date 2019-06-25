@@ -4,11 +4,11 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.aletheiaware.space.android"
-        minSdkVersion 19
+        minSdkVersion 22
         targetSdkVersion 28
         vectorDrawables.useSupportLibrary = true
-        versionCode 20
-        versionName "2.0"
+        versionCode 21
+        versionName "2.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -20,9 +20,9 @@ android {
             resValue "string", "file_provider_authority", "\"com.aletheiaware.space.android.fileprovider\""
             resValue "string", "stripe_publishable_key", "\"pk_live_HnBAuZFfX6Rkd1UizHWJ5VTn\""
             resValue "string", "stripe_subscription_storage_product", "\"prod_ElxCvugLTxOwEf\""
-            resValue "string", "stripe_subscription_storage_plan", "\"plan_ElxDRLDcjYjzHO\""
+            resValue "string", "stripe_subscription_storage_plan", "\"plan_FJvP3e1ztZ3m3J\""
             resValue "string", "stripe_subscription_mining_product", "\"prod_Elpqy82Et33ACO\""
-            resValue "string", "stripe_subscription_mining_plan", "\"plan_Elpsi2mVf0U2KM\""
+            resValue "string", "stripe_subscription_mining_plan", "\"plan_FJr9oz5avTIm1u\""
         }
         debug {
             minifyEnabled false
@@ -47,7 +47,8 @@ dependencies {
     implementation files('libs/FinanceJava.jar')
     implementation files('libs/SpaceJava.jar')
     implementation files('libs/protobuf-lite-3.0.1.jar')
-    implementation project(':bc-android')
+    debugImplementation project(path:':bc-android', configuration: 'debug')
+    releaseImplementation project(path:':bc-android', configuration: 'release')
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
     implementation 'com.android.support:design:28.0.0'
@@ -56,7 +57,7 @@ dependencies {
     implementation 'com.android.support:recyclerview-v7:28.0.0'
     implementation 'com.android.support:support-v4:28.0.0'
     implementation 'com.android.support:support-vector-drawable:28.0.0'
-    implementation 'com.stripe:stripe-android:9.1.1'
+    implementation 'com.stripe:stripe-android:9.3.2'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'

@@ -16,6 +16,8 @@
 
 package com.aletheiaware.space.android.ui;
 
+import android.app.Activity;
+
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -44,12 +46,12 @@ public abstract class TextContentFragment extends ContentFragment {
     }
 
     @Override
-    public InputStream getInputStream() {
+    public InputStream getInputStream(Activity parent) {
         return new ByteArrayInputStream(getText().getBytes(Charset.defaultCharset()));
     }
 
     @Override
-    public Preview getPreview() {
+    public Preview getPreview(Activity parent) {
         String text = getText();
         return Preview.newBuilder()
                 .setType(SpaceUtils.TEXT_PLAIN_TYPE)

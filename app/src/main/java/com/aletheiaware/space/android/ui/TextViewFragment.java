@@ -16,6 +16,7 @@
 
 package com.aletheiaware.space.android.ui;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
@@ -46,25 +47,24 @@ public class TextViewFragment extends TextContentFragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_text_view, container, false);
-        contentTextView = view.findViewById(R.id.fragment_text_view);
-        contentTextView.setOnClickListener(new CopyToClipboardListener(contentTextView, getName()));
+        contentTextView = (TextView) inflater.inflate(R.layout.fragment_text_view, container, false);
+        contentTextView.setOnClickListener(new CopyToClipboardListener(contentTextView, name));
         contentTextView.setText(getText());
-        return view;
+        return contentTextView;
     }
 
     @Override
-    public String getName() {
+    public String getName(Activity parent) {
         return name;
     }
 
     @Override
-    public String getType() {
+    public String getType(Activity parent) {
         return type;
     }
 
     @Override
-    public long getSize() {
+    public long getSize(Activity parent) {
         return size;
     }
 }

@@ -53,7 +53,8 @@ import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
-import com.aletheiaware.finance.FinanceProto;
+import com.aletheiaware.finance.FinanceProto.Registration;
+import com.aletheiaware.finance.FinanceProto.Subscription;
 import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Share;
@@ -62,6 +63,9 @@ import com.aletheiaware.space.android.MetaLoader;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.MinerUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils.ProviderCallback;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils.RegistrationCallback;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils.SubscriptionCallback;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 
@@ -164,7 +168,7 @@ public class DetailActivity extends AppCompatActivity {
         if (SpaceUtils.isVideo(type)) {
             Log.d(SpaceUtils.TAG, "Setting Video");
             File videos = new File(getCacheDir(), "video");
-            if (!videos.exists() &&!videos.mkdirs()) {
+            if (!videos.exists() && !videos.mkdirs()) {
                 Log.e(SpaceUtils.TAG, "Error making video directory");
             }
             File f = new File(videos, new String(BCUtils.encodeBase64URL(loader.getMetaRecordHash().toByteArray())));
@@ -179,7 +183,7 @@ public class DetailActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     VideoViewFragment fragment = new VideoViewFragment();
-                    fragment.setup(DetailActivity.this, uri);
+                    fragment.setup(uri);
                     fragment.name = meta.getName();
                     fragment.type = meta.getType();
                     fragment.size = meta.getSize();
@@ -200,7 +204,7 @@ public class DetailActivity extends AppCompatActivity {
                 writeFileToURI(uri);
             }
             Log.d(SpaceUtils.TAG, "Length: " + f.length());
-            Drawable[] drawables = { null };
+            Drawable[] drawables = {null};
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 ImageDecoder.Source source = ImageDecoder.createSource(getContentResolver(), uri);
                 try {
@@ -229,7 +233,7 @@ public class DetailActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     ImageViewFragment fragment = new ImageViewFragment();
-                    fragment.setup(DetailActivity.this, uri);
+                    fragment.setup(uri);
                     fragment.name = meta.getName();
                     fragment.type = meta.getType();
                     fragment.size = meta.getSize();
@@ -315,10 +319,10 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void setContentFragment(ContentFragment fragment) {
-        setTitle(fragment.getName());
-        nameTextView.setText(fragment.getName());
-        typeTextView.setText(fragment.getType());
-        sizeTextView.setText(BCUtils.sizeToString(fragment.getSize()));
+        setTitle(fragment.getName(this));
+        nameTextView.setText(fragment.getName(this));
+        typeTextView.setText(fragment.getType(this));
+        sizeTextView.setText(BCUtils.sizeToString(fragment.getSize(this)));
         timestampTextView.setText(BCUtils.timeToString(loader.getTimestamp()));
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.detail_content_frame, fragment);
@@ -598,15 +602,42 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     @WorkerThread
-    private void share(final String alias, final KeyPair keys, final Cache cache, String provider, final String recipientAlias, final PublicKey recipientKey, final Share share) {
+    private void share(final String alias, final KeyPair keys, final Cache cache, final String provider, final String recipientAlias, final PublicKey recipientKey, final Share share) {
         try {
             final Network network = SpaceAndroidUtils.getStorageNetwork(DetailActivity.this, alias);
-            final FinanceProto.Registration registration = FinanceUtils.getRegistration(cache, network, provider, null, alias, keys);
+            final Registration registration = FinanceUtils.getRegistration(cache, network, provider, null, alias, keys);
+            Log.d(SpaceUtils.TAG, "Registration: " + registration);
+            final Subscription subscriptionStorage = FinanceUtils.getSubscription(cache, network, provider, null, alias, keys, getString(R.string.stripe_subscription_storage_product), getString(R.string.stripe_subscription_storage_plan));
+            Log.d(SpaceUtils.TAG, "Storage Subscription: " + subscriptionStorage);
+            final Subscription subscriptionMining = FinanceUtils.getSubscription(cache, network, provider, null, alias, keys, getString(R.string.stripe_subscription_mining_product), getString(R.string.stripe_subscription_mining_plan));
+            Log.d(SpaceUtils.TAG, "Mining Subscription: " + subscriptionMining);
             if (registration == null) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        showShareProviderPicker(alias, keys, cache, recipientAlias, recipientKey, share);
+                        SpaceAndroidUtils.registerSpaceCustomer(DetailActivity.this, provider, alias, new RegistrationCallback() {
+                            @Override
+                            public void onRegistered(final String customerId) {
+                                Log.d(SpaceUtils.TAG, "Space Customer ID: " + customerId);
+                                share(alias, keys, cache, provider, recipientAlias, recipientKey, share);
+                            }
+                        });
+                    }
+                });
+            } else if (subscriptionStorage == null) {
+                SpaceAndroidUtils.subscribeSpaceStorageCustomer(DetailActivity.this, provider, alias, registration.getCustomerId(), new SubscriptionCallback() {
+                    @Override
+                    public void onSubscribed(String subscriptionId) {
+                        Log.d(SpaceUtils.TAG, "Space Storage Subscription ID: " + subscriptionId);
+                        share(alias, keys, cache, provider, recipientAlias, recipientKey, share);
+                    }
+                });
+            } else if (subscriptionMining == null) {
+                SpaceAndroidUtils.subscribeSpaceMiningCustomer(DetailActivity.this, provider, alias, registration.getCustomerId(), new SubscriptionCallback() {
+                    @Override
+                    public void onSubscribed(String subscriptionId) {
+                        Log.d(SpaceUtils.TAG, "Space Mining Subscription ID: " + subscriptionId);
+                        share(alias, keys, cache, provider, recipientAlias, recipientKey, share);
                     }
                 });
             } else {
@@ -626,7 +657,7 @@ public class DetailActivity extends AppCompatActivity {
 
     @UiThread
     private void showShareProviderPicker(final String alias, final KeyPair keys, final Cache cache, final String recipientAlias, final PublicKey recipientKey, final Share share) {
-        SpaceAndroidUtils.showProviderPicker(DetailActivity.this, alias, new SpaceAndroidUtils.ProviderCallback() {
+        SpaceAndroidUtils.showProviderPicker(DetailActivity.this, alias, new ProviderCallback() {
             @Override
             public void onProviderSelected(String provider) {
                 share(alias, keys, cache, provider, recipientAlias, recipientKey, share);
@@ -670,15 +701,42 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     @WorkerThread
-    private void tag(final String alias, final KeyPair keys, final Cache cache, String provider, final Reference reference, final Tag tag) {
+    private void tag(final String alias, final KeyPair keys, final Cache cache, final String provider, final Reference reference, final Tag tag) {
         try {
             final Network network = SpaceAndroidUtils.getStorageNetwork(DetailActivity.this, alias);
-            final FinanceProto.Registration registration = FinanceUtils.getRegistration(cache, network, provider, null, alias, keys);
+            final Registration registration = FinanceUtils.getRegistration(cache, network, provider, null, alias, keys);
+            Log.d(SpaceUtils.TAG, "Registration: " + registration);
+            final Subscription subscriptionStorage = FinanceUtils.getSubscription(cache, network, provider, null, alias, keys, getString(R.string.stripe_subscription_storage_product), getString(R.string.stripe_subscription_storage_plan));
+            Log.d(SpaceUtils.TAG, "Storage Subscription: " + subscriptionStorage);
+            final Subscription subscriptionMining = FinanceUtils.getSubscription(cache, network, provider, null, alias, keys, getString(R.string.stripe_subscription_mining_product), getString(R.string.stripe_subscription_mining_plan));
+            Log.d(SpaceUtils.TAG, "Mining Subscription: " + subscriptionMining);
             if (registration == null) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        showTagProviderPicker(alias, keys, cache, reference, tag);
+                        SpaceAndroidUtils.registerSpaceCustomer(DetailActivity.this, provider, alias, new RegistrationCallback() {
+                            @Override
+                            public void onRegistered(final String customerId) {
+                                Log.d(SpaceUtils.TAG, "Space Customer ID: " + customerId);
+                                tag(alias, keys, cache, provider, reference, tag);
+                            }
+                        });
+                    }
+                });
+            } else if (subscriptionStorage == null) {
+                SpaceAndroidUtils.subscribeSpaceStorageCustomer(DetailActivity.this, provider, alias, registration.getCustomerId(), new SubscriptionCallback() {
+                    @Override
+                    public void onSubscribed(String subscriptionId) {
+                        Log.d(SpaceUtils.TAG, "Space Storage Subscription ID: " + subscriptionId);
+                        tag(alias, keys, cache, provider, reference, tag);
+                    }
+                });
+            } else if (subscriptionMining == null) {
+                SpaceAndroidUtils.subscribeSpaceMiningCustomer(DetailActivity.this, provider, alias, registration.getCustomerId(), new SubscriptionCallback() {
+                    @Override
+                    public void onSubscribed(String subscriptionId) {
+                        Log.d(SpaceUtils.TAG, "Space Mining Subscription ID: " + subscriptionId);
+                        tag(alias, keys, cache, provider, reference, tag);
                     }
                 });
             } else {
@@ -698,7 +756,7 @@ public class DetailActivity extends AppCompatActivity {
 
     @UiThread
     private void showTagProviderPicker(final String alias, final KeyPair keys, final Cache cache, final Reference reference, final Tag tag) {
-        SpaceAndroidUtils.showProviderPicker(DetailActivity.this, alias, new SpaceAndroidUtils.ProviderCallback() {
+        SpaceAndroidUtils.showProviderPicker(DetailActivity.this, alias, new ProviderCallback() {
             @Override
             public void onProviderSelected(String provider) {
                 tag(alias, keys, cache, provider, reference, tag);

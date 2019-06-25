@@ -33,20 +33,18 @@ import java.io.InputStream;
 
 public abstract class UriContentFragment extends ContentFragment {
 
-    Activity parent;
     Uri uri;
     String name;
     String type;
     long size;
     Bitmap bitmap;
 
-    public void setup(Activity parent, Uri uri) {
-        this.parent = parent;
+    public void setup(Uri uri) {
         this.uri = uri;
     }
 
     @Override
-    public String getName() {
+    public String getName(Activity parent) {
         if (name == null || name.isEmpty()) {
             name = SpaceAndroidUtils.getName(parent, uri);
         }
@@ -54,14 +52,14 @@ public abstract class UriContentFragment extends ContentFragment {
     }
 
     @Override
-    public String getType() {
+    public String getType(Activity parent) {
         return type;
     }
 
     @Override
-    public long getSize() {
+    public long getSize(Activity parent) {
         if (size == 0) {
-            try (InputStream in = getInputStream()) {
+            try (InputStream in = getInputStream(parent)) {
                 size = in.available();
             } catch (IOException e) {
                 BCAndroidUtils.showErrorDialog(parent, R.string.error_reading_uri, e);
@@ -71,7 +69,7 @@ public abstract class UriContentFragment extends ContentFragment {
     }
 
     @Override
-    public InputStream getInputStream() {
+    public InputStream getInputStream(Activity parent) {
         try {
             return parent.getContentResolver().openInputStream(uri);
         } catch (IOException e) {
@@ -81,7 +79,7 @@ public abstract class UriContentFragment extends ContentFragment {
     }
 
     @Override
-    public Preview getPreview() {
+    public Preview getPreview(Activity parent) {
         if (bitmap != null) {
             if (bitmap.getWidth() > SpaceUtils.PREVIEW_IMAGE_SIZE || bitmap.getHeight() > SpaceUtils.PREVIEW_IMAGE_SIZE) {
                 bitmap = Bitmap.createScaledBitmap(bitmap, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE, false);

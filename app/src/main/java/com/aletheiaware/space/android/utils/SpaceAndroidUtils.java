@@ -39,12 +39,19 @@ import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
 
+import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.TCPNetwork;
+import com.aletheiaware.bc.android.ui.CreateAccountActivity;
 import com.aletheiaware.bc.android.ui.StripeDialog;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.finance.FinanceProto.Registration;
+import com.aletheiaware.finance.FinanceProto.Subscription;
+import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.ui.ComposeDocumentActivity;
@@ -55,6 +62,7 @@ import com.stripe.android.model.Token;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.KeyPair;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -334,6 +342,11 @@ public class SpaceAndroidUtils {
         }.create();
     }
 
+    @UiThread
+    public static void registerSpaceCustomer(final Activity parent, final String provider, final String alias, final RegistrationCallback callback) {
+        registerCustomer(parent, "https://" + provider + "/space-register", "Space Registration", alias, callback);
+    }
+
     public interface SubscriptionCallback {
         void onSubscribed(String subscriptionId);
     }
@@ -351,6 +364,16 @@ public class SpaceAndroidUtils {
         }
     }
 
+    @WorkerThread
+    public static void subscribeSpaceMiningCustomer(final Activity parent, final String provider, final String alias, final String customerId, final SubscriptionCallback callback) {
+        subscribeCustomer(parent, "https://" + provider + "/space-subscribe-mining", alias, customerId, callback);
+    }
+
+    @WorkerThread
+    public static void subscribeSpaceStorageCustomer(final Activity parent, final String provider, final String alias, final String customerId, final SubscriptionCallback callback) {
+        subscribeCustomer(parent, "https://" + provider + "/space-subscribe-storage", alias, customerId, callback);
+    }
+
     public interface ProviderCallback {
         void onProviderSelected(String provider);
         void onCancelSelection();
@@ -366,28 +389,7 @@ public class SpaceAndroidUtils {
                 .setItems(providers, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        final String provider = providers[which];
-                        Log.d(SpaceUtils.TAG, "Picked Provider: " + provider);
-                        final String website = "https://" + provider;
-                        registerCustomer(parent, website + "/space-register", "Space Registration", alias, new RegistrationCallback() {
-                            @Override
-                            public void onRegistered(final String customerId) {
-                                Log.d(SpaceUtils.TAG, "Customer ID: " + customerId);
-                                subscribeCustomer(parent, website + "/space-storage-subscribe", alias, customerId, new SubscriptionCallback() {
-                                    @Override
-                                    public void onSubscribed(String subscriptionId) {
-                                        Log.d(SpaceUtils.TAG, "Storage Subscription ID: " + subscriptionId);
-                                        subscribeCustomer(parent, website + "/space-mining-subscribe", alias, customerId, new SubscriptionCallback() {
-                                            @Override
-                                            public void onSubscribed(String subscriptionId) {
-                                                Log.d(SpaceUtils.TAG, "Mining Subscription ID: " + subscriptionId);
-                                                callback.onProviderSelected(provider);
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        });
+                        callback.onProviderSelected(providers[which]);
                     }
                 })
                 .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {

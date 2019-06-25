@@ -16,6 +16,7 @@
 
 package com.aletheiaware.space.android.ui;
 
+import android.app.Activity;
 import android.support.v4.app.Fragment;
 
 import com.aletheiaware.space.SpaceProto.Preview;
@@ -24,14 +25,14 @@ import java.io.InputStream;
 
 public abstract class ContentFragment extends Fragment {
 
-    public abstract String getName();
+    public abstract String getName(Activity parent);
 
-    public abstract String getType();
+    public abstract String getType(Activity parent);
 
-    public abstract long getSize();
+    public abstract long getSize(Activity parent);
 
-    public abstract InputStream getInputStream();
+    public abstract InputStream getInputStream(Activity parent);
 
-    public abstract Preview getPreview();
+    public abstract Preview getPreview(Activity parent);
 
 }
