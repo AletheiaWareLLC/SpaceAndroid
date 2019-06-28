@@ -39,19 +39,12 @@ import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.view.View;
-import android.widget.ProgressBar;
 
-import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.TCPNetwork;
-import com.aletheiaware.bc.android.ui.CreateAccountActivity;
 import com.aletheiaware.bc.android.ui.StripeDialog;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
-import com.aletheiaware.finance.FinanceProto.Registration;
-import com.aletheiaware.finance.FinanceProto.Subscription;
-import com.aletheiaware.finance.utils.FinanceUtils;
 import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.ui.ComposeDocumentActivity;
@@ -62,7 +55,7 @@ import com.stripe.android.model.Token;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.security.KeyPair;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -94,7 +87,7 @@ public class SpaceAndroidUtils {
     private static String tempURIType = null;
 
     public static String getSpaceHostname() {
-        return BuildConfig.DEBUG ? SpaceUtils.SPACE_HOST_TEST : SpaceUtils.SPACE_HOST;
+        return SpaceUtils.getSpaceHostname(BuildConfig.DEBUG);
     }
 
     @WorkerThread
@@ -382,6 +375,7 @@ public class SpaceAndroidUtils {
     @UiThread
     public static void showProviderPicker(final Activity parent, final String alias, final ProviderCallback callback) {
         Set<String> ps = getStorageProvidersPreference(parent, alias);
+        ps.addAll(Arrays.asList(parent.getResources().getStringArray(R.array.provider_options)));
         final String[] providers = new String[ps.size()];
         ps.toArray(providers);
         new AlertDialog.Builder(parent, R.style.AlertDialogTheme)

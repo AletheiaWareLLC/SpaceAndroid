@@ -46,6 +46,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Set;
 
 import javax.crypto.BadPaddingException;
@@ -117,7 +118,7 @@ public class ProvidersActivity extends AppCompatActivity {
                         // Adapter
                         adapter = new ProvidersAdapter(ProvidersActivity.this) {
                             @Override
-                            public void onClickProviderRemove(final String provider) {
+                            public void onLongClickProvider(final String provider) {
                                 new DeleteProviderDialog(ProvidersActivity.this) {
                                     @Override
                                     public void onDelete(DialogInterface dialog) {
@@ -132,61 +133,56 @@ public class ProvidersActivity extends AppCompatActivity {
                             }
 
                             @Override
-                            public void onClickProviderRegistration(final String provider, final String registrationId) {
-                                if (registrationId == null || registrationId.isEmpty()) {
-                                    SpaceAndroidUtils.registerSpaceCustomer(ProvidersActivity.this, provider, alias, new RegistrationCallback() {
-                                        @Override
-                                        public void onRegistered(String customerId) {
-                                            Log.d(BCUtils.TAG, "Registration ID: " + customerId);
-                                            refresh(provider);
-                                        }
-                                    });
-                                } else {
-                                    // TODO show recent bills, charges, usage, etc
+                            public void onClickProvider(final String provider, final String registrationId, String subscriptionStorageId, String subscriptionMiningId) {
+                                new ProviderDialog(ProvidersActivity.this, provider, registrationId, subscriptionStorageId, subscriptionMiningId) {
+                                    // TODO show prices, recent bills, charges, usage, etc
                                     // TODO unregister()?
-                                }
-                            }
-
-                            @Override
-                            public void onClickProviderStorage(final String provider, final String registrationId, String subscriptionId) {
-                                if (subscriptionId == null || subscriptionId.isEmpty()) {
-                                    new Thread() {
-                                        @Override
-                                        public void run() {
-                                            SpaceAndroidUtils.subscribeSpaceStorageCustomer(ProvidersActivity.this, provider, alias, registrationId, new SubscriptionCallback() {
-                                                @Override
-                                                public void onSubscribed(String subscriptionId) {
-                                                    Log.d(BCUtils.TAG, "Space Storage Subscription ID" + subscriptionId);
-                                                    refresh(provider);
-                                                }
-                                            });
-                                        }
-                                    }.start();
-                                } else {
                                     // TODO unsubscribe()?
-                                }
-                                SpaceAndroidUtils.addStorageProviderPreference(ProvidersActivity.this, alias, provider);
-                            }
+                                    @Override
+                                    public void onRegister() {
+                                        SpaceAndroidUtils.registerSpaceCustomer(ProvidersActivity.this, provider, alias, new RegistrationCallback() {
+                                            @Override
+                                            public void onRegistered(String customerId) {
+                                                Log.d(BCUtils.TAG, "Registration ID: " + customerId);
+                                                refresh(provider);
+                                            }
+                                        });
+                                    }
 
-                            @Override
-                            public void onClickProviderMining(final String provider, final String registrationId, String subscriptionId) {
-                                if (subscriptionId == null || subscriptionId.isEmpty()) {
-                                    new Thread() {
-                                        @Override
-                                        public void run() {
-                                            SpaceAndroidUtils.subscribeSpaceMiningCustomer(ProvidersActivity.this, provider, alias, registrationId, new SubscriptionCallback() {
-                                                @Override
-                                                public void onSubscribed(String subscriptionId) {
-                                                    Log.d(BCUtils.TAG, "Space Mining Subscription ID" + subscriptionId);
-                                                    refresh(provider);
-                                                }
-                                            });
-                                        }
-                                    }.start();
-                                } else {
-                                    // TODO unsubscribe()?
-                                }
-                                SpaceAndroidUtils.setRemoteMinerPreference(ProvidersActivity.this, alias, provider);
+                                    @Override
+                                    public void onSubscribeStorage() {
+                                        new Thread() {
+                                            @Override
+                                            public void run() {
+                                                SpaceAndroidUtils.subscribeSpaceStorageCustomer(ProvidersActivity.this, provider, alias, registrationId, new SubscriptionCallback() {
+                                                    @Override
+                                                    public void onSubscribed(String subscriptionId) {
+                                                        Log.d(BCUtils.TAG, "Space Storage Subscription ID" + subscriptionId);
+                                                        refresh(provider);
+                                                    }
+                                                });
+                                                SpaceAndroidUtils.addStorageProviderPreference(ProvidersActivity.this, alias, provider);
+                                            }
+                                        }.start();
+                                    }
+
+                                    @Override
+                                    public void onSubscribeMining() {
+                                        new Thread() {
+                                            @Override
+                                            public void run() {
+                                                SpaceAndroidUtils.subscribeSpaceMiningCustomer(ProvidersActivity.this, provider, alias, registrationId, new SubscriptionCallback() {
+                                                    @Override
+                                                    public void onSubscribed(String subscriptionId) {
+                                                        Log.d(BCUtils.TAG, "Space Mining Subscription ID" + subscriptionId);
+                                                        refresh(provider);
+                                                    }
+                                                });
+                                                SpaceAndroidUtils.setRemoteMinerPreference(ProvidersActivity.this, alias, provider);
+                                            }
+                                        }.start();
+                                    }
+                                }.create();
                             }
                         };
                         runOnUiThread(new Runnable() {
@@ -205,7 +201,9 @@ public class ProvidersActivity extends AppCompatActivity {
     }
 
     private void refresh() {
-        for (String provider : SpaceAndroidUtils.getStorageProvidersPreference(this, BCAndroidUtils.getAlias())) {
+        Set<String> providers = SpaceAndroidUtils.getStorageProvidersPreference(this, BCAndroidUtils.getAlias());
+        providers.addAll(Arrays.asList(getResources().getStringArray(R.array.provider_options)));
+        for (String provider : providers) {
             refresh(provider);
         }
     }

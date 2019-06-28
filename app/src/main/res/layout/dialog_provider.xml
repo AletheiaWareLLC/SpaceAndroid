@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright 2019 Aletheia Ware LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:padding="@dimen/activity_padding">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="vertical"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/provider_register_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:background="@color/accent"
+            android:drawableStart="@drawable/account"
+            android:padding="@dimen/view_padding"
+            android:text="@string/provider_register_action"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size"/>
+
+        <TextView
+            android:id="@+id/provider_registration_id_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/provider_registration_id_text"
+            android:text="@string/provider_registration"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <TextView
+            android:id="@+id/provider_registration_id_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size"/>
+
+        <Button
+            android:id="@+id/provider_subscribe_storage_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:background="@color/accent"
+            android:drawableStart="@drawable/bc_storage"
+            android:padding="@dimen/view_padding"
+            android:text="@string/provider_subscribe_storage_action"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size"/>
+
+        <TextView
+            android:id="@+id/provider_subscription_storage_id_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/provider_subscription_storage_id_text"
+            android:text="@string/provider_subscription_storage"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <TextView
+            android:id="@+id/provider_subscription_storage_id_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size" />
+
+        <Button
+            android:id="@+id/provider_subscribe_mining_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:background="@color/accent"
+            android:drawableStart="@drawable/bc_mine"
+            android:padding="@dimen/view_padding"
+            android:text="@string/provider_subscribe_mining_action"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size"/>
+
+        <TextView
+            android:id="@+id/provider_subscription_mining_id_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/provider_subscription_mining_id_text"
+            android:text="@string/provider_subscription_mining"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <TextView
+            android:id="@+id/provider_subscription_mining_id_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size" />
+
+    </LinearLayout>
+
+</ScrollView>

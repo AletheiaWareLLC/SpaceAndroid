@@ -111,13 +111,17 @@ limitations under the License.
     <string name="tag_reason">Reason</string>
     <string name="tag_document_label">Tags are used to search and filter documents</string>
 
-    <string name="add_provider">Add Provider</string>
+    <string name="provider_add">Add Provider</string>
     <string name="delete_provider">Delete Provider</string>
     <string name="delete_provider_action">Delete</string>
     <string name="delete_provider_legalese">Deleting this provider will not unregister your account or cancel any subscriptions you may have with them, nor will it delete your data from their systems. For more information or support, please contact the provider.</string>
-    <string name="registration">Registration</string>
-    <string name="subscription_storage">Storage Subscription</string>
-    <string name="subscription_mining">Mining Subscription</string>
+    <string name="provider_description">Providers offer Storage and Mining services to registered customers on a subscription basis. Select which providers store and mine your data from the list above, or add a custom provider.</string>
+    <string name="provider_register_action">Register</string>
+    <string name="provider_subscribe_storage_action">Subscribe Storage</string>
+    <string name="provider_subscribe_mining_action">Subscribe Mining</string>
+    <string name="provider_registration">Registration</string>
+    <string name="provider_subscription_storage">Storage Subscription</string>
+    <string name="provider_subscription_mining">Mining Subscription</string>
 
     <string name="custom_provider_alias">Provider Alias</string>
     <string name="custom_provider_action">Add</string>

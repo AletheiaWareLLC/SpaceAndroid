@@ -141,12 +141,7 @@ public class MinerUtils {
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
                     BCAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
                 } finally {
-                    parent.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            NotificationManagerCompat.from(parent).cancel(SpaceAndroidUtils.MINING_NOTIFICATION_ID);
-                        }
-                    });
+                    cancelMiningNotification(parent);
                 }
             }
         }.start();
@@ -181,12 +176,7 @@ public class MinerUtils {
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
                     BCAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
                 } finally {
-                    parent.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            NotificationManagerCompat.from(parent).cancel(SpaceAndroidUtils.MINING_NOTIFICATION_ID);
-                        }
-                    });
+                    cancelMiningNotification(parent);
                 }
             }
         }.start();
@@ -221,14 +211,22 @@ public class MinerUtils {
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
                     BCAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
                 } finally {
-                    parent.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            NotificationManagerCompat.from(parent).cancel(SpaceAndroidUtils.MINING_NOTIFICATION_ID);
-                        }
-                    });
+                    cancelMiningNotification(parent);
                 }
             }
         }.start();
+    }
+
+    private static void cancelMiningNotification(final Activity parent) {
+        try {
+            // Sleep for a second so user can see notification
+            Thread.sleep(1000);
+        } catch (InterruptedException ignored) {}
+        parent.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                NotificationManagerCompat.from(parent).cancel(SpaceAndroidUtils.MINING_NOTIFICATION_ID);
+            }
+        });
     }
 }

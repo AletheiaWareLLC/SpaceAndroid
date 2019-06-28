@@ -91,6 +91,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
         // Precomplete EditText with generated name
         String generatedName = "Document" + System.currentTimeMillis();
         nameEditText.setText(generatedName);
+        nameEditText.setSelection(0, generatedName.length());
 
         typeAdapter = ArrayAdapter.createFromResource(this, R.array.mime_types, android.R.layout.simple_spinner_item);
         typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);

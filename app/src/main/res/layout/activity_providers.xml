@@ -46,9 +46,16 @@ limitations under the License.
             android:background="@color/accent"
             android:drawableStart="@drawable/icon_add"
             android:padding="@dimen/view_padding"
-            android:text="@string/add_provider"
+            android:text="@string/provider_add"
             android:textColor="@color/text_primary"
             android:textSize="@dimen/text_primary_size" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/provider_description"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
 
     </LinearLayout>
 

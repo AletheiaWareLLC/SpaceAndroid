@@ -302,12 +302,15 @@ public class UploadActivity extends AppCompatActivity {
 
     private void setContentFragment(ContentFragment fragment) {
         contentFragment = fragment;
-        nameEditText.setText(contentFragment.getName(this));
+        String name = contentFragment.getName(this);
+        nameEditText.setText(name);
         typeTextView.setText(contentFragment.getType(this));
         updateSize(contentFragment.getSize(this));
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.upload_content_frame, fragment);
         ft.commit();
+        nameEditText.requestFocus();
+        nameEditText.setSelection(0, name.length());
     }
 
     public void updateSize(long size) {

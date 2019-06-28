@@ -460,6 +460,10 @@ public class DetailActivity extends AppCompatActivity {
                                         /* Ignored */
                                         ex.printStackTrace();
                                     } finally {
+                                        try {
+                                            // Sleep for a second so user can see notification
+                                            Thread.sleep(1000);
+                                        } catch (InterruptedException ignored) {}
                                         runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {

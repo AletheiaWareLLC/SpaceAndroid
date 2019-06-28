@@ -18,12 +18,12 @@ package com.aletheiaware.space.android;
 
 import android.app.Activity;
 import android.support.annotation.NonNull;
-import android.support.v7.widget.AppCompatImageButton;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -81,31 +81,15 @@ public abstract class ProvidersAdapter extends RecyclerView.Adapter<ProvidersAda
             @Override
             public void onClick(View v) {
                 String provider = holder.getProvider();
-                onClickProviderRegistration(provider, registrationIds.get(provider));
+                onClickProvider(provider, registrationIds.get(provider), subscriptionStorageIds.get(provider), subscriptionMiningIds.get(provider));
             }
         });
         view.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
                 String provider = holder.getProvider();
-                onClickProviderRemove(provider);
+                onLongClickProvider(provider);
                 return true;
-            }
-        });
-        final AppCompatImageButton subscriptionStorageButton = view.findViewById(R.id.provider_subscription_storage_button);
-        subscriptionStorageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String provider = holder.getProvider();
-                onClickProviderStorage(provider, registrationIds.get(provider), subscriptionStorageIds.get(provider));
-            }
-        });
-        final AppCompatImageButton subscriptionMiningButton = view.findViewById(R.id.provider_subscription_mining_button);
-        subscriptionMiningButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String provider = holder.getProvider();
-                onClickProviderMining(provider, registrationIds.get(provider), subscriptionMiningIds.get(provider));
             }
         });
         return holder;
@@ -117,7 +101,7 @@ public abstract class ProvidersAdapter extends RecyclerView.Adapter<ProvidersAda
             holder.setEmptyView();
         } else {
             String provider = sorted.get(position);
-            holder.set(provider, registrationIds.get(provider), subscriptionStorageIds.get(provider), subscriptionMiningIds.get(provider));
+            holder.set(provider, registrationIds.containsKey(provider), subscriptionStorageIds.containsKey(provider), subscriptionMiningIds.containsKey(provider));
         }
     }
 
@@ -129,13 +113,9 @@ public abstract class ProvidersAdapter extends RecyclerView.Adapter<ProvidersAda
         return sorted.size();
     }
 
-    public abstract void onClickProviderRemove(String provider);
+    public abstract void onLongClickProvider(String provider);
 
-    public abstract void onClickProviderRegistration(String provider, String registrationId);
-
-    public abstract void onClickProviderStorage(String provider, String registrationId, String subscriptionId);
-
-    public abstract void onClickProviderMining(String provider, String registrationId, String subscriptionId);
+    public abstract void onClickProvider(String provider, String registrationId, String subscriptionStorageId, String subscriptionMiningId);
 
     public boolean isEmpty() {
         return sorted.isEmpty();
@@ -145,55 +125,27 @@ public abstract class ProvidersAdapter extends RecyclerView.Adapter<ProvidersAda
 
         private String provider;
 
-        // TODO private ImageView providerImage;
+        private ImageView providerRegistered;
+        private ImageView providerSubscribedStorage;
+        private ImageView providerSubscribedMining;
         private TextView providerNameText;
-        private TextView registrationIdText;
-        private TextView subscriptionStorageIdText;
-        private TextView subscriptionMiningIdText;
-        private AppCompatImageButton subscriptionStorageButton;
-        private AppCompatImageButton subscriptionMiningButton;
 
         ViewHolder(LinearLayout view) {
             super(view);
+            providerRegistered = view.findViewById(R.id.provider_registered);
+            providerSubscribedStorage = view.findViewById(R.id.provider_subscribed_storage);
+            providerSubscribedMining = view.findViewById(R.id.provider_subscribed_mining);
             providerNameText = view.findViewById(R.id.provider_name);
-            registrationIdText = view.findViewById(R.id.provider_registration_id);
-            subscriptionStorageIdText = view.findViewById(R.id.provider_subscription_storage_id);
-            subscriptionMiningIdText = view.findViewById(R.id.provider_subscription_mining_id);
-            subscriptionStorageButton = view.findViewById(R.id.provider_subscription_storage_button);
-            subscriptionMiningButton = view.findViewById(R.id.provider_subscription_mining_button);
         }
 
-        void set(String provider, String registrationId, String subscriptionStorageId, String subscriptionMiningId) {
-            Log.d(SpaceUtils.TAG, "Setting " + provider + " " + registrationId + " " + subscriptionStorageId + " " + subscriptionMiningId);
+        void set(String provider, boolean registered, boolean subscribedStorage, boolean subscribedMining) {
+            Log.d(SpaceUtils.TAG, "Setting " + provider + " " + registered+ " " + subscribedStorage + " " + subscribedMining);
             this.provider = provider;
             providerNameText.setVisibility(View.VISIBLE);
             providerNameText.setText(provider);
-            if (registrationId == null || registrationId.isEmpty()) {
-                registrationIdText.setVisibility(View.GONE);
-                subscriptionStorageButton.setVisibility(View.GONE);
-                subscriptionMiningButton.setVisibility(View.GONE);
-            } else {
-                registrationIdText.setVisibility(View.VISIBLE);
-                registrationIdText.setText(registrationId);
-                subscriptionStorageButton.setVisibility(View.VISIBLE);
-                subscriptionMiningButton.setVisibility(View.VISIBLE);
-            }
-            if (subscriptionStorageId == null || subscriptionStorageId.isEmpty()) {
-                subscriptionStorageIdText.setVisibility(View.GONE);
-                subscriptionStorageButton.setBackgroundResource(R.color.primary);
-            } else {
-                subscriptionStorageIdText.setVisibility(View.VISIBLE);
-                subscriptionStorageIdText.setText(subscriptionStorageId);
-                subscriptionStorageButton.setBackgroundResource(R.color.accent);
-            }
-            if (subscriptionMiningId == null || subscriptionMiningId.isEmpty()) {
-                subscriptionMiningIdText.setVisibility(View.GONE);
-                subscriptionMiningButton.setBackgroundResource(R.color.primary);
-            } else {
-                subscriptionMiningIdText.setVisibility(View.VISIBLE);
-                subscriptionMiningIdText.setText(subscriptionMiningId);
-                subscriptionMiningButton.setBackgroundResource(R.color.accent);
-            }
+            providerRegistered.setVisibility(registered ? View.VISIBLE : View.GONE);
+            providerSubscribedStorage.setVisibility(subscribedStorage ? View.VISIBLE : View.GONE);
+            providerSubscribedMining.setVisibility(subscribedMining ? View.VISIBLE : View.GONE);
         }
 
         String getProvider() {
@@ -201,7 +153,7 @@ public abstract class ProvidersAdapter extends RecyclerView.Adapter<ProvidersAda
         }
 
         void setEmptyView() {
-            set(SpaceAndroidUtils.getSpaceHostname(), null, null, null);
+            set(SpaceAndroidUtils.getSpaceHostname(), false, false, false);
         }
     }
 }
