@@ -17,21 +17,22 @@
 package com.aletheiaware.space.android.ui;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.Spinner;
 
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
@@ -41,6 +42,7 @@ import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.ui.AccountActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
+import com.aletheiaware.common.android.utils.CommonAndroidUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.MetaAdapter;
 import com.aletheiaware.space.android.R;
@@ -56,7 +58,6 @@ public class MainActivity extends AppCompatActivity {
 
     private MetaAdapter adapter;
     private RecyclerView recyclerView;
-    private Spinner sortSpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,41 +65,46 @@ public class MainActivity extends AppCompatActivity {
 
         // Setup UI
         setContentView(R.layout.activity_main);
-        setTitle(null);
 
-        // SortSpinner
-        sortSpinner = findViewById(R.id.main_sort);
-        ArrayAdapter<CharSequence> sortAdapter = ArrayAdapter.createFromResource(this, R.array.preference_sort_options, R.layout.sort_list_item);
-        sortAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        sortSpinner.setAdapter(sortAdapter);
-        sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        // Toolbar
+        Toolbar toolbar = findViewById(R.id.main_toolbar);
+        toolbar.setTitle("");
+        setSupportActionBar(toolbar);
+
+        // CollapsingToolbar
+        final CollapsingToolbarLayout collapsingToolbar = findViewById(R.id.main_collapsing_toolbar);
+        collapsingToolbar.setTitle("");
+        final CharSequence title = getString(R.string.title_activity_main);
+        // Appbar
+        AppBarLayout appbar = findViewById(R.id.main_appbar);
+        appbar.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
+            boolean showing = false;
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                final String value = String.valueOf(position + 1);
-                new Thread() {
-                    @Override
-                    public void run() {
-                        SpaceAndroidUtils.setSortPreference(MainActivity.this, BCAndroidUtils.getAlias(), value);
-                        if (adapter != null) {
-                            adapter.sort();
-                        }
-                    }
-                }.start();
+            public void onOffsetChanged(AppBarLayout appBar, int verticalOffset) {
+                if (Math.abs(appBar.getTotalScrollRange() + verticalOffset) < 50) {
+                    collapsingToolbar.setTitle(title);
+                    showing = true;
+                } else if (showing) {
+                    collapsingToolbar.setTitle("");
+                    showing = false;
+                }
             }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
         });
+        setTitle(null);
 
         // RecyclerView
         recyclerView = findViewById(R.id.main_recycler);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        RecyclerView.LayoutManager layoutManager;
+        if ((getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) < Configuration.SCREENLAYOUT_SIZE_LARGE) {
+            layoutManager = new LinearLayoutManager(this);
+        } else {
+            layoutManager = new GridLayoutManager(this, 5, GridLayoutManager.VERTICAL, false);
+        }
         recyclerView.setLayoutManager(layoutManager);
-        recyclerView.addItemDecoration(new DividerItemDecoration(this, layoutManager.getOrientation()));
 
-        // Add Button
-        Button addButton = findViewById(R.id.main_add_button);
-        addButton.setOnClickListener(new View.OnClickListener() {
+        // Add FloatingActionButton
+        FloatingActionButton addFab = findViewById(R.id.main_add_fab);
+        addFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 SpaceAndroidUtils.add(MainActivity.this);
@@ -129,12 +135,6 @@ public class MainActivity extends AppCompatActivity {
                                 startActivityForResult(i, SpaceAndroidUtils.DETAIL_ACTIVITY);
                             }
                         };
-                        adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
-                            @Override
-                            public void onChanged() {
-                                sortSpinner.setVisibility(adapter.isEmpty() ? View.GONE : View.VISIBLE);
-                            }
-                        });
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -149,14 +149,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }.start();
-            switch (SpaceAndroidUtils.getSortPreference(this, alias)) {
-                case "1":
-                    sortSpinner.setSelection(0);
-                    break;
-                case "2":
-                    sortSpinner.setSelection(1);
-                    break;
-            }
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
             startActivityForResult(intent, SpaceAndroidUtils.ACCESS_ACTIVITY);
@@ -318,6 +310,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public MetaAdapter getAdapter() {
+        return adapter;
+    }
+
     private void refresh() {
         if (BCAndroidUtils.isInitialized()) {
             // TODO start refresh menu animate
@@ -344,7 +340,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
                     } catch (IOException e) {
-                        BCAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_meta_read_failed, e);
+                        CommonAndroidUtils.showErrorDialog(MainActivity.this, R.style.AlertDialogTheme, R.string.error_meta_read_failed, e);
                     }
                     try {
                         SpaceUtils.readShares(cache, network, alias, keys, null, null, null, new RecordCallback() {
@@ -362,7 +358,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }, null);
                     } catch (IOException e) {
-                        BCAndroidUtils.showErrorDialog(MainActivity.this, R.string.error_shared_meta_read_failed, e);
+                        CommonAndroidUtils.showErrorDialog(MainActivity.this, R.style.AlertDialogTheme, R.string.error_shared_meta_read_failed, e);
                     }
                     runOnUiThread(new Runnable() {
                         @Override

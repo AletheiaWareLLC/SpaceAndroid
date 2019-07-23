@@ -53,6 +53,7 @@ import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.common.utils.CommonUtils;
 import com.aletheiaware.finance.FinanceProto.Registration;
 import com.aletheiaware.finance.FinanceProto.Subscription;
 import com.aletheiaware.finance.utils.FinanceUtils;
@@ -171,7 +172,7 @@ public class DetailActivity extends AppCompatActivity {
             if (!videos.exists() && !videos.mkdirs()) {
                 Log.e(SpaceUtils.TAG, "Error making video directory");
             }
-            File f = new File(videos, new String(BCUtils.encodeBase64URL(loader.getMetaRecordHash().toByteArray())));
+            File f = new File(videos, new String(CommonUtils.encodeBase64URL(loader.getMetaRecordHash().toByteArray())));
             Log.d(SpaceUtils.TAG, "File");
             Log.d(SpaceUtils.TAG, "Path: " + f.getAbsolutePath());
             final Uri uri = FileProvider.getUriForFile(DetailActivity.this, getString(R.string.file_provider_authority), f);
@@ -196,7 +197,7 @@ public class DetailActivity extends AppCompatActivity {
             if (!images.exists() && !images.mkdirs()) {
                 Log.e(SpaceUtils.TAG, "Error making image directory");
             }
-            File f = new File(images, new String(BCUtils.encodeBase64URL(loader.getMetaRecordHash().toByteArray())));
+            File f = new File(images, new String(CommonUtils.encodeBase64URL(loader.getMetaRecordHash().toByteArray())));
             Log.d(SpaceUtils.TAG, "File");
             Log.d(SpaceUtils.TAG, "Path: " + f.getAbsolutePath());
             final Uri uri = FileProvider.getUriForFile(DetailActivity.this, getString(R.string.file_provider_authority), f);
@@ -322,8 +323,8 @@ public class DetailActivity extends AppCompatActivity {
         setTitle(fragment.getName(this));
         nameTextView.setText(fragment.getName(this));
         typeTextView.setText(fragment.getType(this));
-        sizeTextView.setText(BCUtils.sizeToString(fragment.getSize(this)));
-        timestampTextView.setText(BCUtils.timeToString(loader.getTimestamp()));
+        sizeTextView.setText(CommonUtils.sizeToString(fragment.getSize(this)));
+        timestampTextView.setText(CommonUtils.timeToString(loader.getTimestamp()));
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.detail_content_frame, fragment);
         ft.commit();
@@ -436,7 +437,7 @@ public class DetailActivity extends AppCompatActivity {
                                                 @Override
                                                 public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                                                     try {
-                                                        Log.d(SpaceUtils.TAG, "Writing: " + BCUtils.sizeToString(payload.length));
+                                                        Log.d(SpaceUtils.TAG, "Writing: " + CommonUtils.sizeToString(payload.length));
                                                         out.write(payload);
                                                         count[0] += payload.length;
                                                         final double percent = (count[0] / size) * 100.0;
@@ -454,7 +455,7 @@ public class DetailActivity extends AppCompatActivity {
                                                     return true;
                                                 }
                                             });
-                                            Log.d(SpaceUtils.TAG, "Downloaded: " + BCUtils.sizeToString(count[0]));
+                                            Log.d(SpaceUtils.TAG, "Downloaded: " + CommonUtils.sizeToString(count[0]));
                                         }
                                     } catch (IOException ex) {
                                         /* Ignored */

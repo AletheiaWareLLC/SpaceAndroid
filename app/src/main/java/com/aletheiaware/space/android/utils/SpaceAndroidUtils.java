@@ -45,6 +45,7 @@ import com.aletheiaware.bc.TCPNetwork;
 import com.aletheiaware.bc.android.ui.StripeDialog;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.common.android.utils.CommonAndroidUtils;
 import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.ui.ComposeDocumentActivity;
@@ -152,7 +153,7 @@ public class SpaceAndroidUtils {
                                 if (parent.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
                                     takePicture(parent);
                                 } else {
-                                    BCAndroidUtils.showErrorDialog(parent, R.string.error_no_camera, new Exception("Device missing camera feature"));
+                                    CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_no_camera, new Exception("Device missing camera feature"));
                                 }
                                 break;
                             case 3:
@@ -160,7 +161,7 @@ public class SpaceAndroidUtils {
                                 if (parent.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
                                     recordVideo(parent);
                                 } else {
-                                    BCAndroidUtils.showErrorDialog(parent, R.string.error_no_camera, new Exception("Device missing camera feature"));
+                                    CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_no_camera, new Exception("Device missing camera feature"));
                                 }
                                 break;
                         }
@@ -279,33 +280,33 @@ public class SpaceAndroidUtils {
     }
 
     public static void setSortPreference(Context context, String alias, String value) {
-        BCAndroidUtils.setPreference(context, context.getString(R.string.preference_sort_key, alias), value);
+        CommonAndroidUtils.setPreference(context, context.getString(R.string.preference_sort_key, alias), value);
     }
 
     public static String getSortPreference(Context context, String alias) {
         // 1 - chronological
         // 2 - reverse-chronological
-        return BCAndroidUtils.getPreference(context, context.getString(R.string.preference_sort_key, alias), "2");
+        return CommonAndroidUtils.getPreference(context, context.getString(R.string.preference_sort_key, alias), "2");
     }
 
     public static void addStorageProviderPreference(Context context, String alias, String provider) {
         Set<String> providers = getStorageProvidersPreference(context, alias);
         providers.add(provider);
-        BCAndroidUtils.setPreferences(context, context.getString(R.string.preference_storage_providers_key, alias), providers);
+        CommonAndroidUtils.setPreferences(context, context.getString(R.string.preference_storage_providers_key, alias), providers);
     }
 
     public static Set<String> getStorageProvidersPreference(Context context, String alias) {
         Set<String> defaults = new HashSet<>();
         defaults.add(getSpaceHostname());
-        return BCAndroidUtils.getPreferences(context, context.getString(R.string.preference_storage_providers_key, alias), defaults);
+        return CommonAndroidUtils.getPreferences(context, context.getString(R.string.preference_storage_providers_key, alias), defaults);
     }
 
     public static void setRemoteMinerPreference(Context context, String alias, String value) {
-        BCAndroidUtils.setPreference(context, context.getString(R.string.preference_remote_miner_key, alias), value);
+        CommonAndroidUtils.setPreference(context, context.getString(R.string.preference_remote_miner_key, alias), value);
     }
 
     public static String getRemoteMinerPreference(Context context, String alias) {
-        return BCAndroidUtils.getPreference(context, context.getString(R.string.preference_remote_miner_key, alias), getSpaceHostname());
+        return CommonAndroidUtils.getPreference(context, context.getString(R.string.preference_remote_miner_key, alias), getSpaceHostname());
     }
 
     public interface RegistrationCallback {
@@ -324,7 +325,7 @@ public class SpaceAndroidUtils {
                         try {
                             customerId = BCUtils.register(website, alias, email, token.getId());
                         } catch (IOException e) {
-                            BCAndroidUtils.showErrorDialog(parent, R.string.error_registering, e);
+                            CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_registering, e);
                         }
                         if (customerId != null && !customerId.isEmpty()) {
                             callback.onRegistered(customerId);
@@ -350,7 +351,7 @@ public class SpaceAndroidUtils {
         try {
             subscriptionId = BCUtils.subscribe(website, alias, customerId);
         } catch (IOException e) {
-            BCAndroidUtils.showErrorDialog(parent, R.string.error_subscribing, e);
+            CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_subscribing, e);
         }
         if (subscriptionId != null && !subscriptionId.isEmpty()) {
             callback.onSubscribed(subscriptionId);

@@ -21,8 +21,8 @@ limitations under the License.
     android:viewportWidth="48">
 
     <path
-        android:fillColor="#000000"
+        android:fillColor="@color/primary_dark"
         android:pathData="M 0 0 H 48 V 48 H 0 V 0 Z"
-        android:strokeColor="#000000"
+        android:strokeColor="@color/primary_dark"
         android:strokeWidth="1" />
 </vector>

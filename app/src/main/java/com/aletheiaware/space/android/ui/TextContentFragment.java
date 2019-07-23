@@ -53,9 +53,16 @@ public abstract class TextContentFragment extends ContentFragment {
     @Override
     public Preview getPreview(Activity parent) {
         String text = getText();
+        // Substring up to preview text length
+        String preview = text.substring(0, Math.min(text.length(), SpaceUtils.PREVIEW_TEXT_LENGTH));
+        // Substring up to first newline
+        int index = preview.indexOf('\n');
+        if (index >= 0) {
+            preview = preview.substring(0, index);
+        }
         return Preview.newBuilder()
                 .setType(SpaceUtils.TEXT_PLAIN_TYPE)
-                .setData(ByteString.copyFromUtf8(text.substring(0, Math.min(text.length(), SpaceUtils.PREVIEW_TEXT_LENGTH))))
+                .setData(ByteString.copyFromUtf8(preview))
                 .build();
     }
 }

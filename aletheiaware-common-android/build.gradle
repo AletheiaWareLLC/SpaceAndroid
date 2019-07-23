@@ -1,0 +1,4 @@
+configurations.maybeCreate("debug")
+artifacts.add("debug", file('app-debug.aar'))
+configurations.maybeCreate("release")
+artifacts.add("release", file('app-release.aar'))

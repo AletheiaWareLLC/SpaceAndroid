@@ -30,6 +30,7 @@ import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.common.android.utils.CommonAndroidUtils;
 import com.aletheiaware.finance.FinanceProto.Registration;
 import com.aletheiaware.finance.FinanceProto.Subscription;
 import com.aletheiaware.finance.utils.FinanceUtils;
@@ -96,7 +97,7 @@ public class ProvidersActivity extends AppCompatActivity {
                                         });
                                     }
                                 } catch (IOException e) {
-                                    BCAndroidUtils.showErrorDialog(ProvidersActivity.this, getString(R.string.error_connection, provider), e);
+                                    CommonAndroidUtils.showErrorDialog(ProvidersActivity.this, R.style.AlertDialogTheme, getString(R.string.error_connection, provider), e);
                                 }
                             }
                         }.start();
@@ -124,7 +125,7 @@ public class ProvidersActivity extends AppCompatActivity {
                                     public void onDelete(DialogInterface dialog) {
                                         Set<String> providers = SpaceAndroidUtils.getStorageProvidersPreference(ProvidersActivity.this, alias);
                                         providers.remove(provider);
-                                        BCAndroidUtils.setPreferences(ProvidersActivity.this, getString(R.string.preference_storage_providers_key, alias), providers);
+                                        CommonAndroidUtils.setPreferences(ProvidersActivity.this, getString(R.string.preference_storage_providers_key, alias), providers);
                                         notifyDataSetChanged();
                                         recyclerView.requestLayout();
                                         dialog.dismiss();
@@ -232,7 +233,7 @@ public class ProvidersActivity extends AppCompatActivity {
                 }
             });
         } catch (IOException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchPaddingException | BadPaddingException e) {
-            BCAndroidUtils.showErrorDialog(ProvidersActivity.this, R.string.error_read_finance_failed, e);
+            CommonAndroidUtils.showErrorDialog(ProvidersActivity.this, R.style.AlertDialogTheme, R.string.error_read_finance_failed, e);
         }
     }
 }

@@ -21,6 +21,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
+import com.aletheiaware.common.android.utils.CommonAndroidUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
@@ -62,7 +63,7 @@ public abstract class UriContentFragment extends ContentFragment {
             try (InputStream in = getInputStream(parent)) {
                 size = in.available();
             } catch (IOException e) {
-                BCAndroidUtils.showErrorDialog(parent, R.string.error_reading_uri, e);
+                CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_reading_uri, e);
             }
         }
         return size;
@@ -73,7 +74,7 @@ public abstract class UriContentFragment extends ContentFragment {
         try {
             return parent.getContentResolver().openInputStream(uri);
         } catch (IOException e) {
-            BCAndroidUtils.showErrorDialog(parent, R.string.error_reading_uri, e);
+            CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_reading_uri, e);
         }
         return null;
     }

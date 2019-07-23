@@ -48,8 +48,6 @@ limitations under the License.
     <string name="legalese_beta_label">This beta version of SPACE is made available under the <a href="https://aletheiaware.com/space-beta-test-agreement.html">Beta Test Agreement</a></string>
     <string name="legalese_beta_test_agreement">I understand, and agree to the Beta Test Agreement</string>
 
-    <string name="main_add">Add</string>
-
     <string name="menu_account">Account</string>
     <string name="menu_download">Download</string>
     <string name="menu_providers">Providers</string>

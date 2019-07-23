@@ -38,6 +38,8 @@ import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.common.android.utils.CommonAndroidUtils;
+import com.aletheiaware.common.utils.CommonUtils;
 import com.aletheiaware.finance.FinanceProto.Registration;
 import com.aletheiaware.finance.FinanceProto.Subscription;
 import com.aletheiaware.finance.utils.FinanceUtils;
@@ -289,7 +291,7 @@ public class UploadActivity extends AppCompatActivity {
                     }
                     setContentFragment(fragment);
                 } else {
-                    BCAndroidUtils.showErrorDialog(this, getString(R.string.error_unsupported_type, type));
+                    CommonAndroidUtils.showErrorDialog(this, R.style.AlertDialogTheme, getString(R.string.error_unsupported_type, type));
                     return;
                 }
                 uploadButton.setVisibility(View.VISIBLE);
@@ -314,7 +316,7 @@ public class UploadActivity extends AppCompatActivity {
     }
 
     public void updateSize(long size) {
-        sizeTextView.setText(BCUtils.sizeToString(size));
+        sizeTextView.setText(CommonUtils.sizeToString(size));
     }
 
     @Override

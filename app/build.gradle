@@ -7,8 +7,8 @@ android {
         minSdkVersion 22
         targetSdkVersion 28
         vectorDrawables.useSupportLibrary = true
-        versionCode 22
-        versionName "2.2"
+        versionCode 23
+        versionName "2.3"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -18,7 +18,10 @@ android {
             resValue "string", "app_name", "\"S P A C E\""
             resValue "string", "space_host", "\"space.aletheiaware.com\""
             resValue "string", "file_provider_authority", "\"com.aletheiaware.space.android.fileprovider\""
+            /*
             resValue "string", "stripe_publishable_key", "\"pk_live_HnBAuZFfX6Rkd1UizHWJ5VTn\""
+            */
+            // TODO remove
             resValue "string", "stripe_subscription_storage_product", "\"prod_ElxCvugLTxOwEf\""
             resValue "string", "stripe_subscription_storage_plan", "\"plan_FJvP3e1ztZ3m3J\""
             resValue "string", "stripe_subscription_mining_product", "\"prod_Elpqy82Et33ACO\""
@@ -31,7 +34,10 @@ android {
             resValue "string", "app_name", "\"S P A C E D\""
             resValue "string", "space_host", "\"test-space.aletheiaware.com\""
             resValue "string", "file_provider_authority", "\"com.aletheiaware.space.android.debug.fileprovider\""
+            /*
             resValue "string", "stripe_publishable_key", "\"pk_test_gvdQJ2CsMiwE0gARM6nGUbUb\""
+            */
+            // TODO remove
             resValue "string", "stripe_subscription_storage_product", "\"prod_FALr4IAPzaacMh\""
             resValue "string", "stripe_subscription_storage_plan", "\"plan_FALwZg3chjwCdM\""
             resValue "string", "stripe_subscription_mining_product", "\"prod_Dy7MyD0zX01YZ9\""
@@ -42,11 +48,14 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation files('libs/AletheiaWareCommonJava.jar')
     implementation files('libs/AliasJava.jar')
     implementation files('libs/BCJava.jar')
     implementation files('libs/FinanceJava.jar')
     implementation files('libs/SpaceJava.jar')
     implementation files('libs/protobuf-lite-3.0.1.jar')
+    debugImplementation project(path:':aletheiaware-common-android', configuration: 'debug')
+    releaseImplementation project(path:':aletheiaware-common-android', configuration: 'release')
     debugImplementation project(path:':bc-android', configuration: 'debug')
     releaseImplementation project(path:':bc-android', configuration: 'release')
     implementation 'com.android.support:appcompat-v7:28.0.0'
@@ -59,6 +68,8 @@ dependencies {
     implementation 'com.android.support:support-vector-drawable:28.0.0'
     implementation 'com.stripe:stripe-android:9.3.2'
     testImplementation 'junit:junit:4.12'
+    androidTestImplementation files('libs/BCJavaTest.jar')
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-intents:3.0.2'
 }

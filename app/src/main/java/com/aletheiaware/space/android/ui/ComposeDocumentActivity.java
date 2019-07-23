@@ -39,6 +39,7 @@ import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.common.utils.CommonUtils;
 import com.aletheiaware.finance.FinanceProto.Registration;
 import com.aletheiaware.finance.FinanceProto.Subscription;
 import com.aletheiaware.finance.utils.FinanceUtils;
@@ -113,7 +114,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
 
         // Size TextView
         sizeTextView = findViewById(R.id.compose_document_size);
-        sizeTextView.setText(BCUtils.sizeToString(0));
+        sizeTextView.setText(CommonUtils.sizeToString(0));
 
         // Content Frame
         contentFrame = findViewById(R.id.compose_document_content_frame);
@@ -303,7 +304,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
     }
 
     public void updateSize(long size) {
-        sizeTextView.setText(BCUtils.sizeToString(size));
+        sizeTextView.setText(CommonUtils.sizeToString(size));
     }
 
     @Override

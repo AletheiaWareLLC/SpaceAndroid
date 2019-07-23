@@ -32,6 +32,7 @@ import android.widget.TextView;
 import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.common.utils.CommonUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.utils.PreviewUtils;
@@ -89,6 +90,15 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
         }
     }
 
+    public void addPreview(ByteString hash, Preview preview) {
+        previews.put(hash, preview);
+        activity.runOnUiThread(new Runnable() {
+            public void run() {
+                notifyDataSetChanged();
+            }
+        });
+    }
+
     public synchronized void sort() {
         String value = SpaceAndroidUtils.getSortPreference(activity, alias);
         boolean chronological = "1".equals(value);
@@ -136,12 +146,7 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
                     @Override
                     public void onPreview(Preview preview) {
                         if (preview != null) {
-                            previews.put(hash, preview);
-                            activity.runOnUiThread(new Runnable() {
-                                public void run() {
-                                    notifyDataSetChanged();
-                                }
-                            });
+                            addPreview(hash, preview);
                         }
                     }
                 });
@@ -169,17 +174,17 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
 
         private ByteString hash;
 
-        private TextView itemTime;
         private ImageView itemImage;
         private TextView itemText;
         private TextView itemTitle;
+        private TextView itemTime;
 
         ViewHolder(LinearLayout view) {
             super(view);
-            itemTime = view.findViewById(R.id.list_item_time);
             itemImage = view.findViewById(R.id.list_item_image_view);
             itemText = view.findViewById(R.id.list_item_text_view);
             itemTitle = view.findViewById(R.id.list_item_title);
+            itemTime = view.findViewById(R.id.list_item_time);
         }
 
         void set(ByteString hash, Long time, Meta meta, Preview preview, boolean shared) {
@@ -218,24 +223,32 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
                         itemImage.setImageBitmap(bitmap);
                     }
                 }
+            } else if (SpaceUtils.isAudio(meta.getType())) {
+                itemImage.setVisibility(View.VISIBLE);
+                itemText.setVisibility(View.GONE);
+                if (preview == null) {
+                    setDefaultAudioPreview(shared);
+                } else {
+                    // TODO decode preview.getData().newInput() into audio visualization
+                    //Bitmap bitmap = BitmapFactory.decodeStream(preview.getData().newInput());
+                    //if (bitmap == null) {
+                        setDefaultAudioPreview(shared);
+                    //} else {
+                    //    itemImage.setImageBitmap(bitmap);
+                    //}
+                }
             }
-            itemTime.setText(BCUtils.timeToString(time));
-            itemTitle.setText(meta.getName());
             if (shared) {
-                itemView.setBackgroundResource(R.color.primary_light);
-                itemImage.setBackgroundResource(R.color.primary_light);
-                itemText.setBackgroundResource(R.color.primary_light);
-                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.primary_dark));
-                itemTime.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.primary_dark));
-                itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.primary_dark));
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.highlight));
+                itemTime.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.highlight));
+                itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.highlight));
             } else {
-                itemView.setBackgroundResource(R.color.primary_dark);
-                itemImage.setBackgroundResource(R.color.primary_dark);
-                itemText.setBackgroundResource(R.color.primary_dark);
-                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.primary_light));
-                itemTime.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.primary_light));
-                itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.primary_light));
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.text_primary));
+                itemTime.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.text_primary));
+                itemTitle.setTextColor(ContextCompat.getColor(itemTitle.getContext(), R.color.text_primary));
             }
+            itemTitle.setText(meta.getName());
+            itemTime.setText(CommonUtils.timeToString(time));
         }
 
         private void setDefaultTextPreview() {
@@ -255,6 +268,14 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
                 itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_video_shared));
             } else {
                 itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_video));
+            }
+        }
+
+        private void setDefaultAudioPreview(boolean shared) {
+            if (shared) {
+                itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_audio_shared));
+            } else {
+                itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.bc_audio));
             }
         }
 

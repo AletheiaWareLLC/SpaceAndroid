@@ -85,7 +85,7 @@ public abstract class ProviderDialog {
         final Button subscribeMiningButton = providerView.findViewById(R.id.provider_subscribe_mining_button);
         final TextView subscriptionMiningIdLabel = providerView.findViewById(R.id.provider_subscription_mining_id_label);
         final TextView subscriptionMiningIdText = providerView.findViewById(R.id.provider_subscription_mining_id_text);
-        if (registrationId == null || registrationId.isEmpty()) {
+        if (subscriptionMiningId == null || subscriptionMiningId.isEmpty()) {
             subscribeMiningButton.setVisibility(View.VISIBLE);
             subscribeMiningButton.setOnClickListener(new View.OnClickListener() {
                 @Override

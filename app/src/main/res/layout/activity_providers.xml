@@ -53,6 +53,7 @@ limitations under the License.
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
             android:text="@string/provider_description"
             android:textColor="@color/text_secondary"
             android:textSize="@dimen/text_secondary_size"/>

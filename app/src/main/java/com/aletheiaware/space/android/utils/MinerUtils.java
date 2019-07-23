@@ -25,6 +25,8 @@ import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.bc.utils.BCUtils.RecordCallback;
+import com.aletheiaware.common.android.utils.CommonAndroidUtils;
+import com.aletheiaware.common.utils.CommonUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.SpaceProto.Share;
@@ -86,7 +88,7 @@ public class MinerUtils {
                                 return;
                             }
                             metaReferences.add(fileReference);
-                            Log.d(SpaceUtils.TAG, "Uploaded File " + new String(BCUtils.encodeBase64URL(fileReference.getRecordHash().toByteArray())));
+                            Log.d(SpaceUtils.TAG, "Uploaded File " + new String(CommonUtils.encodeBase64URL(fileReference.getRecordHash().toByteArray())));
                         }
                     });
                     final Meta meta = Meta.newBuilder()
@@ -110,7 +112,7 @@ public class MinerUtils {
                         System.err.println("Failed to post meta record 5 times");
                         return;
                     }
-                    Log.d(SpaceUtils.TAG, "Uploaded Meta " + new String(BCUtils.encodeBase64URL(metaReference.getRecordHash().toByteArray())));
+                    Log.d(SpaceUtils.TAG, "Uploaded Meta " + new String(CommonUtils.encodeBase64URL(metaReference.getRecordHash().toByteArray())));
                     if (preview != null) {
                         Log.d(SpaceUtils.TAG, "Preview " + preview);
                         final List<Reference> previewReferences = new ArrayList<>();
@@ -134,12 +136,12 @@ public class MinerUtils {
                             System.err.println("Failed to post preview record 5 times");
                             return;
                         }
-                        Log.d(SpaceUtils.TAG, "Uploaded Preview " + new String(BCUtils.encodeBase64URL(previewReference.getRecordHash().toByteArray())));
+                        Log.d(SpaceUtils.TAG, "Uploaded Preview " + new String(CommonUtils.encodeBase64URL(previewReference.getRecordHash().toByteArray())));
                     }
                 } catch (SocketException | SocketTimeoutException e) {
-                    BCAndroidUtils.showErrorDialog(parent, parent.getString(R.string.error_connection, website), e);
+                    CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, parent.getString(R.string.error_connection, website), e);
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    BCAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
+                    CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_uploading, e);
                 } finally {
                     cancelMiningNotification(parent);
                 }
@@ -170,11 +172,11 @@ public class MinerUtils {
                         System.err.println("Failed to post share record 5 times");
                         return;
                     }
-                    Log.d(SpaceUtils.TAG, "Uploaded Share " + new String(BCUtils.encodeBase64URL(shareReference.getRecordHash().toByteArray())));
+                    Log.d(SpaceUtils.TAG, "Uploaded Share " + new String(CommonUtils.encodeBase64URL(shareReference.getRecordHash().toByteArray())));
                 } catch (SocketException | SocketTimeoutException e) {
-                    BCAndroidUtils.showErrorDialog(parent, parent.getString(R.string.error_connection, website), e);
+                    CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, parent.getString(R.string.error_connection, website), e);
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    BCAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
+                    CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_uploading, e);
                 } finally {
                     cancelMiningNotification(parent);
                 }
@@ -205,11 +207,11 @@ public class MinerUtils {
                         System.err.println("Failed to post tag record 5 times");
                         return;
                     }
-                    Log.d(SpaceUtils.TAG, "Uploaded Tag " + new String(BCUtils.encodeBase64URL(tagReference.getRecordHash().toByteArray())));
+                    Log.d(SpaceUtils.TAG, "Uploaded Tag " + new String(CommonUtils.encodeBase64URL(tagReference.getRecordHash().toByteArray())));
                 } catch (SocketException | SocketTimeoutException e) {
-                    BCAndroidUtils.showErrorDialog(parent, parent.getString(R.string.error_connection, website), e);
+                    CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, parent.getString(R.string.error_connection, website), e);
                 } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                    BCAndroidUtils.showErrorDialog(parent, R.string.error_uploading, e);
+                    CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_uploading, e);
                 } finally {
                     cancelMiningNotification(parent);
                 }

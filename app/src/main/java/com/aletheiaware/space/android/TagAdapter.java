@@ -29,6 +29,7 @@ import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.PoWChannel;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.bc.utils.ChannelUtils;
+import com.aletheiaware.common.utils.CommonUtils;
 import com.aletheiaware.space.SpaceProto.Tag;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -45,7 +46,7 @@ public class TagAdapter extends ArrayAdapter<String> implements Filterable {
         new Thread() {
             @Override
             public void run() {
-                PoWChannel tags = new PoWChannel(SpaceUtils.SPACE_PREFIX_TAG + new String(BCUtils.encodeBase64URL(metaRecordHash.toByteArray())), BC.THRESHOLD_STANDARD);
+                PoWChannel tags = new PoWChannel(SpaceUtils.SPACE_PREFIX_TAG + new String(CommonUtils.encodeBase64URL(metaRecordHash.toByteArray())), BC.THRESHOLD_STANDARD);
                 try {
                     ChannelUtils.pull(tags, cache, network);
                 } catch (NoSuchAlgorithmException e) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-Copyright 2018 Aletheia Ware LLC
+Copyright 2019 Aletheia Ware LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ limitations under the License.
     android:viewportHeight="24.0"
     android:viewportWidth="24.0">
     <path
-        android:strokeColor="@color/primary_light"
-        android:strokeWidth="1"
-        android:pathData="M4,8L16,8L16,16L4,16Z" />
+        android:fillColor="@color/primary_light"
+        android:pathData="M12,14A2,2 0 0 1 8,18 A2,2 0 0 1 12,14 Z" />
     <path
         android:strokeColor="@color/primary_light"
         android:strokeWidth="1"
-        android:pathData="M16,12L20,10L20,14Z" />
+        android:pathData="M12,17L12,5" />
+    <path
+        android:strokeColor="@color/primary_light"
+        android:strokeWidth="2"
+        android:pathData="M12,6L16,6" />
 </vector>

@@ -34,6 +34,8 @@ import com.aletheiaware.bc.android.ui.PasswordUnlockDialog;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.android.utils.BiometricUtils;
 import com.aletheiaware.bc.utils.BCUtils;
+import com.aletheiaware.common.android.utils.CommonAndroidUtils;
+import com.aletheiaware.common.utils.CommonUtils;
 import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.utils.SpaceUtils;
@@ -123,7 +125,7 @@ public class SettingsActivity extends AppCompatActivity {
                                     // TODO update after biometric callback success
                                     update();
                                 } catch (InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | NoSuchProviderException e) {
-                                    BCAndroidUtils.showErrorDialog(activity, R.string.error_biometric_enroll, e);
+                                    CommonAndroidUtils.showErrorDialog(activity, R.style.AlertDialogTheme, R.string.error_biometric_enroll, e);
                                 }
                             }
                         }.create();
@@ -180,7 +182,7 @@ public class SettingsActivity extends AppCompatActivity {
                     if (activity == null) {
                         return false;
                     }
-                    BCAndroidUtils.support(activity, new StringBuilder());
+                    CommonAndroidUtils.support(activity, new StringBuilder());
                     return true;
                 }
             });
@@ -214,7 +216,7 @@ public class SettingsActivity extends AppCompatActivity {
 
             long size = BCAndroidUtils.getCacheSize(activity);
             Log.d(SpaceUtils.TAG, "Cache Size: " + size);
-            cacheSizePreference.setSummary(BCUtils.sizeToString(size));
+            cacheSizePreference.setSummary(CommonUtils.sizeToString(size));
             cachePurgePreference.setEnabled(size > 0L);
 
             appVersionPreference.setSummary(BuildConfig.BUILD_TYPE + "-" + BuildConfig.VERSION_NAME);

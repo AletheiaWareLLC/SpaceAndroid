@@ -23,18 +23,10 @@ limitations under the License.
     android:padding="@dimen/view_padding"
     android:gravity="center">
 
-    <TextView android:id="@+id/list_item_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/view_margin"
-        android:textColor="@color/text_secondary"
-        android:textSize="@dimen/text_secondary_size" />
-
     <TextView android:id="@+id/list_item_text_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
-        android:textColor="@color/text"
         android:textSize="@dimen/text_primary_size"
         android:visibility="gone" />
 
@@ -51,7 +43,12 @@ limitations under the License.
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
-        android:textColor="@color/text_primary"
         android:textSize="@dimen/text_primary_size"/>
+
+    <TextView android:id="@+id/list_item_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/view_margin"
+        android:textSize="@dimen/text_secondary_size" />
 
 </LinearLayout>
