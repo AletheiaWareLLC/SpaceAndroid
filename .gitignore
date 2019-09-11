@@ -20,9 +20,6 @@
 .idea/workspace.xml
 app/build
 build
-gradle
-gradlew
-gradlew.bat
 gradle.properties
 local.properties
 private
@@ -40,3 +37,6 @@ private
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+# Include gradle wrapper jar
+!/gradle/wrapper/gradle-wrapper.jar

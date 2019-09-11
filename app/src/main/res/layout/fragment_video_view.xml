@@ -14,11 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<VideoView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<VideoView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="@dimen/view_margin"
-    android:adjustViewBounds="true"
-    android:contentDescription="@string/fragment_video"
-    android:scaleType="centerInside" />
+    android:layout_height="100dp"
+    android:layout_margin="@dimen/view_margin" />

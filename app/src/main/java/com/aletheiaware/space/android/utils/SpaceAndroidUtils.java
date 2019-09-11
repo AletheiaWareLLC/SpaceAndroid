@@ -17,9 +17,6 @@
 package com.aletheiaware.space.android.utils;
 
 import android.app.Activity;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -28,37 +25,54 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
+import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.support.annotation.WorkerThread;
 import android.support.media.ExifInterface;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 
+import com.aletheiaware.bc.BCProto.BlockEntry;
+import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.TCPNetwork;
 import com.aletheiaware.bc.android.ui.StripeDialog;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.common.android.utils.CommonAndroidUtils;
+import com.aletheiaware.finance.FinanceProto.Merchant;
+import com.aletheiaware.finance.FinanceProto.Registration;
+import com.aletheiaware.finance.FinanceProto.Service;
+import com.aletheiaware.finance.FinanceProto.Subscription;
+import com.aletheiaware.finance.utils.FinanceUtils;
+import com.aletheiaware.finance.utils.FinanceUtils.ChargeCallback;
+import com.aletheiaware.finance.utils.FinanceUtils.RegistrationCallback;
+import com.aletheiaware.finance.utils.FinanceUtils.SubscriptionCallback;
+import com.aletheiaware.finance.utils.FinanceUtils.UsageRecordCallback;
+import com.aletheiaware.space.SpaceProto.Miner;
+import com.aletheiaware.space.SpaceProto.Registrar;
 import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.ui.ComposeDocumentActivity;
-import com.aletheiaware.space.android.ui.MainActivity;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.stripe.android.model.Token;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Arrays;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public class SpaceAndroidUtils {
 
@@ -72,17 +86,11 @@ public class SpaceAndroidUtils {
     public static final int OPEN_ACTIVITY = 107;
     public static final int SETTINGS_ACTIVITY = 108;
     public static final int UPLOAD_ACTIVITY = 109;
-    public static final int PROVIDERS_ACTIVITY = 110;
 
     public static final String DATA_EXTRA = "data";
     public static final String HASH_EXTRA = "hash";
     public static final String META_EXTRA = "meta";
     public static final String SHARED_EXTRA = "shared";
-    public static final String MINING_CHANNEL_ID = "Mining Channel";
-    public static final String DOWNLOAD_CHANNEL_ID = "Download Channel";
-    public static final int MINING_NOTIFICATION_ID = 1;
-    public static final int DOWNLOAD_NOTIFICATION_ID = 2;
-    public static final int NOTIFICATION_TIMEOUT = 5 * 60 * 1000;// 5 minutes
 
     private static Uri tempURI = null;
     private static String tempURIType = null;
@@ -92,35 +100,18 @@ public class SpaceAndroidUtils {
     }
 
     @WorkerThread
-    public static InetAddress getSpaceHost() {
+    public static TCPNetwork getRegistrarNetwork(final Context context, String alias) {
+        Set<String> registrars = getRegistrarsPreference(context, alias);
+        Set<InetAddress> addresses = new HashSet<>();
         try {
-            return InetAddress.getByName(getSpaceHostname());
-        } catch (Exception e) {
-            /* Ignored */
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static String getSpaceWebsite() {
-        return "https://" + getSpaceHostname();
-    }
-
-    @WorkerThread
-    public static Network getStorageNetwork(final Context context, String alias) {
-        Set<String> providers = getStorageProvidersPreference(context, alias);
-        InetAddress[] addresses = new InetAddress[providers.size()];
-        int i = 0;
-        try {
-            for (String provider : providers) {
-                addresses[i] = InetAddress.getByName(provider);
-                i++;
+            for (String registrar : registrars) {
+                addresses.add(InetAddress.getByName(registrar));
             }
         } catch (Exception e) {
             /* Ignored */
             e.printStackTrace();
         }
-        return new TCPNetwork(addresses);
+        return new TCPNetwork(addresses.toArray(new InetAddress[0]));
     }
 
     public static Uri getTempURI() {
@@ -132,10 +123,8 @@ public class SpaceAndroidUtils {
     }
 
     public static void add(final Activity parent) {
-        // TODO merge upload into composeDocument
-        // TODO use fragments to swap editors based on MIME/Meta.type
         new AlertDialog.Builder(parent, R.style.AlertDialogTheme)
-                .setTitle(R.string.title_dialog_add_record)
+                .setTitle(R.string.title_dialog_add_document)
                 .setItems(R.array.add_options, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -188,16 +177,20 @@ public class SpaceAndroidUtils {
         parent.startActivityForResult(i, SpaceAndroidUtils.OPEN_ACTIVITY);
     }
 
+    private static void createTempFile(Activity parent, String name) {
+        File file = new File(parent.getCacheDir(), "file");
+        if (!file.exists() && !file.mkdirs()) {
+            Log.e(SpaceUtils.TAG, "Error making files directory");
+        }
+        File f = new File(file, name);
+        Log.d(SpaceUtils.TAG, f.getAbsolutePath());
+        tempURI = FileProvider.getUriForFile(parent, parent.getString(R.string.file_provider_authority), f);
+        Log.d(SpaceUtils.TAG, tempURI.toString());
+    }
+
     private static void takePicture(Activity parent) {
         Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        File images = new File(parent.getCacheDir(), "image");
-        if (!images.exists() && !images.mkdirs()) {
-            Log.e(SpaceUtils.TAG, "Error making image directory");
-        }
-        File file = new File(images, "image" + System.currentTimeMillis());
-        Log.d(SpaceUtils.TAG, file.getAbsolutePath());
-        tempURI = FileProvider.getUriForFile(parent, parent.getString(R.string.file_provider_authority), file);
-        Log.d(SpaceUtils.TAG, tempURI.toString());
+        createTempFile(parent, "image" + System.currentTimeMillis());
         tempURIType = SpaceUtils.DEFAULT_IMAGE_TYPE;
         i.putExtra(MediaStore.EXTRA_OUTPUT, tempURI);
         parent.startActivityForResult(i, SpaceAndroidUtils.CAPTURE_IMAGE_ACTIVITY);
@@ -205,14 +198,7 @@ public class SpaceAndroidUtils {
 
     private static void recordVideo(Activity parent) {
         Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-        File videos = new File(parent.getCacheDir(), "video");
-        if (!videos.exists() && !videos.mkdirs()) {
-            Log.e(SpaceUtils.TAG, "Error making video directory");
-        }
-        File file = new File(videos, "video" + System.currentTimeMillis());
-        Log.d(SpaceUtils.TAG, file.getAbsolutePath());
-        tempURI = FileProvider.getUriForFile(parent, parent.getString(R.string.file_provider_authority), file);
-        Log.d(SpaceUtils.TAG, tempURI.toString());
+        createTempFile(parent, "video" + System.currentTimeMillis());
         tempURIType = SpaceUtils.DEFAULT_VIDEO_TYPE;
         i.putExtra(MediaStore.EXTRA_OUTPUT, tempURI);
         parent.startActivityForResult(i, SpaceAndroidUtils.CAPTURE_VIDEO_ACTIVITY);
@@ -289,33 +275,34 @@ public class SpaceAndroidUtils {
         return CommonAndroidUtils.getPreference(context, context.getString(R.string.preference_sort_key, alias), "2");
     }
 
-    public static void addStorageProviderPreference(Context context, String alias, String provider) {
-        Set<String> providers = getStorageProvidersPreference(context, alias);
-        providers.add(provider);
-        CommonAndroidUtils.setPreferences(context, context.getString(R.string.preference_storage_providers_key, alias), providers);
+    public static void addRegistrarPreference(Context context, String alias, String registrar) {
+        Set<String> registrars = getRegistrarsPreference(context, alias);
+        registrars.add(registrar);
+        CommonAndroidUtils.setPreferences(context, context.getString(R.string.preference_registrars_key, alias), registrars);
     }
 
-    public static Set<String> getStorageProvidersPreference(Context context, String alias) {
+    public static Set<String> getRegistrarsPreference(Context context, String alias) {
         Set<String> defaults = new HashSet<>();
         defaults.add(getSpaceHostname());
-        return CommonAndroidUtils.getPreferences(context, context.getString(R.string.preference_storage_providers_key, alias), defaults);
+        return CommonAndroidUtils.getPreferences(context, context.getString(R.string.preference_registrars_key, alias), defaults);
     }
 
-    public static void setRemoteMinerPreference(Context context, String alias, String value) {
-        CommonAndroidUtils.setPreference(context, context.getString(R.string.preference_remote_miner_key, alias), value);
+    public static void setMinerPreference(Context context, String alias, String value) {
+        CommonAndroidUtils.setPreference(context, context.getString(R.string.preference_miner_key, alias), value);
     }
 
-    public static String getRemoteMinerPreference(Context context, String alias) {
-        return CommonAndroidUtils.getPreference(context, context.getString(R.string.preference_remote_miner_key, alias), getSpaceHostname());
+    public static String getMinerPreference(Context context, String alias) {
+        return CommonAndroidUtils.getPreference(context, context.getString(R.string.preference_miner_key, alias), getSpaceHostname());
     }
 
-    public interface RegistrationCallback {
-        void onRegistered(String customerId);
+    public interface RegistrationIdCallback {
+        void onRegistrationId(String registration);
     }
 
     @UiThread
-    public static void registerCustomer(final Activity parent, final String website, final String description, final String alias, final RegistrationCallback callback) {
-        new StripeDialog(parent, description, null) {
+    public static void registerCustomer(final Activity parent, final Merchant merchant, final String description, final String alias, @Nullable final RegistrationIdCallback callback) {
+        Log.d(SpaceUtils.TAG, "Register Customer");
+        new StripeDialog(parent, merchant.getPublishableKey(), description, null) {
             @Override
             public void onSubmit(final String email, final Token token) {
                 new Thread() {
@@ -323,12 +310,13 @@ public class SpaceAndroidUtils {
                     public void run() {
                         String customerId = null;
                         try {
-                            customerId = BCUtils.register(website, alias, email, token.getId());
-                        } catch (IOException e) {
+                            customerId = BCUtils.register("https://" + merchant.getDomain() + merchant.getRegisterUrl(), alias, email, token.getId());
+                        } catch (Exception e) {
                             CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_registering, e);
                         }
-                        if (customerId != null && !customerId.isEmpty()) {
-                            callback.onRegistered(customerId);
+                        if (customerId != null && !customerId.isEmpty() && callback != null) {
+                            //
+                            callback.onRegistrationId(customerId);
                         }
                     }
                 }.start();
@@ -337,95 +325,135 @@ public class SpaceAndroidUtils {
     }
 
     @UiThread
-    public static void registerSpaceCustomer(final Activity parent, final String provider, final String alias, final RegistrationCallback callback) {
-        registerCustomer(parent, "https://" + provider + "/space-register", "Space Registration", alias, callback);
-    }
-
-    public interface SubscriptionCallback {
-        void onSubscribed(String subscriptionId);
+    public static void registerSpaceCustomer(final Activity parent, final Merchant merchant, final String alias, @Nullable final RegistrationIdCallback callback) {
+        Log.d(SpaceUtils.TAG, "Register Space Customer");
+        registerCustomer(parent, merchant, "Space Registration", alias, callback);
     }
 
     @WorkerThread
-    public static void subscribeCustomer(final Activity parent, final String website, final String alias, final String customerId, final SubscriptionCallback callback) {
+    public static void getRegistration(final Activity parent, final Cache cache, final Network network, final Merchant merchant, final String alias, final KeyPair keys, @Nullable final RegistrationCallback callback) throws IllegalBlockSizeException, InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+        Log.d(SpaceUtils.TAG, "Get Registration");
+        final boolean[] success = {false};
+        FinanceUtils.readRegistration(SpaceUtils.SPACE_REGISTRATION, cache, network, merchant.getAlias(), null, alias, keys, new RegistrationCallback() {
+            @Override
+            public void onRegistration(BlockEntry entry, Registration registration) {
+                Log.d(SpaceUtils.TAG, "Registration: " + registration);
+                if (registration != null) {
+                    success[0] = true;
+                    if (callback != null) {
+                        callback.onRegistration(entry, registration);
+                    }
+                }
+            }
+        });
+        if (!success[0]) {
+            parent.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    registerSpaceCustomer(parent, merchant, alias, new RegistrationIdCallback() {
+                        @Override
+                        public void onRegistrationId(String registration) {
+                            if (registration != null && !registration.isEmpty()) {
+                                Log.d(SpaceUtils.TAG, "Registered: " + registration);
+                                try {
+                                    FinanceUtils.readRegistration(SpaceUtils.SPACE_REGISTRATION, cache, network, merchant.getAlias(), null, alias, keys, callback);
+                                } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    public interface SubscriptionIdCallback {
+        void onSubscriptionId(String subscription);
+    }
+
+    @WorkerThread
+    public static void subscribeCustomer(final Activity parent, final Merchant merchant, final Service service, final String alias, final String customerId, @Nullable final SubscriptionIdCallback callback) {
         String subscriptionId = null;
         try {
-            subscriptionId = BCUtils.subscribe(website, alias, customerId);
-        } catch (IOException e) {
+            subscriptionId = BCUtils.subscribe("https://" + merchant.getDomain() + service.getSubscribeUrl(), alias, customerId);
+        } catch (Exception e) {
             CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_subscribing, e);
         }
-        if (subscriptionId != null && !subscriptionId.isEmpty()) {
-            callback.onSubscribed(subscriptionId);
+        if (subscriptionId != null && !subscriptionId.isEmpty() && callback != null) {
+            callback.onSubscriptionId(subscriptionId);
         }
     }
 
     @WorkerThread
-    public static void subscribeSpaceMiningCustomer(final Activity parent, final String provider, final String alias, final String customerId, final SubscriptionCallback callback) {
-        subscribeCustomer(parent, "https://" + provider + "/space-subscribe-mining", alias, customerId, callback);
+    public static void subscribeSpaceMinerCustomer(final Activity parent, final Miner miner, final String alias, final String customerId, @Nullable final SubscriptionIdCallback callback) {
+        subscribeCustomer(parent, miner.getMerchant(), miner.getService(), alias, customerId, callback);
     }
 
     @WorkerThread
-    public static void subscribeSpaceStorageCustomer(final Activity parent, final String provider, final String alias, final String customerId, final SubscriptionCallback callback) {
-        subscribeCustomer(parent, "https://" + provider + "/space-subscribe-storage", alias, customerId, callback);
+    public static void subscribeSpaceRegistrarCustomer(final Activity parent, final Registrar registrar, final String alias, final String customerId, @Nullable final SubscriptionIdCallback callback) {
+        subscribeCustomer(parent, registrar.getMerchant(), registrar.getService(), alias, customerId, callback);
     }
 
-    public interface ProviderCallback {
-        void onProviderSelected(String provider);
-        void onCancelSelection();
-    }
-
-    @UiThread
-    public static void showProviderPicker(final Activity parent, final String alias, final ProviderCallback callback) {
-        Set<String> ps = getStorageProvidersPreference(parent, alias);
-        ps.addAll(Arrays.asList(parent.getResources().getStringArray(R.array.provider_options)));
-        final String[] providers = new String[ps.size()];
-        ps.toArray(providers);
-        new AlertDialog.Builder(parent, R.style.AlertDialogTheme)
-                .setTitle(R.string.title_dialog_select_provider)
-                .setItems(providers, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        callback.onProviderSelected(providers[which]);
+    @WorkerThread
+    public static void getMinerSubscription(final Activity parent, final Cache cache, final Network network, final Miner miner, final String alias, final KeyPair keys, final String customerId, @Nullable final SubscriptionCallback callback) throws IllegalBlockSizeException, InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+        Log.d(SpaceUtils.TAG, "Get Miner Subscription");
+        final boolean[] success = {false};
+        FinanceUtils.readSubscription(SpaceUtils.SPACE_SUBSCRIPTION, cache, network, miner.getMerchant().getAlias(), null, alias, keys, miner.getService().getProductId(), miner.getService().getPlanId(), new SubscriptionCallback() {
+            @Override
+            public void onSubscription(BlockEntry entry, Subscription subscription) {
+                if (subscription != null) {
+                    success[0] = true;
+                    if (callback != null) {
+                        callback.onSubscription(entry, subscription);
                     }
-                })
-                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        callback.onCancelSelection();
-                        dialog.dismiss();
-                    }
-                })
-                .show();
-    }
-
-    public static void createNotificationChannels(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel miningChannel = new NotificationChannel(MINING_CHANNEL_ID, context.getString(R.string.notification_channel_name_mining), NotificationManager.IMPORTANCE_HIGH);
-            miningChannel.setDescription(context.getString(R.string.notification_channel_description_mining));
-            NotificationChannel downloadChannel = new NotificationChannel(DOWNLOAD_CHANNEL_ID, context.getString(R.string.notification_channel_name_download), NotificationManager.IMPORTANCE_HIGH);
-            downloadChannel.setDescription(context.getString(R.string.notification_channel_description_download));
-            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(miningChannel);
-                notificationManager.createNotificationChannel(downloadChannel);
+                }
             }
+        });
+        if (!success[0]) {
+            SpaceAndroidUtils.subscribeSpaceMinerCustomer(parent, miner, alias, customerId, new SubscriptionIdCallback() {
+                @Override
+                public void onSubscriptionId(String subscription) {
+                    if (subscription != null && !subscription.isEmpty()) {
+                        try {
+                            FinanceUtils.readSubscription(SpaceUtils.SPACE_SUBSCRIPTION, cache, network, miner.getMerchant().getAlias(), null, alias, keys, miner.getService().getProductId(), miner.getService().getPlanId(), callback);
+                        } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
         }
     }
 
-    public static void createMiningNotification(Context context, String name) {
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, MINING_CHANNEL_ID)
-                .setSmallIcon(R.drawable.cloud_upload)
-                .setContentTitle(context.getString(R.string.title_notification_mining))
-                .setContentText(name)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setProgress(0, 0, true)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                .setTimeoutAfter(NOTIFICATION_TIMEOUT);
-
-        NotificationManagerCompat.from(context).notify(MINING_NOTIFICATION_ID, builder.build());
+    @WorkerThread
+    public static void getRegistrarSubscription(final Activity parent, final Cache cache, final Network network, final Registrar registrar, final String alias, final KeyPair keys, final String customerId, @Nullable final SubscriptionCallback callback) throws IllegalBlockSizeException, InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+        Log.d(SpaceUtils.TAG, "Get Registrar Subscription");
+        final boolean[] success = {false};
+        FinanceUtils.readSubscription(SpaceUtils.SPACE_SUBSCRIPTION, cache, network, registrar.getMerchant().getAlias(), null, alias, keys, registrar.getService().getProductId(), registrar.getService().getPlanId(), new SubscriptionCallback() {
+            @Override
+            public void onSubscription(BlockEntry entry, Subscription subscription) {
+                if (subscription != null) {
+                    success[0] = true;
+                    if (callback != null) {
+                        callback.onSubscription(entry, subscription);
+                    }
+                }
+            }
+        });
+        if (!success[0]) {
+            SpaceAndroidUtils.subscribeSpaceRegistrarCustomer(parent, registrar, alias, customerId, new SubscriptionIdCallback() {
+                @Override
+                public void onSubscriptionId(String subscription) {
+                    if (subscription != null && !subscription.isEmpty()) {
+                        try {
+                            FinanceUtils.readSubscription(SpaceUtils.SPACE_SUBSCRIPTION, cache, network, registrar.getMerchant().getAlias(), null, alias, keys, registrar.getService().getProductId(), registrar.getService().getPlanId(), callback);
+                        } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+        }
     }
 }

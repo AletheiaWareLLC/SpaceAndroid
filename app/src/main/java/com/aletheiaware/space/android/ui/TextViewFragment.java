@@ -24,12 +24,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.aletheiaware.bc.android.utils.CopyToClipboardListener;
+import com.aletheiaware.common.android.utils.CopyToClipboardListener;
 import com.aletheiaware.space.android.R;
 
 public class TextViewFragment extends TextContentFragment {
 
-    private TextView contentTextView;
     private String name;
     private String type;
     private long size;
@@ -47,7 +46,7 @@ public class TextViewFragment extends TextContentFragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        contentTextView = (TextView) inflater.inflate(R.layout.fragment_text_view, container, false);
+        TextView contentTextView = (TextView) inflater.inflate(R.layout.fragment_text_view, container, false);
         contentTextView.setOnClickListener(new CopyToClipboardListener(contentTextView, name));
         contentTextView.setText(getText());
         return contentTextView;

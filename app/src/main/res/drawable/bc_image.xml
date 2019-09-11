@@ -20,11 +20,11 @@ limitations under the License.
     android:viewportHeight="24.0"
     android:viewportWidth="24.0">
     <path
-        android:strokeColor="@color/primary_light"
+        android:strokeColor="@color/primary"
         android:strokeWidth="1"
         android:pathData="M4,8L4,18L20,18L20,8L16,8L14,6L10,6L8,8Z" />
     <path
-        android:strokeColor="@color/primary_light"
+        android:strokeColor="@color/primary"
         android:strokeWidth="1"
         android:pathData="M12,10C16,8 16,16 12,14C8,16 8,8 12,10" />
 </vector>

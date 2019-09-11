@@ -60,7 +60,7 @@ public class EditTextFragment extends TextContentFragment {
     @Override
     public String getName(Activity parent) {
         // Generate name
-        return "Document" + System.currentTimeMillis();
+        return parent.getString(R.string.default_document_name, System.currentTimeMillis());
     }
 
     @Override

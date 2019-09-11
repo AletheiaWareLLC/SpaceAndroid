@@ -27,19 +27,19 @@ limitations under the License.
         android:strokeWidth="1" />
     <path
         android:pathData="M 60 6 L 36 18 L 60 30 L 36 42 "
-        android:strokeColor="@color/primary_light"
+        android:strokeColor="@color/primary"
         android:strokeLineJoin="bevel"
         android:strokeWidth="1" />
     <path
-        android:fillColor="@color/primary_light"
+        android:fillColor="@color/primary"
         android:pathData="M 60 5 C 60.5522847498 5 61 5.44771525017 61 6 C 61 6.55228474983 60.5522847498 7 60 7 C 59.4477152502 7 59 6.55228474983 59 6 C 59 5.44771525017 59.4477152502 5 60 5 Z" />
     <path
-        android:fillColor="@color/primary_light"
+        android:fillColor="@color/primary"
         android:pathData="M 36 17 C 36.5522847498 17 37 17.4477152502 37 18 C 37 18.5522847498 36.5522847498 19 36 19 C 35.4477152502 19 35 18.5522847498 35 18 C 35 17.4477152502 35.4477152502 17 36 17 Z" />
     <path
-        android:fillColor="@color/primary_light"
+        android:fillColor="@color/primary"
         android:pathData="M 60 29 C 60.5522847498 29 61 29.4477152502 61 30 C 61 30.5522847498 60.5522847498 31 60 31 C 59.4477152502 31 59 30.5522847498 59 30 C 59 29.4477152502 59.4477152502 29 60 29 Z" />
     <path
-        android:fillColor="@color/primary_light"
+        android:fillColor="@color/primary"
         android:pathData="M 36 41 C 36.5522847498 41 37 41.4477152502 37 42 C 37 42.5522847498 36.5522847498 43 36 43 C 35.4477152502 43 35 42.5522847498 35 42 C 35 41.4477152502 35.4477152502 41 36 41 Z" />
 </vector>

@@ -14,19 +14,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tool="http://schemas.android.com/tools"
+    android:id="@+id/preference_frame"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tool="http://schemas.android.com/tools"
-    android:background="@color/background"
+    android:layout_margin="@dimen/view_margin"
     android:padding="@dimen/activity_padding"
-    android:orientation="vertical"
     tool:context=".ui.SettingsActivity">
-
-    <FrameLayout
-        android:id="@+id/preference_frame"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="@dimen/view_margin"/>
-
-</LinearLayout>
+    <requestFocus/>
+</FrameLayout>

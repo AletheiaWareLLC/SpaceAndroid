@@ -29,19 +29,14 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.aletheiaware.bc.Cache;
-import com.aletheiaware.bc.Network;
-import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.common.utils.CommonUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Preview;
-import com.aletheiaware.space.android.utils.PreviewUtils;
 import com.aletheiaware.space.android.utils.PreviewUtils.PreviewCallback;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 
-import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,27 +44,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewHolder> {
+public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewHolder> implements PreviewCallback {
 
     private final Activity activity;
     private final LayoutInflater inflater;
-    private final Cache cache;
-    private final Network network;
     private final String alias;
-    private final KeyPair keys;
     private final Map<ByteString, Meta> metas = new HashMap<>();
     private final Map<ByteString, Preview> previews = new HashMap<>();
     private final Map<ByteString, Long> timestamps = new HashMap<>();
     private final Set<ByteString> shared = new HashSet<>();
     private final List<ByteString> sorted = new ArrayList<>();
+    private ByteString metaHead;
+    private ByteString shareHead;
 
-    public MetaAdapter(Activity activity, Cache cache, Network network, String alias, KeyPair keys) {
+    public MetaAdapter(Activity activity, String alias) {
         this.activity = activity;
-        this.inflater = activity.getLayoutInflater();
-        this.cache = cache;
-        this.network = network;
+        inflater = activity.getLayoutInflater();
         this.alias = alias;
-        this.keys = keys;
     }
 
     public String getAlias() {
@@ -90,16 +81,19 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
         }
     }
 
-    public void addPreview(ByteString hash, Preview preview) {
-        previews.put(hash, preview);
-        activity.runOnUiThread(new Runnable() {
-            public void run() {
-                notifyDataSetChanged();
-            }
-        });
+    @Override
+    public void onPreview(ByteString hash, Preview preview) {
+        if (preview != null) {
+            previews.put(hash, preview);
+            activity.runOnUiThread(new Runnable() {
+                public void run() {
+                    notifyDataSetChanged();
+                }
+            });
+        }
     }
 
-    public synchronized void sort() {
+    private synchronized void sort() {
         String value = SpaceAndroidUtils.getSortPreference(activity, alias);
         boolean chronological = "1".equals(value);
         SpaceUtils.sort(sorted, timestamps, chronological);
@@ -124,9 +118,11 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
             @Override
             public void onClick(View v) {
                 ByteString hash = holder.getHash();
-                Meta meta = metas.get(hash);
                 if (hash != null) {
-                    onSelection(hash, meta);
+                    Meta meta = metas.get(hash);
+                    if (meta != null) {
+                        onSelection(hash, meta);
+                    }
                 }
             }
         });
@@ -141,20 +137,17 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
             final ByteString hash = sorted.get(position);
             Long time = timestamps.get(hash);
             Meta meta = metas.get(hash);
-            if (!previews.containsKey(hash)) {
-                PreviewUtils.loadPreview(cache, network, alias, keys, hash, isShared(hash), new PreviewCallback() {
-                    @Override
-                    public void onPreview(Preview preview) {
-                        if (preview != null) {
-                            addPreview(hash, preview);
-                        }
-                    }
-                });
+            if (time != null && meta != null) {
+                if (!previews.containsKey(hash)) {
+                    loadPreview(hash);
+                }
+                Preview preview = previews.get(hash);
+                holder.set(hash, time, meta, preview, isShared(hash));
             }
-            Preview preview = previews.get(hash);
-            holder.set(hash, time, meta, preview, isShared(hash));
         }
     }
+
+    protected abstract void loadPreview(ByteString hash);
 
     @Override
     public int getItemCount() {
@@ -170,26 +163,43 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
         return sorted.isEmpty();
     }
 
+    public ByteString getMetaHead() {
+        return metaHead;
+    }
+
+    public void setMetaHead(ByteString metaHead) {
+        this.metaHead = metaHead;
+    }
+
+    public ByteString getShareHead() {
+        return shareHead;
+    }
+
+    public void setShareHead(ByteString shareHead) {
+        this.shareHead = shareHead;
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder {
 
         private ByteString hash;
 
-        private ImageView itemImage;
-        private TextView itemText;
-        private TextView itemTitle;
-        private TextView itemTime;
+        private final ImageView itemImage;
+        private final TextView itemText;
+        private final TextView itemTitle;
+        private final TextView itemTime;
 
         ViewHolder(LinearLayout view) {
             super(view);
-            itemImage = view.findViewById(R.id.list_item_image_view);
-            itemText = view.findViewById(R.id.list_item_text_view);
-            itemTitle = view.findViewById(R.id.list_item_title);
-            itemTime = view.findViewById(R.id.list_item_time);
+            itemImage = view.findViewById(R.id.detail_list_item_image_view);
+            itemText = view.findViewById(R.id.detail_list_item_text_view);
+            itemTitle = view.findViewById(R.id.detail_list_item_title);
+            itemTime = view.findViewById(R.id.detail_list_item_time);
         }
 
         void set(ByteString hash, Long time, Meta meta, Preview preview, boolean shared) {
             this.hash = hash;
-            if (SpaceUtils.isText(meta.getType())) {
+            String type = meta.getType();
+            if (SpaceUtils.isText(type)) {
                 itemImage.setVisibility(View.GONE);
                 itemText.setVisibility(View.VISIBLE);
                 if (preview == null) {
@@ -197,7 +207,7 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
                 } else {
                     itemText.setText(preview.getData().toStringUtf8());
                 }
-            } else if (SpaceUtils.isImage(meta.getType())) {
+            } else if (SpaceUtils.isImage(type)) {
                 itemImage.setVisibility(View.VISIBLE);
                 itemText.setVisibility(View.GONE);
                 if (preview == null) {
@@ -210,7 +220,7 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
                         itemImage.setImageBitmap(bitmap);
                     }
                 }
-            } else if (SpaceUtils.isVideo(meta.getType())) {
+            } else if (SpaceUtils.isVideo(type)) {
                 itemImage.setVisibility(View.VISIBLE);
                 itemText.setVisibility(View.GONE);
                 if (preview == null) {
@@ -223,7 +233,7 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
                         itemImage.setImageBitmap(bitmap);
                     }
                 }
-            } else if (SpaceUtils.isAudio(meta.getType())) {
+            } else if (SpaceUtils.isAudio(type)) {
                 itemImage.setVisibility(View.VISIBLE);
                 itemText.setVisibility(View.GONE);
                 if (preview == null) {
@@ -236,6 +246,19 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
                     //} else {
                     //    itemImage.setImageBitmap(bitmap);
                     //}
+                }
+            } else {
+                itemImage.setVisibility(View.VISIBLE);
+                itemText.setVisibility(View.GONE);
+                if (preview == null) {
+                    setDefaultFilePreview(shared);
+                } else {
+                    Bitmap bitmap = BitmapFactory.decodeStream(preview.getData().newInput());
+                    if (bitmap == null) {
+                        setDefaultFilePreview(shared);
+                    } else {
+                        itemImage.setImageBitmap(bitmap);
+                    }
                 }
             }
             if (shared) {
@@ -279,13 +302,21 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
             }
         }
 
+        private void setDefaultFilePreview(boolean shared) {
+            if (shared) {
+                itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.file_shared));
+            } else {
+                itemImage.setImageDrawable(ContextCompat.getDrawable(itemImage.getContext(), R.drawable.file));
+            }
+        }
+
         ByteString getHash() {
             return hash;
         }
 
         void setEmptyView() {
             hash = null;
-            itemTitle.setText(R.string.empty_list);
+            itemTitle.setText(R.string.empty_detail_list);
         }
     }
 }

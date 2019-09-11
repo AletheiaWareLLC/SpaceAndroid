@@ -16,10 +16,8 @@
 
 package com.aletheiaware.space.android.ui;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.UiThread;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -35,33 +33,20 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.aletheiaware.bc.Cache;
-import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
-import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.common.utils.CommonUtils;
-import com.aletheiaware.finance.FinanceProto.Registration;
-import com.aletheiaware.finance.FinanceProto.Subscription;
-import com.aletheiaware.finance.utils.FinanceUtils;
+import com.aletheiaware.space.SpaceProto.Miner;
 import com.aletheiaware.space.SpaceProto.Preview;
+import com.aletheiaware.space.SpaceProto.Registrar;
 import com.aletheiaware.space.android.R;
-import com.aletheiaware.space.android.utils.MinerUtils;
+import com.aletheiaware.space.android.utils.RemoteMiningUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
-import com.aletheiaware.space.android.utils.SpaceAndroidUtils.ProviderCallback;
-import com.aletheiaware.space.android.utils.SpaceAndroidUtils.RegistrationCallback;
-import com.aletheiaware.space.android.utils.SpaceAndroidUtils.SubscriptionCallback;
 import com.aletheiaware.space.utils.SpaceUtils;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import java.util.Map;
 
 public class ComposeDocumentActivity extends AppCompatActivity {
 
@@ -76,11 +61,12 @@ public class ComposeDocumentActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SpaceAndroidUtils.createNotificationChannels(this);
 
         // TODO add menu items
-        // TODO - Preview - choose which preview sizes to generate and mine after meta. Consider adding default preview sizes to settings
-        // TODO - Tag - choose which tags to apply and mine after meta.
+        // TODO - Preview - choose which preview sizes to generate and mine after meta. Consider adding default preview sizes to settings.
+        // TODO - Tag - choose which tags to apply and mine after meta. Consider adding default tags to settings.
+        // TODO - Reference - choose which documents to reference. Consider adding default references to settings.
+        // TODO - Security - choose which compression, encryption, and signature algorithms to use. Consider adding default algorithms to settings.
 
         // TODO Add access spinner - choose from private, public, or a list of recipients with whom to grant access and mine after meta.
 
@@ -90,9 +76,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
         // Name EditText
         nameEditText = findViewById(R.id.compose_document_name);
         // Precomplete EditText with generated name
-        String generatedName = "Document" + System.currentTimeMillis();
-        nameEditText.setText(generatedName);
-        nameEditText.setSelection(0, generatedName.length());
+        nameEditText.setText(getString(R.string.default_document_name, System.currentTimeMillis()));
 
         typeAdapter = ArrayAdapter.createFromResource(this, R.array.mime_types, android.R.layout.simple_spinner_item);
         typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -114,7 +98,7 @@ public class ComposeDocumentActivity extends AppCompatActivity {
 
         // Size TextView
         sizeTextView = findViewById(R.id.compose_document_size);
-        sizeTextView.setText(CommonUtils.sizeToString(0));
+        sizeTextView.setText(CommonUtils.binarySizeToString(0));
 
         // Content Frame
         contentFrame = findViewById(R.id.compose_document_content_frame);
@@ -125,111 +109,33 @@ public class ComposeDocumentActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 setEditable(false);
-                String alias = BCAndroidUtils.getAlias();
-                KeyPair keys = BCAndroidUtils.getKeyPair();
-                Cache cache = BCAndroidUtils.getCache();
-                String name = nameEditText.getText().toString();
-                String type = typeSpinner.getSelectedItem().toString();
-                InputStream in = contentFragment.getInputStream(ComposeDocumentActivity.this);
-                Preview preview = contentFragment.getPreview(ComposeDocumentActivity.this);
-                String provider = SpaceAndroidUtils.getRemoteMinerPreference(ComposeDocumentActivity.this, alias);
-                if (provider == null || provider.isEmpty()) {
-                    showProviderPicker(alias, keys, cache, name, type, preview, in);
-                } else {
-                    compose(alias, keys, cache, provider, name, type, preview, in);
-                }
-            }
-        });
-        composeButton.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                setEditable(false);
-                String alias = BCAndroidUtils.getAlias();
-                KeyPair keys = BCAndroidUtils.getKeyPair();
-                Cache cache = BCAndroidUtils.getCache();
-                String name = nameEditText.getText().toString();
-                String type = typeSpinner.getSelectedItem().toString();
-                InputStream in = contentFragment.getInputStream(ComposeDocumentActivity.this);
-                Preview preview = contentFragment.getPreview(ComposeDocumentActivity.this);
-                showProviderPicker(alias, keys, cache, name, type, preview, in);
-                return true;
+                final String alias = BCAndroidUtils.getAlias();
+                final KeyPair keys = BCAndroidUtils.getKeyPair();
+                final Cache cache = BCAndroidUtils.getCache();
+                final String name = nameEditText.getText().toString();
+                final String type = typeSpinner.getSelectedItem().toString();
+                final InputStream in = contentFragment.getInputStream(ComposeDocumentActivity.this);
+                final Preview preview = contentFragment.getPreview(ComposeDocumentActivity.this);
+                new MiningDialog(ComposeDocumentActivity.this, alias, keys, cache, null) {
+                    @Override
+                    public void onMine(Miner miner, final Map<String, Registrar> registrars) {
+                        RemoteMiningUtils.mineFileAndFinish(ComposeDocumentActivity.this, miner, registrars,  name, type, preview, in);
+                    }
+
+                    @Override
+                    public void onMiningCancelled() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                setEditable(true);
+                            }
+                        });
+                    }
+                }.create();
             }
         });
 
         setContentFragment(0);
-    }
-
-    private void compose(final String alias, final KeyPair keys, final Cache cache, final String provider, final String name, final String type, final Preview preview, final InputStream in) {
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    final Network network = SpaceAndroidUtils.getStorageNetwork(ComposeDocumentActivity.this, alias);
-                    final Registration registration = FinanceUtils.getRegistration(cache, network, provider, null, alias, keys);
-                    Log.d(SpaceUtils.TAG, "Registration: " + registration);
-                    final Subscription subscriptionStorage = FinanceUtils.getSubscription(cache, network, provider, null, alias, keys, getString(R.string.stripe_subscription_storage_product), getString(R.string.stripe_subscription_storage_plan));
-                    Log.d(SpaceUtils.TAG, "Storage Subscription: " + subscriptionStorage);
-                    final Subscription subscriptionMining = FinanceUtils.getSubscription(cache, network, provider, null, alias, keys, getString(R.string.stripe_subscription_mining_product), getString(R.string.stripe_subscription_mining_plan));
-                    Log.d(SpaceUtils.TAG, "Mining Subscription: " + subscriptionMining);
-                    if (registration == null) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                SpaceAndroidUtils.registerSpaceCustomer(ComposeDocumentActivity.this, provider, alias, new RegistrationCallback() {
-                                    @Override
-                                    public void onRegistered(final String customerId) {
-                                        Log.d(SpaceUtils.TAG, "Space Customer ID: " + customerId);
-                                        compose(alias, keys, cache, provider, name, type, preview, in);
-                                    }
-                                });
-                            }
-                        });
-                    } else if (subscriptionStorage == null) {
-                        SpaceAndroidUtils.subscribeSpaceStorageCustomer(ComposeDocumentActivity.this, provider, alias, registration.getCustomerId(), new SubscriptionCallback() {
-                            @Override
-                            public void onSubscribed(String subscriptionId) {
-                                Log.d(SpaceUtils.TAG, "Space Storage Subscription ID: " + subscriptionId);
-                                compose(alias, keys, cache, provider, name, type, preview, in);
-                            }
-                        });
-                    } else if (subscriptionMining == null) {
-                        SpaceAndroidUtils.subscribeSpaceMiningCustomer(ComposeDocumentActivity.this, provider, alias, registration.getCustomerId(), new SubscriptionCallback() {
-                            @Override
-                            public void onSubscribed(String subscriptionId) {
-                                Log.d(SpaceUtils.TAG, "Space Mining Subscription ID: " + subscriptionId);
-                                compose(alias, keys, cache, provider, name, type, preview, in);
-                            }
-                        });
-                    } else {
-                        MinerUtils.mineFile(ComposeDocumentActivity.this, "https://" + provider, name, type, preview, in);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                setResult(Activity.RESULT_OK);
-                                finish();
-                            }
-                        });
-                    }
-                } catch (IOException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchPaddingException | BadPaddingException e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
-    }
-
-    @UiThread
-    private void showProviderPicker(final String alias, final KeyPair keys, final Cache cache, final String name, final String type, final Preview preview, final InputStream in) {
-        SpaceAndroidUtils.showProviderPicker(ComposeDocumentActivity.this, alias, new ProviderCallback() {
-            @Override
-            public void onProviderSelected(String provider) {
-                compose(alias, keys, cache, provider, name, type, preview, in);
-            }
-
-            @Override
-            public void onCancelSelection() {
-                setEditable(true);
-            }
-        });
     }
 
     private void setEditable(boolean editable) {
@@ -303,8 +209,8 @@ public class ComposeDocumentActivity extends AppCompatActivity {
         ft.commit();
     }
 
-    public void updateSize(long size) {
-        sizeTextView.setText(CommonUtils.sizeToString(size));
+    private void updateSize(long size) {
+        sizeTextView.setText(CommonUtils.binarySizeToString(size));
     }
 
     @Override
@@ -317,8 +223,6 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                     case RESULT_CANCELED:
                         setResult(RESULT_CANCELED);
                         finish();
-                        break;
-                    default:
                         break;
                 }
                 break;

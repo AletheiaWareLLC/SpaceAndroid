@@ -17,57 +17,83 @@
 package com.aletheiaware.space.android.ui;
 
 import android.app.Activity;
-import android.support.v7.app.AlertDialog;
 import android.content.DialogInterface;
+import android.support.annotation.UiThread;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 
 import com.aletheiaware.alias.AliasProto.Alias;
+import com.aletheiaware.alias.utils.AliasUtils;
+import com.aletheiaware.bc.BCProto.Block;
+import com.aletheiaware.bc.BCProto.BlockEntry;
+import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.Cache;
+import com.aletheiaware.bc.Channel;
 import com.aletheiaware.bc.Network;
+import com.aletheiaware.bc.PoWChannel;
+import com.aletheiaware.bc.utils.ChannelUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
+import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.android.AliasAdapter;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.utils.SpaceUtils;
+import com.google.protobuf.ByteString;
 
-public abstract class ShareDialog {
+import java.io.IOException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+
+public abstract class ShareMiningDialog {
 
     private final Activity activity;
-    private final AliasAdapter adapter;
     private final Meta meta;
+    private final AliasAdapter adapter;
     private AlertDialog dialog;
+    private AutoCompleteTextView aliasText;
 
-    public ShareDialog(Activity activity, Cache cache, Network network, Meta meta, boolean shared) {
+    public ShareMiningDialog(Activity activity, Cache cache, Network network, Meta meta) {
         this.activity = activity;
-        adapter = new AliasAdapter(activity, cache, network);
         this.meta = meta;
+        this.adapter = new AliasAdapter(activity, cache, network);
+    }
+
+    public AlertDialog getDialog() {
+        return dialog;
     }
 
     public void create() {
         View shareView = View.inflate(activity, R.layout.dialog_share, null);
         // Name TextView
-        final TextView nameText = shareView.findViewById(R.id.share_name);
+        TextView nameText = shareView.findViewById(R.id.share_name);
         nameText.setText(meta.getName());
         // Alias EditText
-        final AutoCompleteTextView aliasText = shareView.findViewById(R.id.share_alias);
+        aliasText = shareView.findViewById(R.id.share_alias);
         aliasText.setAdapter(adapter);
         aliasText.setThreshold(3);
         aliasText.setFocusable(true);
         aliasText.setFocusableInTouchMode(true);
         AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
         ab.setTitle(R.string.title_dialog_share);
+        ab.setIcon(R.drawable.share);
         ab.setView(shareView);
         ab.setPositiveButton(R.string.share_action, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 final String recipient = aliasText.getText().toString();
                 Log.d(SpaceUtils.TAG, "Recipient: " + recipient);
-                if (!recipient.isEmpty()) {
+                if (recipient.isEmpty()) {
+                    // FIXME show error
+                } else {
                     final Alias r = adapter.get(recipient);
-                    if (r != null) {
-                        onShare(dialog, r);
+                    if (r == null) {
+                        // FIXME show error
+                    } else {
+                        onShare(r);
                     }
                 }
             }
@@ -75,9 +101,6 @@ public abstract class ShareDialog {
         dialog = ab.show();
     }
 
-    public abstract void onShare(DialogInterface dialog, Alias recipient);
-
-    public AlertDialog getDialog() {
-        return dialog;
-    }
+    @UiThread
+    public abstract void onShare(Alias recipient);
 }

@@ -27,7 +27,6 @@ import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.PoWChannel;
-import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.bc.utils.ChannelUtils;
 import com.aletheiaware.common.utils.CommonUtils;
 import com.aletheiaware.space.SpaceProto.Tag;
@@ -38,6 +37,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
+import java.util.Set;
 
 public class TagAdapter extends ArrayAdapter<String> implements Filterable {
 
@@ -47,21 +48,21 @@ public class TagAdapter extends ArrayAdapter<String> implements Filterable {
             @Override
             public void run() {
                 PoWChannel tags = new PoWChannel(SpaceUtils.SPACE_PREFIX_TAG + new String(CommonUtils.encodeBase64URL(metaRecordHash.toByteArray())), BC.THRESHOLD_STANDARD);
+                ChannelUtils.loadHead(tags, cache);
                 try {
                     ChannelUtils.pull(tags, cache, network);
                 } catch (NoSuchAlgorithmException e) {
                     /* Ignored */
                     e.printStackTrace();
                 }
+                final Set<String> ts = new HashSet<>();
                 try {
                     ChannelUtils.read(tags.getName(), tags.getHead(), null, cache, network, alias, keys, null, new RecordCallback() {
                         @Override
                         public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                             try {
                                 Tag t = Tag.newBuilder().mergeFrom(payload).build();
-                                // TODO this is inefficient for large tag counts
-                                remove(t.getValue());// Remove duplicates
-                                add(t.getValue());// Add to arrayadapter
+                                ts.add(t.getValue());
                             } catch (InvalidProtocolBufferException e) {
                                 /* Ignored */
                                 e.printStackTrace();
@@ -73,6 +74,7 @@ public class TagAdapter extends ArrayAdapter<String> implements Filterable {
                     /* Ignored */
                     e.printStackTrace();
                 }
+                addAll(ts);
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {

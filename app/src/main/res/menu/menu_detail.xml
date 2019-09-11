@@ -22,6 +22,14 @@ limitations under the License.
         app:showAsAction="ifRoom"
         android:title="@string/menu_download">
     </item>
+    <!-- TODO
+    <item
+        android:id="@+id/menu_preview"
+        android:icon="@drawable/preview"
+        app:showAsAction="ifRoom"
+        android:title="@string/menu_preview">
+    </item>
+    -->
     <item
         android:id="@+id/menu_share"
         android:icon="@drawable/share"

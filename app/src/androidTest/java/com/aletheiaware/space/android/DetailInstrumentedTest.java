@@ -21,7 +21,6 @@ import android.content.Intent;
 import android.support.test.espresso.intent.rule.IntentsTestRule;
 import android.support.test.rule.GrantPermissionRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.view.View;
 
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtilsTest;
@@ -39,7 +38,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class DetailInstrumentedTest {
 
-    public IntentsTestRule<DetailActivity> intentsTestRule = new IntentsTestRule<>(DetailActivity.class, false, false);
+    private final IntentsTestRule<DetailActivity> intentsTestRule = new IntentsTestRule<>(DetailActivity.class, true, false);
 
     @Rule
     public RuleChain ruleChain = RuleChain.outerRule(GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE))

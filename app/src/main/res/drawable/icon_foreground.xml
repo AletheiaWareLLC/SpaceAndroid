@@ -24,20 +24,20 @@ limitations under the License.
         android:translateY="24">
         <path
             android:pathData="M 36 6 L 12 18 L 36 30 L 12 42 "
-            android:strokeColor="@color/primary_light"
+            android:strokeColor="@color/primary"
             android:strokeLineJoin="bevel"
             android:strokeWidth="1" />
         <path
-            android:fillColor="@color/primary_light"
+            android:fillColor="@color/primary"
             android:pathData="M 36 5 C 36.5522847498 5 37 5.44771525017 37 6 C 37 6.55228474983 36.5522847498 7 36 7 C 35.4477152502 7 35 6.55228474983 35 6 C 35 5.44771525017 35.4477152502 5 36 5 Z" />
         <path
-            android:fillColor="@color/primary_light"
+            android:fillColor="@color/primary"
             android:pathData="M 12 17 C 12.5522847498 17 13 17.4477152502 13 18 C 13 18.5522847498 12.5522847498 19 12 19 C 11.4477152502 19 11 18.5522847498 11 18 C 11 17.4477152502 11.4477152502 17 12 17 Z" />
         <path
-            android:fillColor="@color/primary_light"
+            android:fillColor="@color/primary"
             android:pathData="M 36 29 C 36.5522847498 29 37 29.4477152502 37 30 C 37 30.5522847498 36.5522847498 31 36 31 C 35.4477152502 31 35 30.5522847498 35 30 C 35 29.4477152502 35.4477152502 29 36 29 Z" />
         <path
-            android:fillColor="@color/primary_light"
+            android:fillColor="@color/primary"
             android:pathData="M 12 41 C 12.5522847498 41 13 41.4477152502 13 42 C 13 42.5522847498 12.5522847498 43 12 43 C 11.4477152502 43 11 42.5522847498 11 42 C 11 41.4477152502 11.4477152502 41 12 41 Z" />
     </group>
 </vector>

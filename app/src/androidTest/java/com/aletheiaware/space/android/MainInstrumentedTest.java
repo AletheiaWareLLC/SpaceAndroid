@@ -44,7 +44,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class MainInstrumentedTest {
 
-    public IntentsTestRule<MainActivity> intentsTestRule = new IntentsTestRule<>(MainActivity.class, false, false);
+    private final IntentsTestRule<MainActivity> intentsTestRule = new IntentsTestRule<>(MainActivity.class, true, false);
 
     @Rule
     public RuleChain ruleChain = RuleChain.outerRule(GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE))
@@ -116,8 +116,8 @@ public class MainInstrumentedTest {
         //Preview preview3;
         //Preview preview4;
         //Preview preview5;
-        adapter.addPreview(recordHash1, preview1);
-        adapter.addPreview(recordHash2, preview2);
+        adapter.onPreview(recordHash1, preview1);
+        adapter.onPreview(recordHash2, preview2);
         //adapter.addPreview(recordHash3, preview3);
         //adapter.addPreview(recordHash4, preview4);
         //adapter.addPreview(recordHash5, preview5);

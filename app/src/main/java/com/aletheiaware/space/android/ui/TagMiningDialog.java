@@ -18,6 +18,7 @@ package com.aletheiaware.space.android.ui;
 
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.support.annotation.UiThread;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.View;
@@ -25,61 +26,70 @@ import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.aletheiaware.bc.Cache;
-import com.aletheiaware.bc.Network;
 import com.aletheiaware.space.SpaceProto.Meta;
+import com.aletheiaware.space.SpaceProto.Tag;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.TagAdapter;
 import com.aletheiaware.space.utils.SpaceUtils;
-import com.google.protobuf.ByteString;
 
-import java.security.KeyPair;
-
-public abstract class TagDialog {
+public abstract class TagMiningDialog {
 
     private final Activity activity;
-    private final TagAdapter adapter;
     private final Meta meta;
+    private final TagAdapter adapter;
     private AlertDialog dialog;
+    private AutoCompleteTextView valueText;
+    private EditText reasonText;
 
-    public TagDialog(Activity activity, String alias, KeyPair keys, Cache cache, Network network, ByteString metaRecordHash, Meta meta) {
+    public TagMiningDialog(Activity activity, Meta meta, TagAdapter adapter) {
         this.activity = activity;
-        adapter = new TagAdapter(activity, alias, keys, metaRecordHash, cache, network);
         this.meta = meta;
+        this.adapter = adapter;
+    }
+
+    public AlertDialog getDialog() {
+        return dialog;
     }
 
     public void create() {
         View tagView = View.inflate(activity, R.layout.dialog_tag, null);
         // Name TextView
-        final TextView nameText = tagView.findViewById(R.id.tag_name);
+        TextView nameText = tagView.findViewById(R.id.tag_name);
         nameText.setText(meta.getName());
         // Value EditText
-        final AutoCompleteTextView valueText = tagView.findViewById(R.id.tag_value);
+        valueText = tagView.findViewById(R.id.tag_value);
         valueText.setAdapter(adapter);
         valueText.setThreshold(3);
         valueText.setFocusable(true);
         valueText.setFocusableInTouchMode(true);
         // Reason TextView
-        final EditText reasonText = tagView.findViewById(R.id.tag_reason);
+        reasonText = tagView.findViewById(R.id.tag_reason);
         AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
         ab.setTitle(R.string.title_dialog_tag);
+        ab.setIcon(R.drawable.tag);
         ab.setView(tagView);
         ab.setPositiveButton(R.string.tag_action, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 final String value = valueText.getText().toString();
                 Log.d(SpaceUtils.TAG, "Value: " + value);
-                if (!value.isEmpty()) {
-                    onTag(dialog, value, reasonText.getText().toString());
+                final String reason = reasonText.getText().toString();
+                Log.d(SpaceUtils.TAG, "Reason: " + reason);
+                if (value.isEmpty()) {
+                    // FIXME show error
+                } else {
+                    Tag.Builder tb = Tag.newBuilder()
+                            .setValue(value);
+                    if (!reason.isEmpty()) {
+                        tb.setReason(reason);
+                    }
+                    onTag(tb.build());
                 }
             }
         });
         dialog = ab.show();
     }
 
-    public abstract void onTag(DialogInterface dialog, String value, String reason);
-
-    public AlertDialog getDialog() {
-        return dialog;
-    }
+    @UiThread
+    public abstract void onTag(Tag tag);
 }

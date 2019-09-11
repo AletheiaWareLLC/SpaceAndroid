@@ -15,10 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:background="@color/background"
     android:padding="@dimen/activity_padding"
     tools:context=".ui.UploadActivity">
 
@@ -35,7 +34,9 @@ limitations under the License.
             android:imeOptions="actionDone"
             android:inputType="text|textNoSuggestions"
             android:textColor="@color/text_primary"
-            android:textSize="@dimen/text_primary_size" />
+            android:textSize="@dimen/text_primary_size">
+            <requestFocus/>
+        </EditText>
 
         <TextView
             android:id="@+id/upload_type"

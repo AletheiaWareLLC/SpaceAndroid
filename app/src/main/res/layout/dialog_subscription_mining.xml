@@ -17,7 +17,6 @@ limitations under the License.
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
     android:padding="@dimen/activity_padding">
 
     <LinearLayout
@@ -26,95 +25,106 @@ limitations under the License.
         android:scrollbars="vertical"
         android:orientation="vertical">
 
-        <Button
-            android:id="@+id/provider_register_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:background="@color/accent"
-            android:drawableStart="@drawable/account"
-            android:padding="@dimen/view_padding"
-            android:text="@string/provider_register_action"
-            android:textColor="@color/text_primary"
-            android:textSize="@dimen/text_primary_size"/>
-
         <TextView
-            android:id="@+id/provider_registration_id_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
-            android:labelFor="@id/provider_registration_id_text"
-            android:text="@string/provider_registration"
+            android:labelFor="@id/miner_alias"
+            android:text="@string/miner_alias"
             android:textColor="@color/text_secondary"
             android:textSize="@dimen/text_secondary_size"/>
 
         <TextView
-            android:id="@+id/provider_registration_id_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:textColor="@color/text_primary"
-            android:textSize="@dimen/text_primary_size"/>
-
-        <Button
-            android:id="@+id/provider_subscribe_storage_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:background="@color/accent"
-            android:drawableStart="@drawable/bc_storage"
-            android:padding="@dimen/view_padding"
-            android:text="@string/provider_subscribe_storage_action"
-            android:textColor="@color/text_primary"
-            android:textSize="@dimen/text_primary_size"/>
-
-        <TextView
-            android:id="@+id/provider_subscription_storage_id_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:labelFor="@id/provider_subscription_storage_id_text"
-            android:text="@string/provider_subscription_storage"
-            android:textColor="@color/text_secondary"
-            android:textSize="@dimen/text_secondary_size"/>
-
-        <TextView
-            android:id="@+id/provider_subscription_storage_id_text"
+            android:id="@+id/miner_alias"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
             android:textColor="@color/text_primary"
             android:textSize="@dimen/text_primary_size" />
 
-        <Button
-            android:id="@+id/provider_subscribe_mining_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:background="@color/accent"
-            android:drawableStart="@drawable/bc_mine"
-            android:padding="@dimen/view_padding"
-            android:text="@string/provider_subscribe_mining_action"
-            android:textColor="@color/text_primary"
-            android:textSize="@dimen/text_primary_size"/>
-
         <TextView
-            android:id="@+id/provider_subscription_mining_id_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
-            android:labelFor="@id/provider_subscription_mining_id_text"
-            android:text="@string/provider_subscription_mining"
+            android:labelFor="@id/miner_registration_id"
+            android:text="@string/miner_registration_id"
             android:textColor="@color/text_secondary"
             android:textSize="@dimen/text_secondary_size"/>
 
         <TextView
-            android:id="@+id/provider_subscription_mining_id_text"
+            android:id="@+id/miner_registration_id"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
             android:textColor="@color/text_primary"
             android:textSize="@dimen/text_primary_size" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/miner_subscription_id"
+            android:text="@string/miner_subscription_id"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <TextView
+            android:id="@+id/miner_subscription_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/miner_subscription_invoices"
+            android:text="@string/miner_subscription_invoices"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/miner_subscription_invoices"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/miner_subscription_charges"
+            android:text="@string/miner_subscription_charges"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/miner_subscription_charges"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/miner_subscription_usage_records"
+            android:text="@string/miner_subscription_usage_records"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/miner_subscription_usage_records"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:text="@string/miner_label"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size" />
 
     </LinearLayout>
 

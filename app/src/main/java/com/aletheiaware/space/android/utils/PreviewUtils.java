@@ -16,6 +16,9 @@
 
 package com.aletheiaware.space.android.utils;
 
+import android.app.Activity;
+import android.util.Log;
+
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.BCProto.Reference;
@@ -23,6 +26,8 @@ import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Channel.RecordCallback;
 import com.aletheiaware.bc.Crypto;
 import com.aletheiaware.bc.Network;
+import com.aletheiaware.bc.PoWChannel;
+import com.aletheiaware.bc.utils.ChannelUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.utils.SpaceUtils;
@@ -43,16 +48,27 @@ public class PreviewUtils {
     private PreviewUtils() {}
 
     public interface PreviewCallback {
-        void onPreview(Preview preview);
+        void onPreview(ByteString hash, Preview preview);
     }
 
-    public static void loadPreview(final Cache cache, final Network network, final String alias, final KeyPair keys, final ByteString metaRecordHash, final boolean shared, final PreviewCallback callback) {
+    public static void loadPreview(final Activity activity, final Cache cache, final String alias, final KeyPair keys, final ByteString metaRecordHash, final boolean shared, final PreviewCallback callback) {
         new Thread() {
             @Override
             public void run() {
                 try {
+                    final Network network = SpaceAndroidUtils.getRegistrarNetwork(activity, alias);
                     if (shared) {
-                        SpaceUtils.readShares(cache, network, alias, keys, null, metaRecordHash, new RecordCallback() {
+                        Log.d(SpaceUtils.TAG, "Loading Share Channel");
+                        PoWChannel shares = SpaceUtils.getShareChannel(alias);
+                        ChannelUtils.loadHead(shares, cache);
+                        Log.d(SpaceUtils.TAG, "Pulling Share Channel");
+                        try {
+                            ChannelUtils.pull(shares, cache, network);
+                        } catch (NoSuchAlgorithmException e) {
+                            e.printStackTrace();
+                        }
+                        Log.d(SpaceUtils.TAG, "Reading Share Channel");
+                        SpaceUtils.readShares(shares, cache, network, alias, keys, null, metaRecordHash, new RecordCallback() {
                             @Override
                             public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                                 Share.Builder sb = Share.newBuilder();
@@ -68,7 +84,18 @@ public class PreviewUtils {
                                     Preview preview = null;
                                     for (int i = 0; i < count; i++) {
                                         Reference r = share.getPreviewReference(i);
-                                        Block b = network.getBlock(r);
+                                        Block b = cache.getBlockContainingRecord(r.getChannelName(), r.getRecordHash());
+                                        if (b == null) {
+                                            b = network.getBlock(r);
+                                            if (b != null) {
+                                                try {
+                                                    cache.putBlock(ByteString.copyFrom(Crypto.getProtobufHash(b)), b);
+                                                } catch (NoSuchAlgorithmException e) {
+                                                    /* Ignored */
+                                                    e.printStackTrace();
+                                                }
+                                            }
+                                        }
                                         if (b != null) {
                                             for (BlockEntry e : b.getEntryList()) {
                                                 try {
@@ -86,14 +113,24 @@ public class PreviewUtils {
                                         }
                                     }
                                     if (preview != null) {
-                                        callback.onPreview(preview);
+                                        callback.onPreview(metaRecordHash, preview);
                                     }
                                 }
                                 return true;
                             }
                         }, null, null);
                     } else {
-                        SpaceUtils.readPreviews(cache, network, alias, keys, null, metaRecordHash, new RecordCallback() {
+                        Log.d(SpaceUtils.TAG, "Loading Preview Channel");
+                        PoWChannel previews = SpaceUtils.getPreviewChannel(metaRecordHash);
+                        ChannelUtils.loadHead(previews, cache);
+                        Log.d(SpaceUtils.TAG, "Pulling Preview Channel");
+                        try {
+                            ChannelUtils.pull(previews, cache, network);
+                        } catch (NoSuchAlgorithmException e) {
+                            e.printStackTrace();
+                        }
+                        Log.d(SpaceUtils.TAG, "Reading Preview Channel");
+                        ChannelUtils.read(previews.getName(), previews.getHead(), null, cache, network, alias, keys, null, new RecordCallback() {
                             @Override
                             public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                                 Preview preview = null;
@@ -111,7 +148,7 @@ public class PreviewUtils {
                                     }
                                 }
                                 if (preview != null) {
-                                    callback.onPreview(preview);
+                                    callback.onPreview(metaRecordHash, preview);
                                     return false;
                                 }
                                 return true;

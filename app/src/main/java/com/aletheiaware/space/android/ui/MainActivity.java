@@ -16,7 +16,9 @@
 
 package com.aletheiaware.space.android.ui;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -25,6 +27,7 @@ import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -33,19 +36,24 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.aletheiaware.bc.BCProto.Block;
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Channel.RecordCallback;
 import com.aletheiaware.bc.Network;
+import com.aletheiaware.bc.PoWChannel;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.ui.AccountActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
+import com.aletheiaware.bc.utils.ChannelUtils;
 import com.aletheiaware.common.android.utils.CommonAndroidUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.MetaAdapter;
 import com.aletheiaware.space.android.R;
+import com.aletheiaware.space.android.utils.PreviewUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
@@ -53,11 +61,14 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 
 public class MainActivity extends AppCompatActivity {
 
+    private TextView emptyListHelpText;
     private MetaAdapter adapter;
     private RecyclerView recyclerView;
+    private volatile boolean refreshing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         AppBarLayout appbar = findViewById(R.id.main_appbar);
         appbar.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
             boolean showing = false;
+
             @Override
             public void onOffsetChanged(AppBarLayout appBar, int verticalOffset) {
                 if (Math.abs(appBar.getTotalScrollRange() + verticalOffset) < 50) {
@@ -92,6 +104,8 @@ public class MainActivity extends AppCompatActivity {
         });
         setTitle(null);
 
+        emptyListHelpText = findViewById(R.id.main_empty_list_help_text);
+
         // RecyclerView
         recyclerView = findViewById(R.id.main_recycler);
         RecyclerView.LayoutManager layoutManager;
@@ -102,11 +116,20 @@ public class MainActivity extends AppCompatActivity {
         }
         recyclerView.setLayoutManager(layoutManager);
 
-        // Add FloatingActionButton
+        // FloatingActionButton
         FloatingActionButton addFab = findViewById(R.id.main_add_fab);
         addFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // TODO expand FAB to show actions, rather than dialog
+                //  add icons to actions;
+                //  - compose: create, or pencil
+                //  - upload: file upload, note add, or paperclip?
+                //  - picture: camera
+                //  - video: camcorder
+                //  - audio: mic
+                //  - location: pin
+                //  - temperature: thermometer
                 SpaceAndroidUtils.add(MainActivity.this);
             }
         });
@@ -119,36 +142,29 @@ public class MainActivity extends AppCompatActivity {
             final String alias = BCAndroidUtils.getAlias();
             final KeyPair keys = BCAndroidUtils.getKeyPair();
             final Cache cache = BCAndroidUtils.getCache();
-            new Thread() {
-                @Override
-                public void run() {
-                    if (adapter == null || !alias.equals(adapter.getAlias())) {
-                        Network network = SpaceAndroidUtils.getStorageNetwork(MainActivity.this, alias);
-                        // Adapter
-                        adapter = new MetaAdapter(MainActivity.this, cache, network, alias, keys) {
-                            @Override
-                            public void onSelection(ByteString hash, Meta meta) {
-                                Intent i = new Intent(MainActivity.this, DetailActivity.class);
-                                i.putExtra(SpaceAndroidUtils.HASH_EXTRA, hash.toByteArray());
-                                i.putExtra(SpaceAndroidUtils.META_EXTRA, meta.toByteArray());
-                                i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, isShared(hash));
-                                startActivityForResult(i, SpaceAndroidUtils.DETAIL_ACTIVITY);
-                            }
-                        };
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                // TODO visually show files that are still getting mined
-                                recyclerView.setAdapter(adapter);
-                                recyclerView.requestLayout();
-                            }
-                        });
+            if (adapter == null || !alias.equals(adapter.getAlias())) {
+                // Adapter
+                adapter = new MetaAdapter(MainActivity.this, alias) {
+                    @Override
+                    protected void loadPreview(ByteString hash) {
+                        PreviewUtils.loadPreview(MainActivity.this, cache, alias, keys, hash, isShared(hash), this);
                     }
-                    if (adapter.isEmpty()) {
-                        refresh();
+
+                    @Override
+                    public void onSelection(ByteString hash, Meta meta) {
+                        Intent i = new Intent(MainActivity.this, DetailActivity.class);
+                        i.putExtra(SpaceAndroidUtils.HASH_EXTRA, hash.toByteArray());
+                        i.putExtra(SpaceAndroidUtils.META_EXTRA, meta.toByteArray());
+                        i.putExtra(SpaceAndroidUtils.SHARED_EXTRA, isShared(hash));
+                        startActivityForResult(i, SpaceAndroidUtils.DETAIL_ACTIVITY);
                     }
-                }
-            }.start();
+                };
+                // TODO visually show files that are still getting mined
+                recyclerView.setAdapter(adapter);
+            }
+            if (adapter.isEmpty()) {
+                refresh();
+            }
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
             startActivityForResult(intent, SpaceAndroidUtils.ACCESS_ACTIVITY);
@@ -172,14 +188,18 @@ public class MainActivity extends AppCompatActivity {
                         setResult(RESULT_CANCELED);
                         finish();
                         break;
-                    default:
-                        break;
                 }
                 break;
             case SpaceAndroidUtils.ACCOUNT_ACTIVITY:
-                refresh();
-                break;
+                // Fallthrough
+            case SpaceAndroidUtils.COMPOSE_ACTIVITY:
+                // Fallthrough
             case SpaceAndroidUtils.DETAIL_ACTIVITY:
+                // Fallthrough
+            case SpaceAndroidUtils.SETTINGS_ACTIVITY:
+                // Fallthrough
+                // TODO if sort preference has changed, recycler view need to relayout data in adapter
+            case SpaceAndroidUtils.UPLOAD_ACTIVITY:
                 refresh();
                 break;
             case SpaceAndroidUtils.OPEN_ACTIVITY:
@@ -200,15 +220,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case RESULT_CANCELED:
                         break;
-                    default:
-                        break;
                 }
-                break;
-            case SpaceAndroidUtils.COMPOSE_ACTIVITY:
-                refresh();
-                break;
-            case SpaceAndroidUtils.UPLOAD_ACTIVITY:
-                refresh();
                 break;
             case SpaceAndroidUtils.CAPTURE_IMAGE_ACTIVITY:
                 Log.d(SpaceUtils.TAG, "CAPTURE_IMAGE_ACTIVITY");
@@ -247,34 +259,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case RESULT_CANCELED:
                         break;
-                    default:
-                        break;
                 }
-                break;
-            case SpaceAndroidUtils.PROVIDERS_ACTIVITY:
-                switch (resultCode) {
-                    case RESULT_OK:
-                        break;
-                    case RESULT_CANCELED:
-                        // TODO
-                        break;
-                    default:
-                        break;
-                }
-                adapter = null; // Clear adapter to reload from new providers
-                refresh();
-                break;
-            case SpaceAndroidUtils.SETTINGS_ACTIVITY:
-                switch (resultCode) {
-                    case RESULT_OK:
-                        break;
-                    case RESULT_CANCELED:
-                        // TODO
-                        break;
-                    default:
-                        break;
-                }
-                refresh();
                 break;
             default:
                 super.onActivityResult(requestCode, resultCode, intent);
@@ -299,9 +284,6 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_account:
                 account();
                 return true;
-            case R.id.menu_providers:
-                providers();
-                return true;
             case R.id.menu_settings:
                 settings();
                 return true;
@@ -315,57 +297,120 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void refresh() {
-        if (BCAndroidUtils.isInitialized()) {
-            // TODO start refresh menu animate
+        if (BCAndroidUtils.isInitialized() && !refreshing) {
+            refreshing = true;
+            // Create refreshing dialog
+            View progressView = View.inflate(MainActivity.this, R.layout.dialog_progress, null);
+            final ProgressBar progressBar = progressView.findViewById(R.id.progress_bar);
+            progressBar.setIndeterminate(true);
+            final TextView progressStatus = progressView.findViewById(R.id.progress_status);
+            progressStatus.setVisibility(View.VISIBLE);
+            final AlertDialog progressDialog = new AlertDialog.Builder(MainActivity.this, R.style.AlertDialogTheme)
+                    .setTitle(R.string.title_dialog_refreshing)
+                    .setIcon(R.drawable.refresh)
+                    .setCancelable(false)
+                    .setView(progressView)
+                    .show();
             new Thread() {
                 @Override
                 public void run() {
                     final String alias = BCAndroidUtils.getAlias();
                     final KeyPair keys = BCAndroidUtils.getKeyPair();
                     final Cache cache = BCAndroidUtils.getCache();
-                    final Network network = SpaceAndroidUtils.getStorageNetwork(MainActivity.this, alias);
+                    final Network network = SpaceAndroidUtils.getRegistrarNetwork(MainActivity.this, alias);
                     try {
-                        SpaceUtils.readMetas(cache, network, alias, keys, null, new RecordCallback() {
-                            @Override
-                            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                try {
-                                    Meta meta = Meta.newBuilder().mergeFrom(payload).build();
-                                    Log.d(SpaceUtils.TAG, "Meta: " + meta);
-                                    adapter.addMeta(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, false);
-                                } catch (InvalidProtocolBufferException e) {
-                                    /* Ignored */
-                                    e.printStackTrace();
+                        progressStatus.setText(R.string.main_loading_meta);
+                        final PoWChannel metas = SpaceUtils.getMetaChannel(alias);
+                        ChannelUtils.loadHead(metas, cache);
+                        progressStatus.setText(R.string.main_pulling_meta);
+                        try {
+                            ChannelUtils.pull(metas, cache, network);
+                        } catch (NoSuchAlgorithmException e) {
+                            /* Ignored */
+                            e.printStackTrace();
+                        }
+                        ByteString head = metas.getHead();
+                        if (head != null && !head.equals(adapter.getMetaHead())) {
+                            progressStatus.setText(R.string.main_reading_meta);
+                            ChannelUtils.read(metas.getName(), metas.getHead(), null, cache, network, alias, keys, null, new RecordCallback() {
+                                @Override
+                                public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                    try {
+                                        Meta meta = Meta.newBuilder().mergeFrom(payload).build();
+                                        Log.d(SpaceUtils.TAG, "Meta: " + meta);
+                                        adapter.addMeta(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, false);
+                                    } catch (InvalidProtocolBufferException e) {
+                                        /* Ignored */
+                                        e.printStackTrace();
+                                    }
+                                    return true;
                                 }
-                                return true;
-                            }
-                        });
+                            });
+                            adapter.setMetaHead(head);
+                        }
                     } catch (IOException e) {
                         CommonAndroidUtils.showErrorDialog(MainActivity.this, R.style.AlertDialogTheme, R.string.error_meta_read_failed, e);
                     }
                     try {
-                        SpaceUtils.readShares(cache, network, alias, keys, null, null, null, new RecordCallback() {
-                            @Override
-                            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                try {
-                                    Meta meta = Meta.newBuilder().mergeFrom(payload).build();
-                                    Log.d(SpaceUtils.TAG, "Shared Meta: " + meta);
-                                    adapter.addMeta(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, true);
-                                } catch (InvalidProtocolBufferException e) {
-                                    /* Ignored */
-                                    e.printStackTrace();
+                        progressStatus.setText(R.string.main_loading_share);
+                        final PoWChannel shares = SpaceUtils.getShareChannel(alias);
+                        ChannelUtils.loadHead(shares, cache);
+                        progressStatus.setText(R.string.main_pulling_share);
+                        try {
+                            ChannelUtils.pull(shares, cache, network);
+                        } catch (NoSuchAlgorithmException e) {
+                            /* Ignored */
+                            e.printStackTrace();
+                        }
+                        ByteString head = shares.getHead();
+                        if (head != null && !head.equals(adapter.getShareHead())) {
+                            progressStatus.setText(R.string.main_reading_share);
+                            SpaceUtils.readShares(shares, cache, network, alias, keys, null, null, null, new RecordCallback() {
+                                @Override
+                                public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                    try {
+                                        Meta meta = Meta.newBuilder().mergeFrom(payload).build();
+                                        Log.d(SpaceUtils.TAG, "Shared Meta: " + meta);
+                                        adapter.addMeta(blockEntry.getRecordHash(), blockEntry.getRecord().getTimestamp(), meta, true);
+                                    } catch (InvalidProtocolBufferException e) {
+                                        /* Ignored */
+                                        e.printStackTrace();
+                                    }
+                                    return true;
                                 }
-                                return true;
-                            }
-                        }, null);
+                            }, null);
+                            adapter.setShareHead(head);
+                        }
                     } catch (IOException e) {
                         CommonAndroidUtils.showErrorDialog(MainActivity.this, R.style.AlertDialogTheme, R.string.error_shared_meta_read_failed, e);
                     }
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            // TODO stop refresh menu animate
+                            // Dismiss refreshing dialog
+                            if (progressDialog != null && progressDialog.isShowing()) {
+                                progressDialog.dismiss();
+                            }
+                            // Show help text if adapter is empty
+                            if (adapter.isEmpty()) {
+                                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+                                final String preference = getString(R.string.preference_main_empty_list_help, alias);
+                                if (preferences.getBoolean(preference, true)) {
+                                    emptyListHelpText.setVisibility(View.VISIBLE);
+                                    emptyListHelpText.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            preferences.edit().putBoolean(preference, false).apply();
+                                            emptyListHelpText.setVisibility(View.GONE);
+                                        }
+                                    });
+                                }
+                            } else {
+                                emptyListHelpText.setVisibility(View.GONE);
+                            }
                         }
                     });
+                    refreshing = false;
                 }
             }.start();
         }
@@ -374,11 +419,6 @@ public class MainActivity extends AppCompatActivity {
     private void account() {
         Intent i = new Intent(this, AccountActivity.class);
         startActivityForResult(i, SpaceAndroidUtils.ACCOUNT_ACTIVITY);
-    }
-
-    private void providers() {
-        Intent i = new Intent(this, ProvidersActivity.class);
-        startActivityForResult(i, SpaceAndroidUtils.PROVIDERS_ACTIVITY);
     }
 
     private void settings() {

@@ -59,7 +59,7 @@ public class AliasAdapter extends ArrayAdapter<String> implements Filterable {
                                 ex.printStackTrace();
                             }
                             Alias a = ab.build();
-                            add(a.getAlias());// Add to arrayadapter
+                            add(a.getAlias());// Add to adapter
                             am.put(a.getAlias(), a);// Add to map
                         }
                         bh = b.getPrevious();

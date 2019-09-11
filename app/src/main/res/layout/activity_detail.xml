@@ -15,10 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:background="@color/background"
     android:padding="@dimen/activity_padding"
     tools:context=".ui.DetailActivity">
 
@@ -31,7 +30,9 @@ limitations under the License.
         <FrameLayout
             android:id="@+id/detail_content_frame"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent">
+            <requestFocus/>
+        </FrameLayout>
 
         <View
             android:layout_width="match_parent"

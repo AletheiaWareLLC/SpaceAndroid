@@ -1,4 +1,4 @@
 configurations.maybeCreate("debug")
-artifacts.add("debug", file('app-debug.aar'))
+artifacts.add("debug", file('../../AletheiaWareCommonAndroid/app/build/outputs/aar/app-debug.aar'))
 configurations.maybeCreate("release")
-artifacts.add("release", file('app-release.aar'))
+artifacts.add("release", file('../../AletheiaWareCommonAndroid/app/build/outputs/aar/app-release.aar'))

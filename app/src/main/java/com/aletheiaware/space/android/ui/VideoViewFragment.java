@@ -23,8 +23,10 @@ import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
 import android.media.MediaPlayer.OnInfoListener;
 import android.media.MediaPlayer.OnPreparedListener;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -49,20 +51,19 @@ public class VideoViewFragment extends UriContentFragment implements OnClickList
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
         Log.i(SpaceUtils.TAG, "On Create View");
-        contentVideoView = (VideoView) inflater.inflate(R.layout.fragment_video_view, container, false);
+        return inflater.inflate(R.layout.fragment_video_view, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        Log.i(SpaceUtils.TAG, "On View Created");
+        contentVideoView = (VideoView) view;
         contentVideoView.setOnClickListener(this);
         contentVideoView.setOnPreparedListener(this);
         contentVideoView.setOnCompletionListener(this);
         contentVideoView.setOnInfoListener(this);
         contentVideoView.setOnErrorListener(this);
-        return contentVideoView;
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        Log.i(SpaceUtils.TAG, "On Resume");
-        Log.i(SpaceUtils.TAG, "Parent: " + getActivity());
         controller = new MediaController(getActivity());
         controller.setMediaPlayer(contentVideoView);
         controller.setAnchorView(contentVideoView);
@@ -70,8 +71,6 @@ public class VideoViewFragment extends UriContentFragment implements OnClickList
         contentVideoView.setVideoURI(uri);
         contentVideoView.setZOrderOnTop(true);
         contentVideoView.requestFocus();
-        contentVideoView.requestLayout();
-        contentVideoView.start();
     }
 
     @Override
@@ -90,9 +89,17 @@ public class VideoViewFragment extends UriContentFragment implements OnClickList
     public void onPrepared(MediaPlayer mp) {
         Log.i(SpaceUtils.TAG, "On Prepared");
         Log.i(SpaceUtils.TAG, "Duration: " + contentVideoView.getDuration());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.i(SpaceUtils.TAG, "Metrics: " + mp.getMetrics());
+        }
         if (controller != null) {
             controller.show(3 * 1000);// Show for 3 seconds in ms
         }
+        ViewGroup.LayoutParams params = contentVideoView.getLayoutParams();
+        params.width = mp.getVideoWidth();
+        params.height = mp.getVideoHeight();
+        contentVideoView.requestLayout();
+        contentVideoView.start();
     }
 
     @Override
@@ -103,12 +110,76 @@ public class VideoViewFragment extends UriContentFragment implements OnClickList
     @Override
     public boolean onInfo(MediaPlayer mp, int what, int extra) {
         Log.i(SpaceUtils.TAG, "On Info " + what + " " + extra);
+        switch (what) {
+            case MediaPlayer.MEDIA_INFO_UNKNOWN:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_UNKNOWN");
+                break;
+            case MediaPlayer.MEDIA_INFO_STARTED_AS_NEXT:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_STARTED_AS_NEXT");
+                break;
+            case MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_VIDEO_RENDERING_START");
+                break;
+            case MediaPlayer.MEDIA_INFO_VIDEO_TRACK_LAGGING:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_VIDEO_TRACK_LAGGING");
+                break;
+            case MediaPlayer.MEDIA_INFO_BUFFERING_START:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_BUFFERING_START");
+                break;
+            case MediaPlayer.MEDIA_INFO_BUFFERING_END:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_BUFFERING_END");
+                break;
+            case MediaPlayer.MEDIA_INFO_BAD_INTERLEAVING:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_BAD_INTERLEAVING");
+                break;
+            case MediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_NOT_SEEKABLE");
+                break;
+            case MediaPlayer.MEDIA_INFO_METADATA_UPDATE:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_METADATA_UPDATE");
+                break;
+            case MediaPlayer.MEDIA_INFO_AUDIO_NOT_PLAYING:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_AUDIO_NOT_PLAYING");
+                break;
+            case MediaPlayer.MEDIA_INFO_VIDEO_NOT_PLAYING:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_VIDEO_NOT_PLAYING");
+                break;
+            case MediaPlayer.MEDIA_INFO_UNSUPPORTED_SUBTITLE:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_UNSUPPORTED_SUBTITLE");
+                break;
+            case MediaPlayer.MEDIA_INFO_SUBTITLE_TIMED_OUT:
+                Log.i(SpaceUtils.TAG, "MEDIA_INFO_SUBTITLE_TIMED_OUT");
+                break;
+        }
         return false;
     }
 
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra) {
         Log.e(SpaceUtils.TAG, "On Error " + what + " " + extra);
+        switch (what) {
+            case MediaPlayer.MEDIA_ERROR_UNKNOWN:
+                Log.i(SpaceUtils.TAG, "MEDIA_ERROR_UNKNOWN");
+                break;
+            case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
+                Log.i(SpaceUtils.TAG, "MEDIA_ERROR_SERVER_DIED");
+                break;
+            case MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK:
+                Log.i(SpaceUtils.TAG, "MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK");
+                break;
+            case MediaPlayer.MEDIA_ERROR_TIMED_OUT:
+                Log.i(SpaceUtils.TAG, "MEDIA_ERROR_TIMED_OUT");
+                break;
+            case MediaPlayer.MEDIA_ERROR_IO:
+                Log.i(SpaceUtils.TAG, "MEDIA_ERROR_IO");
+                break;
+            case MediaPlayer.MEDIA_ERROR_MALFORMED:
+                Log.i(SpaceUtils.TAG, "MEDIA_ERROR_MALFORMED");
+                break;
+            case MediaPlayer.MEDIA_ERROR_UNSUPPORTED:
+                Log.i(SpaceUtils.TAG, "MEDIA_ERROR_UNSUPPORTED");
+                break;
+        }
         return false;
     }
 

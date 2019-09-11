@@ -17,7 +17,6 @@ limitations under the License.
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
     android:padding="@dimen/activity_padding">
 
     <LinearLayout
@@ -60,7 +59,9 @@ limitations under the License.
             android:imeOptions="actionDone"
             android:inputType="text|textNoSuggestions"
             android:textColor="@color/text_primary"
-            android:textSize="@dimen/text_primary_size" />
+            android:textSize="@dimen/text_primary_size">
+            <requestFocus/>
+        </AutoCompleteTextView>
 
         <TextView
             android:layout_width="match_parent"

@@ -18,7 +18,6 @@ limitations under the License.
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="@dimen/view_margin"
-    android:background="@color/background"
     android:gravity="center"
     android:padding="@dimen/view_padding"
     android:textColor="@color/text_secondary"

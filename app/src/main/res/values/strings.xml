@@ -17,25 +17,37 @@ limitations under the License.
 <resources>
     <!-- <string name="app_name">S P A C E</string> moved to gradle -->
 
-    <string name="app_logo">Space Logo</string>
-
-    <string name="action_account">Account</string>
-    <string name="action_search">Search</string>
-    <string name="action_settings">Settings</string>
+    <string name="app_logo_description">Space Logo</string>
 
     <string name="backdrop_description">Backdrop</string>
 
+    <string name="default_document_name">Document-%d</string>
+
+    <string name="default_text_preview">Abc</string>
+
+    <string name="detail_loading_file">Loading File Channel</string>
+    <string name="detail_loading_meta">Loading Meta Channel</string>
+    <string name="detail_pulling_meta">Pulling Meta Channel</string>
+    <string name="detail_reading_meta">Reading Meta Channel</string>
+    <string name="detail_loading_share">Loading Share Channel</string>
+    <string name="detail_pulling_share">Pulling Share Channel</string>
+    <string name="detail_reading_share">Reading Share Channel</string>
+    <string name="detail_loading_preview">Loading Preview Channel</string>
+    <string name="detail_pulling_preview">Pulling Preview Channel</string>
+    <string name="detail_reading_preview">Reading Preview Channel</string>
+    <string name="detail_writing_uri">Writing to: %s</string>
+
+    <string name="empty_charge_list">No Charges</string>
+    <string name="empty_detail_list">No Documents</string>
+    <string name="empty_invoice_list">No Invoices</string>
+    <string name="empty_miner_list">No Miners</string>
+    <string name="empty_registrars_list">No Registrars</string>
+    <string name="empty_usage_record_list">No Usage Records</string>
+
     <string name="error_connection">Failed to connect to %s</string>
-    <string name="error_decoding_image">Failed to decode image</string>
-    <string name="error_decoding_video">Failed to decode video</string>
-    <string name="error_downloading">Failed to download file</string>
-    <string name="error_listing">Failed to list files</string>
-    <string name="error_loading_metadata">Failed to load metadata from intent</string>
-    <string name="error_loading_file">Failed to load file</string>
     <string name="error_reading_uri">Failed to read URI</string>
     <string name="error_uploading">Failed to upload file</string>
     <string name="error_mining">Failed to mine file</string>
-    <string name="error_unsupported_type">Unsupported file type: %s</string>
     <string name="error_no_camera">No camera found on this device</string>
     <string name="error_meta_read_failed">Failed to read metadata</string>
     <string name="error_shared_meta_read_failed">Failed to read shared metadata</string>
@@ -48,9 +60,17 @@ limitations under the License.
     <string name="legalese_beta_label">This beta version of SPACE is made available under the <a href="https://aletheiaware.com/space-beta-test-agreement.html">Beta Test Agreement</a></string>
     <string name="legalese_beta_test_agreement">I understand, and agree to the Beta Test Agreement</string>
 
+    <string name="main_loading_meta">Loading Meta Channel</string>
+    <string name="main_pulling_meta">Pulling Meta Channel</string>
+    <string name="main_reading_meta">Reading Meta Channel</string>
+    <string name="main_loading_share">Loading Share Channel</string>
+    <string name="main_pulling_share">Pulling Share Channel</string>
+    <string name="main_reading_share">Reading Share Channel</string>
+    <string name="main_empty_list_help_text">Tap \'+\' to add your first document</string>
+    <string name="preference_main_empty_list_help">%s_main_empty_list_help_preference</string>
+
     <string name="menu_account">Account</string>
     <string name="menu_download">Download</string>
-    <string name="menu_providers">Providers</string>
     <string name="menu_refresh">Refresh</string>
     <string name="menu_settings">Settings</string>
     <string name="menu_share">Share</string>
@@ -64,70 +84,54 @@ limitations under the License.
     <string name="mime_type_video_mpeg">video/mpeg</string>
 
     <string name="mine_action">Mine</string>
+    <string name="mine_label">Data stored in a blockchain is immutable and indelible</string>
+    <string name="miner_alias">Miner</string>
+    <string name="miner_label">Miners mine your data</string>
+    <string name="miner_registration_id">Registration</string>
+    <string name="miner_subscription_id">Subscription</string>
+    <string name="miner_subscription_invoices">Invoices</string>
+    <string name="miner_subscription_charges">Charges</string>
+    <string name="miner_subscription_usage_records">Usage Records</string>
 
-    <string name="notification_channel_name_mining">Mining</string>
-    <string name="notification_channel_name_download">Downloads</string>
-    <string name="notification_channel_description_mining">Ongoing Mining</string>
-    <string name="notification_channel_description_download">Ongoing Downloads</string>
+    <string name="registrar_alias">Registrar</string>
+    <string name="registrar_label">Registrars store your data</string>
+    <string name="registrar_registration_id">Registration</string>
+    <string name="registrar_subscription_id">Subscription</string>
+    <string name="registrar_subscription_invoices">Invoices</string>
+    <string name="registrar_subscription_charges">Charges</string>
+    <string name="registrar_subscription_usage_records">Usage Records</string>
+
+    <string name="pdf_previous">Previous</string>
+    <string name="pdf_page_count">Page %d of %d</string>
+    <string name="pdf_next">Next</string>
 
     <string name="title_activity_compose_document">Compose Document</string>
     <string name="title_activity_detail">Detail</string>
     <string name="title_activity_main">@string/app_name</string>
-    <string name="title_activity_providers">Providers</string>
     <string name="title_activity_settings">Settings</string>
     <string name="title_activity_upload">Upload File</string>
-    <string name="title_dialog_error">Error</string>
-    <string name="title_dialog_add_record">Add Record</string>
-    <string name="title_dialog_select_miner">Select Miner</string>
-    <string name="title_dialog_select_provider">Select Provider</string>
+    <string name="title_dialog_add_document">Add Document</string>
+    <string name="title_dialog_downloading_document">Downloading Document</string>
     <string name="title_dialog_loading_document">Loading Document</string>
+    <string name="title_dialog_mine">Mine</string>
+    <string name="title_dialog_mining">Mining</string>
     <string name="title_dialog_preview">Preview</string>
+    <string name="title_dialog_refreshing">Refreshing</string>
     <string name="title_dialog_share">Share</string>
+    <string name="title_dialog_sharing_document">Sharing Document</string>
+    <string name="title_dialog_subscription_mining">Mining Subscription</string>
+    <string name="title_dialog_subscription_registrar">Registrar Subscription</string>
     <string name="title_dialog_tag">Tag</string>
-    <string name="title_dialog_custom_provider">Custom Provider</string>
-    <string name="title_notification_mining">Mining</string>
-    <string name="title_notification_download">Downloading</string>
+    <string name="title_dialog_tagging_document">Tagging Document</string>
 
-    <string name="fragment_image">The image to add</string>
-    <string name="fragment_video">The video to add</string>
-    <string name="empty_list">No documents found - add your first using the button below</string>
-    <string name="no_data">No data</string>
-    <string name="default_text_preview">Abc</string>
+    <string name="preference_network_title">Network</string>
+    <string name="preference_miner_key">%s_miner_preference</string>
+    <string name="preference_miner_title">Miner</string>
+    <string name="preference_miner_description">Select where your data is mined</string>
+    <string name="preference_registrars_key">%s_registrars_preference</string>
+    <string name="preference_registrars_title">Registrars</string>
+    <string name="preference_registrars_description">Select where your data is stored</string>
 
-    <string name="preview_name">Document</string>
-    <string name="preview_action">Generate</string>
-    <string name="preview_document_label">Previews are used instead of downloading the whole document</string>
-
-    <string name="share_action">Share</string>
-    <string name="share_alias">Alias</string>
-    <string name="share_name">Document</string>
-    <string name="share_document_label">Sharing a document is non-reversible</string>
-
-    <string name="tag_action">Tag</string>
-    <string name="tag_name">Document</string>
-    <string name="tag_value">Value</string>
-    <string name="tag_reason">Reason</string>
-    <string name="tag_document_label">Tags are used to search and filter documents</string>
-
-    <string name="provider_add">Add Provider</string>
-    <string name="delete_provider">Delete Provider</string>
-    <string name="delete_provider_action">Delete</string>
-    <string name="delete_provider_legalese">Deleting this provider will not unregister your account or cancel any subscriptions you may have with them, nor will it delete your data from their systems. For more information or support, please contact the provider.</string>
-    <string name="provider_description">Providers offer Storage and Mining services to registered customers on a subscription basis. Select which providers store and mine your data from the list above, or add a custom provider.</string>
-    <string name="provider_register_action">Register</string>
-    <string name="provider_subscribe_storage_action">Subscribe Storage</string>
-    <string name="provider_subscribe_mining_action">Subscribe Mining</string>
-    <string name="provider_registration">Registration</string>
-    <string name="provider_subscription_storage">Storage Subscription</string>
-    <string name="provider_subscription_mining">Mining Subscription</string>
-
-    <string name="custom_provider_alias">Provider Alias</string>
-    <string name="custom_provider_action">Add</string>
-
-    <string name="preference_remote_miner_key">%s_remote_miner_preference</string>
-    <string name="preference_storage_providers_key">%s_storage_providers_preference</string>
-
-    <string name="preference_ask_each_time">Ask Each Time</string>
     <string name="preference_general_title">General</string>
     <string name="preference_sort_key">%s_list_sort_preference</string>
     <string name="preference_sort_title">Sort</string>
@@ -145,10 +149,19 @@ limitations under the License.
     <string name="preference_cache_purge_title">Purge Cache</string>
     <string name="preference_cache_purge_description">Delete all data from cache</string>
 
-    <string name="preference_about_title">About</string>
-    <string name="preference_app_version_title">App Version</string>
+    <string name="preview_name">Document</string>
+    <string name="preview_action">Generate</string>
+    <string name="preview_document_label">Previews are used instead of downloading the whole document</string>
 
-    <string name="preference_support_title">Support</string>
-    <string name="preference_support_description">Contact Aletheia Ware for support or to submit feedback</string>
+    <string name="share_action">Share</string>
+    <string name="share_alias">Alias</string>
+    <string name="share_name">Document</string>
+    <string name="share_document_label">Sharing a document is non-reversible</string>
+
+    <string name="tag_action">Tag</string>
+    <string name="tag_name">Document</string>
+    <string name="tag_value">Value</string>
+    <string name="tag_reason">Reason</string>
+    <string name="tag_document_label">Tags are used to search and filter documents</string>
 
 </resources>

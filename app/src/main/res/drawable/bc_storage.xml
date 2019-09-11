@@ -20,22 +20,22 @@ limitations under the License.
     android:viewportHeight="24.0"
     android:viewportWidth="24.0">
     <path
-        android:fillColor="@color/primary_light"
-        android:strokeColor="@color/primary_light"
+        android:fillColor="@color/primary"
+        android:strokeColor="@color/primary"
         android:strokeWidth="1"
         android:pathData="M9,18L9,16L7,16L7,18Z" />
     <path
-        android:fillColor="@color/primary_light"
-        android:strokeColor="@color/primary_light"
+        android:fillColor="@color/primary"
+        android:strokeColor="@color/primary"
         android:strokeWidth="1"
         android:pathData="M13,18L13,10L11,10L11,18Z" />
     <path
-        android:fillColor="@color/primary_light"
-        android:strokeColor="@color/primary_light"
+        android:fillColor="@color/primary"
+        android:strokeColor="@color/primary"
         android:strokeWidth="1"
         android:pathData="M17,18L17,14L15,14L15,18Z" />
     <path
-        android:strokeColor="@color/primary_light"
+        android:strokeColor="@color/primary"
         android:strokeWidth="1"
         android:pathData="M20,20L20,12L12,4L4,12L4,20Z" />
 </vector>

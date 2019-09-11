@@ -23,4 +23,6 @@ limitations under the License.
     android:minLines="5"
     android:scrollbars="vertical"
     android:textColor="@color/text"
-    android:textSize="@dimen/text_primary_size" />
+    android:textSize="@dimen/text_primary_size">
+    <requestFocus/>
+</EditText>

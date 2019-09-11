@@ -20,5 +20,4 @@ limitations under the License.
     android:layout_height="wrap_content"
     android:layout_margin="@dimen/view_margin"
     android:adjustViewBounds="true"
-    android:contentDescription="@string/fragment_image"
     android:scaleType="centerInside" />

@@ -20,7 +20,6 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.net.Uri;
 
-import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.common.android.utils.CommonAndroidUtils;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.android.R;
@@ -83,6 +82,7 @@ public abstract class UriContentFragment extends ContentFragment {
     public Preview getPreview(Activity parent) {
         if (bitmap != null) {
             if (bitmap.getWidth() > SpaceUtils.PREVIEW_IMAGE_SIZE || bitmap.getHeight() > SpaceUtils.PREVIEW_IMAGE_SIZE) {
+                // FIXME this scales rectangular bitmap into square and doesn't preserve aspect ratio
                 bitmap = Bitmap.createScaledBitmap(bitmap, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE, false);
             }
             ByteArrayOutputStream os = new ByteArrayOutputStream();

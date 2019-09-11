@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright 2019 Aletheia Ware LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/activity_padding">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/registrar_alias"
+            android:text="@string/registrar_alias"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <TextView
+            android:id="@+id/registrar_alias"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/registrar_registration_id"
+            android:text="@string/registrar_registration_id"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <TextView
+            android:id="@+id/registrar_registration_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/registrar_subscription_id"
+            android:text="@string/registrar_subscription_id"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <TextView
+            android:id="@+id/registrar_subscription_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/registrar_subscription_invoices"
+            android:text="@string/registrar_subscription_invoices"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/registrar_subscription_invoices"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/registrar_subscription_charges"
+            android:text="@string/registrar_subscription_charges"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/registrar_subscription_charges"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/registrar_subscription_usage_records"
+            android:text="@string/registrar_subscription_usage_records"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/registrar_subscription_usage_records"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:text="@string/registrar_label"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size" />
+
+    </LinearLayout>
+
+</ScrollView>

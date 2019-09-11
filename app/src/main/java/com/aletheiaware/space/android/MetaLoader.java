@@ -26,8 +26,9 @@ import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Channel.RecordCallback;
 import com.aletheiaware.bc.Crypto;
-import com.aletheiaware.bc.Network;
-import com.aletheiaware.bc.android.utils.BCAndroidUtils;
+import com.aletheiaware.bc.PoWChannel;
+import com.aletheiaware.bc.TCPNetwork;
+import com.aletheiaware.bc.utils.ChannelUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
@@ -48,13 +49,12 @@ import javax.crypto.NoSuchPaddingException;
 
 public abstract class MetaLoader implements RecordCallback {
 
-    private final Context context;
     private final String alias;
     private final KeyPair keys;
     private final Cache cache;
-    private Network network;
     private final ByteString metaRecordHash;
     private final boolean shared;
+    private TCPNetwork network;
     private ByteString blockHash;
     private String channelName;
     private ByteString recordHash;
@@ -63,7 +63,6 @@ public abstract class MetaLoader implements RecordCallback {
     private List<Reference> references;
 
     public MetaLoader(final Context context, final String alias, final KeyPair keys, Cache cache, ByteString metaRecordHash, boolean shared) {
-        this.context = context;
         this.alias = alias;
         this.keys = keys;
         this.cache = cache;
@@ -73,7 +72,7 @@ public abstract class MetaLoader implements RecordCallback {
             @Override
             public void run() {
                 try {
-                    network = SpaceAndroidUtils.getStorageNetwork(context, alias);
+                    network = SpaceAndroidUtils.getRegistrarNetwork(context, alias);
                     loadMeta();
                 } catch (IOException e) {
                     /* Ignored */
@@ -111,6 +110,10 @@ public abstract class MetaLoader implements RecordCallback {
         return shared;
     }
 
+    public TCPNetwork getNetwork() {
+        return network;
+    }
+
     @Override
     public boolean onRecord(ByteString hash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
         try {
@@ -134,23 +137,52 @@ public abstract class MetaLoader implements RecordCallback {
 
     private void loadMeta() throws IOException {
         if (shared) {
-            SpaceUtils.readShares(cache, network, alias, keys, null, metaRecordHash, null,this, null);
+            PoWChannel shares = SpaceUtils.getShareChannel(alias);
+            ChannelUtils.loadHead(shares, cache);
+            try {
+                ChannelUtils.pull(shares, cache, network);
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            SpaceUtils.readShares(shares, cache, network, alias, keys, null, metaRecordHash, null,this, null);
         } else {
-            SpaceUtils.readMetas(cache, network, alias, keys, metaRecordHash, this);
+            final PoWChannel metas = SpaceUtils.getMetaChannel(alias);
+            ChannelUtils.loadHead(metas, cache);
+            try {
+                ChannelUtils.pull(metas, cache, network);
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            ChannelUtils.read(metas.getName(), metas.getHead(), null, cache, network, alias, keys, metaRecordHash, this);
         }
     }
 
     public void readFile(RecordCallback callback) throws IOException {
         if (shared) {
-            SpaceUtils.readShares(cache, network, alias, keys, null, metaRecordHash, null, null, callback);
+            PoWChannel shares = SpaceUtils.getShareChannel(alias);
+            ChannelUtils.loadHead(shares, cache);
+            try {
+                ChannelUtils.pull(shares, cache, network);
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            SpaceUtils.readShares(shares, cache, network, alias, keys, null, metaRecordHash, null, null, callback);
         } else if (references != null) {
-            // TODO maintain mapping of record to parent block stored under cache/record/<record-hash>
-            // So records can be loaded from cache if block exists, currently have to request from server each time
             for (Reference reference : references) {
-                // SpaceUtils.readFiles(host, cache, alias, keys, reference.getRecordHash().toByteArray(), callback);
                 Log.d(SpaceUtils.TAG, "Reading: " + reference);
-                Block block = network.getBlock(reference);
+                Block block = cache.getBlockContainingRecord(reference.getChannelName(), reference.getRecordHash());
                 if (block == null) {
+                    block = network.getBlock(reference);
+                    if (block != null) {
+                        try {
+                            cache.putBlock(ByteString.copyFrom(Crypto.getProtobufHash(block)), block);
+                        } catch (NoSuchAlgorithmException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                if (block == null) {
+                    // TODO show error
                     break;
                 }
                 try {

@@ -18,7 +18,6 @@ limitations under the License.
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
     android:padding="@dimen/activity_padding"
     tools:context=".ui.ComposeDocumentActivity">
 
@@ -36,7 +35,9 @@ limitations under the License.
             android:imeOptions="actionDone"
             android:inputType="text|textNoSuggestions"
             android:textColor="@color/text_primary"
-            android:textSize="@dimen/text_primary_size" />
+            android:textSize="@dimen/text_primary_size">
+            <requestFocus/>
+        </EditText>
 
         <Spinner
             android:id="@+id/compose_document_type"
