@@ -53,12 +53,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import java.io.IOException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 
-import androidx.annotation.StringRes;
-import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.preference.PreferenceManager;
@@ -351,7 +348,7 @@ public class MainActivity extends AppCompatActivity {
                             });
                             adapter.setMetaHead(head);
                         }
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         CommonAndroidUtils.showErrorDialog(MainActivity.this, R.style.AlertDialogTheme, R.string.error_meta_read_failed, e);
                     }
                     try {
@@ -384,7 +381,7 @@ public class MainActivity extends AppCompatActivity {
                             }, null);
                             adapter.setShareHead(head);
                         }
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         CommonAndroidUtils.showErrorDialog(MainActivity.this, R.style.AlertDialogTheme, R.string.error_shared_meta_read_failed, e);
                     }
                     runOnUiThread(new Runnable() {

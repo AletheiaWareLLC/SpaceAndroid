@@ -21,3 +21,6 @@
 #-renamesourcefileattribute SourceFile
 
 -dontwarn sun.misc.Unsafe
+
+-keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
+-keepclassmembernames class * extends com.google.protobuf.GeneratedMessageLite { *; }
