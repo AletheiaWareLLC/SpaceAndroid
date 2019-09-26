@@ -19,7 +19,6 @@ package com.aletheiaware.space.android.utils;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.support.annotation.WorkerThread;
 import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -63,6 +62,8 @@ import java.util.Map;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+
+import androidx.annotation.WorkerThread;
 
 public class RemoteMiningUtils {
 

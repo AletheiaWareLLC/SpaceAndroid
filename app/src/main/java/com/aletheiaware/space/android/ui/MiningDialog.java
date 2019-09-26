@@ -18,11 +18,6 @@ package com.aletheiaware.space.android.ui;
 
 import android.app.Activity;
 import android.content.DialogInterface;
-import android.support.annotation.UiThread;
-import android.support.annotation.WorkerThread;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -57,6 +52,12 @@ import java.util.Set;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+
+import androidx.annotation.UiThread;
+import androidx.annotation.WorkerThread;
+import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 public abstract class MiningDialog extends Thread {
 
@@ -164,11 +165,11 @@ public abstract class MiningDialog extends Thread {
                     @Override
                     public void run() {
                         try {
-                            setStatus("Loading Miner Information");
+                            SpaceAndroidUtils.setStatus(activity, progressStatus, "Loading Miner Information");
                             getMiner(new MinerCallback() {
                                 @Override
                                 public void onMiner(final Miner miner) {
-                                    setStatus("Loading Registrars Information");
+                                    SpaceAndroidUtils.setStatus(activity, progressStatus, "Loading Registrars Information");
                                     final Map<String, Registrar> registrars = new HashMap<>();
                                     getRegistrars(new RegistrarCallback() {
                                         @Override
@@ -176,7 +177,7 @@ public abstract class MiningDialog extends Thread {
                                             registrars.put(registrar.getMerchant().getAlias(), registrar);
                                         }
                                     });
-                                    setStatus("Starting Mining");
+                                    SpaceAndroidUtils.setStatus(activity, progressStatus, "Starting Mining");
                                     onMine(miner, registrars);
                                 }
                             });
@@ -207,18 +208,6 @@ public abstract class MiningDialog extends Thread {
             }
         });
         dialog = ab.show();
-    }
-
-    @WorkerThread
-    private void setStatus(final String s) {
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (progressStatus != null) {
-                    progressStatus.setText(s);
-                }
-            }
-        });
     }
 
     @WorkerThread

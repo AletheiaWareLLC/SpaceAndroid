@@ -18,35 +18,21 @@ package com.aletheiaware.space.android.ui;
 
 import android.app.Activity;
 import android.content.DialogInterface;
-import android.support.annotation.UiThread;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 
 import com.aletheiaware.alias.AliasProto.Alias;
-import com.aletheiaware.alias.utils.AliasUtils;
-import com.aletheiaware.bc.BCProto.Block;
-import com.aletheiaware.bc.BCProto.BlockEntry;
-import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.Cache;
-import com.aletheiaware.bc.Channel;
 import com.aletheiaware.bc.Network;
-import com.aletheiaware.bc.PoWChannel;
-import com.aletheiaware.bc.utils.ChannelUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
-import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.android.AliasAdapter;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.utils.SpaceUtils;
-import com.google.protobuf.ByteString;
 
-import java.io.IOException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
+import androidx.annotation.UiThread;
+import androidx.appcompat.app.AlertDialog;
 
 public abstract class ShareMiningDialog {
 

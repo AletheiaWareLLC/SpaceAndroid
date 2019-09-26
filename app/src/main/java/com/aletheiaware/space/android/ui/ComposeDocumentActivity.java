@@ -18,8 +18,6 @@ package com.aletheiaware.space.android.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -47,6 +45,9 @@ import com.aletheiaware.space.utils.SpaceUtils;
 import java.io.InputStream;
 import java.security.KeyPair;
 import java.util.Map;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentTransaction;
 
 public class ComposeDocumentActivity extends AppCompatActivity {
 

@@ -18,7 +18,6 @@ package com.aletheiaware.space.android.ui;
 
 import android.app.Activity;
 import android.content.DialogInterface;
-import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.TextView;
 
@@ -27,6 +26,8 @@ import com.aletheiaware.bc.Network;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.android.AliasAdapter;
 import com.aletheiaware.space.android.R;
+
+import androidx.appcompat.app.AlertDialog;
 
 public abstract class PreviewDialog {
 

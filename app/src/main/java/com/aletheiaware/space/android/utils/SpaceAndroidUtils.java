@@ -27,13 +27,8 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
-import android.support.annotation.Nullable;
-import android.support.annotation.UiThread;
-import android.support.annotation.WorkerThread;
-import android.support.media.ExifInterface;
-import android.support.v4.content.FileProvider;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.widget.TextView;
 
 import com.aletheiaware.bc.BCProto.BlockEntry;
 import com.aletheiaware.bc.Cache;
@@ -48,10 +43,8 @@ import com.aletheiaware.finance.FinanceProto.Registration;
 import com.aletheiaware.finance.FinanceProto.Service;
 import com.aletheiaware.finance.FinanceProto.Subscription;
 import com.aletheiaware.finance.utils.FinanceUtils;
-import com.aletheiaware.finance.utils.FinanceUtils.ChargeCallback;
 import com.aletheiaware.finance.utils.FinanceUtils.RegistrationCallback;
 import com.aletheiaware.finance.utils.FinanceUtils.SubscriptionCallback;
-import com.aletheiaware.finance.utils.FinanceUtils.UsageRecordCallback;
 import com.aletheiaware.space.SpaceProto.Miner;
 import com.aletheiaware.space.SpaceProto.Registrar;
 import com.aletheiaware.space.android.BuildConfig;
@@ -73,6 +66,14 @@ import java.util.Set;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
+import androidx.annotation.UiThread;
+import androidx.annotation.WorkerThread;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.FileProvider;
+import androidx.exifinterface.media.ExifInterface;
 
 public class SpaceAndroidUtils {
 
@@ -455,5 +456,23 @@ public class SpaceAndroidUtils {
                 }
             });
         }
+    }
+
+    @WorkerThread
+    public static void setStatus(final Activity activity, final TextView progressStatus, final @StringRes int s) {
+        setStatus(activity, progressStatus, activity.getString(s));
+    }
+
+    @WorkerThread
+    public static void setStatus(final Activity activity, final TextView progressStatus, final String s) {
+        // TODO move into CommonAndroidUtils
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (progressStatus != null) {
+                    progressStatus.setText(s);
+                }
+            }
+        });
     }
 }

@@ -18,9 +18,6 @@ package com.aletheiaware.space.android.ui;
 
 import android.app.Activity;
 import android.content.DialogInterface;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
 
@@ -29,6 +26,10 @@ import com.aletheiaware.space.android.ChargeAdapter;
 import com.aletheiaware.space.android.InvoiceAdapter;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.UsageRecordAdapter;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 public abstract class RegistrarSubscriptionDialog {
 

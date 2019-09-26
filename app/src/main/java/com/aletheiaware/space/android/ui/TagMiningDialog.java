@@ -18,8 +18,6 @@ package com.aletheiaware.space.android.ui;
 
 import android.app.Activity;
 import android.content.DialogInterface;
-import android.support.annotation.UiThread;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
@@ -31,6 +29,9 @@ import com.aletheiaware.space.SpaceProto.Tag;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.TagAdapter;
 import com.aletheiaware.space.utils.SpaceUtils;
+
+import androidx.annotation.UiThread;
+import androidx.appcompat.app.AlertDialog;
 
 public abstract class TagMiningDialog {
 

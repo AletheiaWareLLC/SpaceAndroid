@@ -18,10 +18,8 @@ package com.aletheiaware.space.android;
 
 import android.Manifest;
 import android.content.Intent;
-import android.support.test.espresso.intent.rule.IntentsTestRule;
-import android.support.test.rule.GrantPermissionRule;
-import android.support.test.runner.AndroidJUnit4;
 
+import com.aletheiaware.bc.MemoryCache;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.BCUtilsTest;
 import com.aletheiaware.common.android.utils.CommonAndroidUtils;
@@ -31,6 +29,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.runner.RunWith;
+
+import androidx.test.espresso.intent.rule.IntentsTestRule;
+import androidx.test.rule.GrantPermissionRule;
+import androidx.test.runner.AndroidJUnit4;
 
 /**
  * Instrumented test for UploadActivity, which will execute on an Android device.
@@ -46,7 +48,7 @@ public class UploadInstrumentedTest {
 
     @Test
     public void screenshot() throws Exception {
-        BCAndroidUtils.initialize(BCUtilsTest.getTestAlias(), BCUtilsTest.getTestKeys(), null);
+        BCAndroidUtils.initialize(BCUtilsTest.getTestAlias(), BCUtilsTest.getTestKeys(), new MemoryCache());
         UploadActivity activity = intentsTestRule.launchActivity(new Intent());
         Thread.sleep(1000);
         CommonAndroidUtils.captureScreenshot(activity, "com.aletheiaware.space.android.UploadActivity.png");

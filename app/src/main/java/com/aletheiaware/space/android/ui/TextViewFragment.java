@@ -18,7 +18,6 @@ package com.aletheiaware.space.android.ui;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,6 +25,8 @@ import android.widget.TextView;
 
 import com.aletheiaware.common.android.utils.CopyToClipboardListener;
 import com.aletheiaware.space.android.R;
+
+import androidx.annotation.NonNull;
 
 public class TextViewFragment extends TextContentFragment {
 

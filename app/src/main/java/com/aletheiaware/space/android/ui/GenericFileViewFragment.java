@@ -17,12 +17,13 @@
 package com.aletheiaware.space.android.ui;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.aletheiaware.space.android.R;
+
+import androidx.annotation.NonNull;
 
 public class GenericFileViewFragment extends UriContentFragment {
 

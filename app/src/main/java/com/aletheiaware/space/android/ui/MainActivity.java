@@ -23,15 +23,6 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.AppBarLayout;
-import android.support.design.widget.CollapsingToolbarLayout;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.preference.PreferenceManager;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -56,12 +47,24 @@ import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.PreviewUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
+import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.appbar.CollapsingToolbarLayout;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+
+import androidx.annotation.StringRes;
+import androidx.annotation.WorkerThread;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -319,10 +322,10 @@ public class MainActivity extends AppCompatActivity {
                     final Cache cache = BCAndroidUtils.getCache();
                     final Network network = SpaceAndroidUtils.getRegistrarNetwork(MainActivity.this, alias);
                     try {
-                        progressStatus.setText(R.string.main_loading_meta);
+                        SpaceAndroidUtils.setStatus(MainActivity.this, progressStatus, R.string.main_loading_meta);
                         final PoWChannel metas = SpaceUtils.getMetaChannel(alias);
                         ChannelUtils.loadHead(metas, cache);
-                        progressStatus.setText(R.string.main_pulling_meta);
+                        SpaceAndroidUtils.setStatus(MainActivity.this, progressStatus, R.string.main_pulling_meta);
                         try {
                             ChannelUtils.pull(metas, cache, network);
                         } catch (NoSuchAlgorithmException e) {
@@ -331,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         ByteString head = metas.getHead();
                         if (head != null && !head.equals(adapter.getMetaHead())) {
-                            progressStatus.setText(R.string.main_reading_meta);
+                            SpaceAndroidUtils.setStatus(MainActivity.this, progressStatus, R.string.main_reading_meta);
                             ChannelUtils.read(metas.getName(), metas.getHead(), null, cache, network, alias, keys, null, new RecordCallback() {
                                 @Override
                                 public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
@@ -352,10 +355,10 @@ public class MainActivity extends AppCompatActivity {
                         CommonAndroidUtils.showErrorDialog(MainActivity.this, R.style.AlertDialogTheme, R.string.error_meta_read_failed, e);
                     }
                     try {
-                        progressStatus.setText(R.string.main_loading_share);
+                        SpaceAndroidUtils.setStatus(MainActivity.this, progressStatus, R.string.main_loading_share);
                         final PoWChannel shares = SpaceUtils.getShareChannel(alias);
                         ChannelUtils.loadHead(shares, cache);
-                        progressStatus.setText(R.string.main_pulling_share);
+                        SpaceAndroidUtils.setStatus(MainActivity.this, progressStatus, R.string.main_pulling_share);
                         try {
                             ChannelUtils.pull(shares, cache, network);
                         } catch (NoSuchAlgorithmException e) {
@@ -364,7 +367,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         ByteString head = shares.getHead();
                         if (head != null && !head.equals(adapter.getShareHead())) {
-                            progressStatus.setText(R.string.main_reading_share);
+                            SpaceAndroidUtils.setStatus(MainActivity.this, progressStatus, R.string.main_reading_share);
                             SpaceUtils.readShares(shares, cache, network, alias, keys, null, null, null, new RecordCallback() {
                                 @Override
                                 public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {

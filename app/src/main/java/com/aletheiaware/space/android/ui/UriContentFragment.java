@@ -46,7 +46,9 @@ public abstract class UriContentFragment extends ContentFragment {
     @Override
     public String getName(Activity parent) {
         if (name == null || name.isEmpty()) {
-            name = SpaceAndroidUtils.getName(parent, uri);
+            if (uri != null) {
+                name = SpaceAndroidUtils.getName(parent, uri);
+            }
         }
         return name;
     }
@@ -58,7 +60,7 @@ public abstract class UriContentFragment extends ContentFragment {
 
     @Override
     public long getSize(Activity parent) {
-        if (size == 0) {
+        if (size == 0 && uri != null) {
             try (InputStream in = getInputStream(parent)) {
                 size = in.available();
             } catch (IOException e) {
@@ -70,10 +72,12 @@ public abstract class UriContentFragment extends ContentFragment {
 
     @Override
     public InputStream getInputStream(Activity parent) {
-        try {
-            return parent.getContentResolver().openInputStream(uri);
-        } catch (IOException e) {
-            CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_reading_uri, e);
+        if (uri != null) {
+            try {
+                return parent.getContentResolver().openInputStream(uri);
+            } catch (IOException e) {
+                CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_reading_uri, e);
+            }
         }
         return null;
     }

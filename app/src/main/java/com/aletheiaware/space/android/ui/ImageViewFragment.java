@@ -22,8 +22,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.media.ThumbnailUtils;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.media.ExifInterface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,6 +34,9 @@ import com.aletheiaware.space.utils.SpaceUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+
+import androidx.annotation.NonNull;
+import androidx.exifinterface.media.ExifInterface;
 
 public class ImageViewFragment extends UriContentFragment {
 
