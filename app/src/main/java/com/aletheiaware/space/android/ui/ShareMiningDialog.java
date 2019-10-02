@@ -24,10 +24,8 @@ import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 
 import com.aletheiaware.alias.AliasProto.Alias;
-import com.aletheiaware.bc.Cache;
-import com.aletheiaware.bc.Network;
 import com.aletheiaware.space.SpaceProto.Meta;
-import com.aletheiaware.space.android.AliasAdapter;
+import com.aletheiaware.space.android.AliasArrayAdapter;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.utils.SpaceUtils;
 
@@ -38,14 +36,14 @@ public abstract class ShareMiningDialog {
 
     private final Activity activity;
     private final Meta meta;
-    private final AliasAdapter adapter;
+    private final AliasArrayAdapter aliasArrayAdapter;
     private AlertDialog dialog;
     private AutoCompleteTextView aliasText;
 
-    public ShareMiningDialog(Activity activity, Cache cache, Network network, Meta meta) {
+    public ShareMiningDialog(Activity activity, Meta meta, AliasArrayAdapter aliasArrayAdapter) {
         this.activity = activity;
         this.meta = meta;
-        this.adapter = new AliasAdapter(activity, cache, network);
+        this.aliasArrayAdapter = aliasArrayAdapter;
     }
 
     public AlertDialog getDialog() {
@@ -59,7 +57,7 @@ public abstract class ShareMiningDialog {
         nameText.setText(meta.getName());
         // Alias EditText
         aliasText = shareView.findViewById(R.id.share_alias);
-        aliasText.setAdapter(adapter);
+        aliasText.setAdapter(aliasArrayAdapter);
         aliasText.setThreshold(3);
         aliasText.setFocusable(true);
         aliasText.setFocusableInTouchMode(true);
@@ -75,7 +73,7 @@ public abstract class ShareMiningDialog {
                 if (recipient.isEmpty()) {
                     // FIXME show error
                 } else {
-                    final Alias r = adapter.get(recipient);
+                    final Alias r = aliasArrayAdapter.get(recipient);
                     if (r == null) {
                         // FIXME show error
                     } else {

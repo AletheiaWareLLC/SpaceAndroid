@@ -110,6 +110,16 @@ public abstract class MetaAdapter extends RecyclerView.Adapter<MetaAdapter.ViewH
         return shared.contains(hash);
     }
 
+    public void clear() {
+        metas.clear();
+        previews.clear();
+        timestamps.clear();
+        shared.clear();
+        sorted.clear();
+        metaHead = null;
+        shareHead = null;
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

@@ -29,44 +29,13 @@ limitations under the License.
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
-            android:text="@string/preference_miner_title"
+            android:labelFor="@id/miner_spinner"
+            android:text="@string/miner_title"
             android:textColor="@color/text_primary"
             android:textSize="@dimen/text_primary_size"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:labelFor="@id/miner_spinner"
-            android:text="@string/preference_miner_description"
-            android:textColor="@color/text_secondary"
-            android:textSize="@dimen/text_secondary_size"/>
 
         <Spinner
             android:id="@+id/miner_spinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:text="@string/preference_registrars_title"
-            android:textColor="@color/text_primary"
-            android:textSize="@dimen/text_primary_size"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:labelFor="@id/registrars_recycler"
-            android:text="@string/preference_registrars_description"
-            android:textColor="@color/text_secondary"
-            android:textSize="@dimen/text_secondary_size"/>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/registrars_recycler"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin" />

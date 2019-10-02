@@ -17,5 +17,7 @@ limitations under the License.
 <paths>
     <cache-path name="block" path="block" />
     <cache-path name="channel" path="channel" />
+    <cache-path name="entry" path="entry" />
     <cache-path name="file" path="file" />
+    <cache-path name="mapping" path="mapping" />
 </paths>

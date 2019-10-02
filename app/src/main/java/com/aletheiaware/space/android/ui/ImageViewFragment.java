@@ -72,19 +72,14 @@ public class ImageViewFragment extends UriContentFragment {
             try (InputStream in = getInputStream(parent)) {
                 Bitmap image = BitmapFactory.decodeStream(in);
                 bitmap = ThumbnailUtils.extractThumbnail(image, SpaceUtils.PREVIEW_IMAGE_SIZE, SpaceUtils.PREVIEW_IMAGE_SIZE);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                try (InputStream in = getInputStream(parent)) {
-                    if (in != null) {
-                        ExifInterface exif = new ExifInterface(in);
-                        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
-                        bitmap = SpaceAndroidUtils.rotateBitmap(bitmap, orientation);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                    ExifInterface exif = new ExifInterface(in);
+                    int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+                    bitmap = SpaceAndroidUtils.rotateBitmap(bitmap, orientation);
                 }
+            } catch (IOException e) {
+                /* Ignored */
+                e.printStackTrace();
             }
         }
         return super.getPreview(parent);

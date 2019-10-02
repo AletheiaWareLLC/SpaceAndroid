@@ -20,50 +20,62 @@ import android.app.Activity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.TextView;
 
-import com.aletheiaware.space.SpaceProto.Registrar;
+import com.aletheiaware.finance.FinanceProto.Registration;
+import com.aletheiaware.finance.FinanceProto.Subscription;
+import com.aletheiaware.space.SpaceProto.Miner;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class RegistrarsAdapter extends RecyclerView.Adapter<RegistrarsAdapter.ViewHolder> {
+public abstract class MinerRecyclerAdapter extends RecyclerView.Adapter<MinerRecyclerAdapter.ViewHolder> {
 
     private final Activity activity;
     private final LayoutInflater inflater;
-    private final Map<String, Registrar> registrars = new HashMap<>();
-    private final Set<String> selections = new HashSet<>();
+    private final Map<String, Miner> miners = new HashMap<>();
+    private final Map<String, Registration> registrations = new HashMap<>();
+    private final Map<String, Subscription> subscriptions = new HashMap<>();
     private final List<String> sorted = new ArrayList<>();
 
-    public RegistrarsAdapter(Activity activity) {
+    public MinerRecyclerAdapter(Activity activity) {
         this.activity = activity;
         inflater = activity.getLayoutInflater();
     }
 
-    public void setRegistrars(Map<String, Registrar> registrars, Set<String> preferences) {
-        this.registrars.putAll(registrars);
-        sorted.addAll(registrars.keySet());
-        selections.addAll(preferences);
-        sort();
+    public void addMiner(Miner miner, Registration registration, Subscription subscription) {
+        String key = miner.getMerchant().getAlias();
+        if (!miners.containsKey(key)) {
+            miners.put(key, miner);
+            registrations.put(key, registration);
+            subscriptions.put(key, subscription);
+            sorted.add(key);
+            sort();
+        }
     }
 
     private synchronized void sort() {
         Collections.sort(sorted, new Comparator<String>() {
             @Override
             public int compare(String m1, String m2) {
-                boolean s1 = selections.contains(m1);
-                boolean s2 = selections.contains(m2);
+                boolean r1 = registrations.containsKey(m1);
+                boolean r2 = registrations.containsKey(m2);
+                if (r1 && !r2) {
+                    // Sort m1 before m2
+                    return -1;
+                } else if (r2 && !r1) {
+                    // Sort m2 before m1
+                    return 1;
+                }
+                boolean s1 = subscriptions.containsKey(m1);
+                boolean s2 = subscriptions.containsKey(m2);
                 if (s1 && !s2) {
                     // Sort m1 before m2
                     return -1;
@@ -83,31 +95,19 @@ public class RegistrarsAdapter extends RecyclerView.Adapter<RegistrarsAdapter.Vi
         });
     }
 
-    public Map<String, Registrar> getSelectedRegistrars() {
-        Map<String, Registrar> ss = new HashMap<>();
-        for (String alias : selections) {
-            Registrar r = registrars.get(alias);
-            if (r != null) {
-                ss.put(alias, r);
-            }
-        }
-        return ss;
-    }
-
     @NonNull
     @Override
-    public RegistrarsAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        final CheckBox view = (CheckBox) inflater.inflate(R.layout.registrar_list_item, parent, false);
+    public MinerRecyclerAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        final TextView view = (TextView) inflater.inflate(R.layout.miner_list_item, parent, false);
         final ViewHolder holder = new ViewHolder(view);
-        view.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+        view.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            public void onClick(View view) {
                 String alias = holder.getAlias();
                 if (alias != null) {
-                    if (isChecked) {
-                        selections.add(alias);
-                    } else {
-                        selections.remove(alias);
+                    Miner miner = miners.get(alias);
+                    if (miner != null) {
+                        onMinerSelected(miner, registrations.get(alias), subscriptions.get(alias));
                     }
                 }
             }
@@ -115,13 +115,20 @@ public class RegistrarsAdapter extends RecyclerView.Adapter<RegistrarsAdapter.Vi
         return holder;
     }
 
+    public abstract void onMinerSelected(Miner miner, Registration registration, Subscription subscription);
+
     @Override
-    public void onBindViewHolder(@NonNull RegistrarsAdapter.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull MinerRecyclerAdapter.ViewHolder holder, int position) {
         if (sorted.isEmpty()) {
             holder.setEmptyView();
         } else {
-            final String alias = sorted.get(position);
-            holder.set(alias, selections.contains(alias));
+            String alias = sorted.get(position);
+            if (alias != null) {
+                Miner miner = miners.get(alias);
+                if (miner != null) {
+                    holder.set(miner);
+                }
+            }
         }
     }
 
@@ -137,27 +144,25 @@ public class RegistrarsAdapter extends RecyclerView.Adapter<RegistrarsAdapter.Vi
 
         private String alias;
 
-        private final CheckBox itemCheck;
+        private final TextView itemText;
 
         ViewHolder(@NonNull View view) {
             super(view);
-            itemCheck = (CheckBox) view;
+            itemText = (TextView) view;
         }
 
         public String getAlias() {
             return alias;
         }
 
-        void set(String alias, boolean selected) {
-            this.alias = alias;
-            itemCheck.setText(alias);
-            itemCheck.setChecked(selected);
+        void set(Miner miner) {
+            alias = miner.getMerchant().getAlias();
+            itemText.setText(alias);
         }
 
         void setEmptyView() {
             alias = null;
-            itemCheck.setText(R.string.empty_registrars_list);
-            itemCheck.setChecked(false);
+            itemText.setText(R.string.empty_miner_list);
         }
     }
 }

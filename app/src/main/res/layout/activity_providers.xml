@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-Copyright 2018 Aletheia Ware LLC
+Copyright 2019 Aletheia Ware LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="@dimen/activity_padding"
-    tools:context=".ui.ComposeDocumentActivity">
+    tools:context=".ui.ProvidersActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,50 +27,59 @@ limitations under the License.
         android:scrollbars="vertical"
         android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/compose_document_name"
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
-            android:imeOptions="actionDone"
-            android:inputType="text|textNoSuggestions"
+            android:text="@string/registrars_title"
             android:textColor="@color/text_primary"
-            android:textSize="@dimen/text_primary_size">
-            <requestFocus/>
-        </EditText>
-
-        <Spinner
-            android:id="@+id/compose_document_type"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/view_margin"
-            android:textColor="@color/text_primary" />
+            android:textSize="@dimen/text_primary_size"/>
 
         <TextView
-            android:id="@+id/compose_document_size"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/providers_registrars_recycler"
+            android:text="@string/registrars_description"
             android:textColor="@color/text_secondary"
-            android:textSize="@dimen/text_secondary_size" />
+            android:textSize="@dimen/text_secondary_size"/>
 
-        <FrameLayout
-            android:id="@+id/compose_document_content_frame"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-
-        <Button
-            android:id="@+id/compose_document_button"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/providers_registrars_recycler"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
+            android:layout_margin="@dimen/view_margin" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
-            android:background="@color/accent"
-            android:padding="@dimen/view_padding"
+            android:text="@string/miner_title"
             android:textColor="@color/text_primary"
-            android:textSize="@dimen/text_primary_size"
-            android:text="@string/mine_action"
-            android:drawableStart="@drawable/bc_mine" />
+            android:textSize="@dimen/text_primary_size"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:labelFor="@id/miner_spinner"
+            android:text="@string/miner_description"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/providers_miner_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/view_margin"
+            android:text="@string/mine_label"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_secondary_size"/>
 
     </LinearLayout>
 

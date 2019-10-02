@@ -16,7 +16,6 @@
 
 package com.aletheiaware.space.android;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.aletheiaware.bc.BCProto.Block;
@@ -26,11 +25,10 @@ import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Channel.RecordCallback;
 import com.aletheiaware.bc.Crypto;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.PoWChannel;
-import com.aletheiaware.bc.TCPNetwork;
 import com.aletheiaware.bc.utils.ChannelUtils;
 import com.aletheiaware.space.SpaceProto.Meta;
-import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -47,6 +45,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import androidx.annotation.WorkerThread;
+
 public abstract class MetaLoader implements RecordCallback {
 
     private final String alias;
@@ -54,7 +54,7 @@ public abstract class MetaLoader implements RecordCallback {
     private final Cache cache;
     private final ByteString metaRecordHash;
     private final boolean shared;
-    private TCPNetwork network;
+    private Network network;
     private ByteString blockHash;
     private String channelName;
     private ByteString recordHash;
@@ -62,24 +62,13 @@ public abstract class MetaLoader implements RecordCallback {
     private Meta meta;
     private List<Reference> references;
 
-    public MetaLoader(final Context context, final String alias, final KeyPair keys, Cache cache, ByteString metaRecordHash, boolean shared) {
+    public MetaLoader(final String alias, KeyPair keys, Cache cache, Network network, ByteString metaRecordHash, boolean shared) throws IOException {
         this.alias = alias;
         this.keys = keys;
         this.cache = cache;
+        this.network = network;
         this.metaRecordHash = metaRecordHash;
         this.shared = shared;
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    network = SpaceAndroidUtils.getRegistrarNetwork(context, alias);
-                    loadMeta();
-                } catch (IOException e) {
-                    /* Ignored */
-                    e.printStackTrace();
-                }
-            }
-        }.start();
     }
 
     public ByteString getMetaRecordHash() {
@@ -110,10 +99,6 @@ public abstract class MetaLoader implements RecordCallback {
         return shared;
     }
 
-    public TCPNetwork getNetwork() {
-        return network;
-    }
-
     @Override
     public boolean onRecord(ByteString hash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
         try {
@@ -135,13 +120,16 @@ public abstract class MetaLoader implements RecordCallback {
         return true;
     }
 
-    private void loadMeta() throws IOException {
+    @WorkerThread
+    public void loadMeta() throws IOException {
         if (shared) {
             PoWChannel shares = SpaceUtils.getShareChannel(alias);
             ChannelUtils.loadHead(shares, cache);
             try {
+                // TODO is this pull needed since SpaceUtils.readShares will request missing blocks?
                 ChannelUtils.pull(shares, cache, network);
             } catch (NoSuchAlgorithmException e) {
+                /* Ignored */
                 e.printStackTrace();
             }
             SpaceUtils.readShares(shares, cache, network, alias, keys, null, metaRecordHash, null,this, null);
@@ -149,8 +137,10 @@ public abstract class MetaLoader implements RecordCallback {
             final PoWChannel metas = SpaceUtils.getMetaChannel(alias);
             ChannelUtils.loadHead(metas, cache);
             try {
+                // TODO is this pull needed since ChannelUtils.read will request missing blocks?
                 ChannelUtils.pull(metas, cache, network);
             } catch (NoSuchAlgorithmException e) {
+                /* Ignored */
                 e.printStackTrace();
             }
             ChannelUtils.read(metas.getName(), metas.getHead(), null, cache, network, alias, keys, metaRecordHash, this);
@@ -162,8 +152,10 @@ public abstract class MetaLoader implements RecordCallback {
             PoWChannel shares = SpaceUtils.getShareChannel(alias);
             ChannelUtils.loadHead(shares, cache);
             try {
+                // TODO is this pull needed since SpaceUtils.readShares will request missing blocks?
                 ChannelUtils.pull(shares, cache, network);
             } catch (NoSuchAlgorithmException e) {
+                /* Ignored */
                 e.printStackTrace();
             }
             SpaceUtils.readShares(shares, cache, network, alias, keys, null, metaRecordHash, null, null, callback);
@@ -177,6 +169,7 @@ public abstract class MetaLoader implements RecordCallback {
                         try {
                             cache.putBlock(ByteString.copyFrom(Crypto.getProtobufHash(block)), block);
                         } catch (NoSuchAlgorithmException e) {
+                            /* Ignored */
                             e.printStackTrace();
                         }
                     }
@@ -204,6 +197,7 @@ public abstract class MetaLoader implements RecordCallback {
                         }
                     }
                 } catch (BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                    // TODO show error
                     e.printStackTrace();
                 }
             }

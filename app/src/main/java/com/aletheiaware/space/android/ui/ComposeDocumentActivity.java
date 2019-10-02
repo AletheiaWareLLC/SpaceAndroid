@@ -31,25 +31,35 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.aletheiaware.bc.Cache;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.android.ui.AccessActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.common.utils.CommonUtils;
+import com.aletheiaware.finance.FinanceProto.Registration;
 import com.aletheiaware.space.SpaceProto.Miner;
 import com.aletheiaware.space.SpaceProto.Preview;
 import com.aletheiaware.space.SpaceProto.Registrar;
+import com.aletheiaware.space.android.MinerArrayAdapter;
 import com.aletheiaware.space.android.R;
-import com.aletheiaware.space.android.utils.RemoteMiningUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.utils.SpaceUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
-import androidx.appcompat.app.AppCompatActivity;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
+import androidx.annotation.UiThread;
 import androidx.fragment.app.FragmentTransaction;
 
-public class ComposeDocumentActivity extends AppCompatActivity {
+public class ComposeDocumentActivity extends MiningActivity {
 
     private EditText nameEditText;
     private ArrayAdapter<CharSequence> typeAdapter;
@@ -117,22 +127,39 @@ public class ComposeDocumentActivity extends AppCompatActivity {
                 final String type = typeSpinner.getSelectedItem().toString();
                 final InputStream in = contentFragment.getInputStream(ComposeDocumentActivity.this);
                 final Preview preview = contentFragment.getPreview(ComposeDocumentActivity.this);
-                new MiningDialog(ComposeDocumentActivity.this, alias, keys, cache, null) {
+                new Thread() {
                     @Override
-                    public void onMine(Miner miner, final Map<String, Registrar> registrars) {
-                        RemoteMiningUtils.mineFileAndFinish(ComposeDocumentActivity.this, miner, registrars,  name, type, preview, in);
-                    }
+                    public void run() {
+                        try {
+                            final Network spaceNetwork = SpaceAndroidUtils.getSpaceNetwork();
+                            final Map<String, Registration> registrations = SpaceAndroidUtils.getRegistrations(alias, keys, cache, spaceNetwork);
+                            final Map<String, Registrar> registrars = SpaceAndroidUtils.getRegistrars(registrations.keySet(), cache, spaceNetwork);
+                            final Network registrarNetwork = SpaceAndroidUtils.getRegistrarNetwork(registrars);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    final MinerArrayAdapter minerArrayAdapter = new MinerArrayAdapter(ComposeDocumentActivity.this, cache, registrarNetwork);
+                                    new MiningDialog(ComposeDocumentActivity.this, alias, minerArrayAdapter, registrations) {
+                                        @Override
+                                        @UiThread
+                                        public void onMine(Miner miner) {
+                                            mine(alias, keys, cache, registrarNetwork, miner, registrars, name, type, preview, in);
+                                        }
 
-                    @Override
-                    public void onMiningCancelled() {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                setEditable(true);
-                            }
-                        });
+                                        @Override
+                                        @UiThread
+                                        public void onMiningCancelled() {
+                                            setEditable(true);
+                                        }
+                                    }.create();
+                                }
+                            });
+                        } catch (IOException | IllegalBlockSizeException | InvalidKeyException | NoSuchAlgorithmException | BadPaddingException | NoSuchPaddingException | InvalidAlgorithmParameterException e) {
+                            // TODO show error
+                            e.printStackTrace();
+                        }
                     }
-                }.create();
+                }.start();
             }
         });
 

@@ -17,12 +17,12 @@ limitations under the License.
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:scrollbars="vertical"
     android:padding="@dimen/activity_padding">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scrollbars="vertical"
         android:orientation="vertical">
 
         <TextView
@@ -42,7 +42,21 @@ limitations under the License.
             android:textColor="@color/text_primary"
             android:textSize="@dimen/text_primary_size" />
 
+        <Button
+            android:id="@+id/registrar_register_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="@dimen/view_margin"
+            android:background="@color/accent"
+            android:padding="@dimen/view_padding"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size"
+            android:text="@string/registrar_register"
+            android:drawableStart="@drawable/add" />
+
         <TextView
+            android:id="@+id/registrar_registration_id_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
@@ -59,7 +73,21 @@ limitations under the License.
             android:textColor="@color/text_primary"
             android:textSize="@dimen/text_primary_size" />
 
+        <Button
+            android:id="@+id/registrar_subscribe_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="@dimen/view_margin"
+            android:background="@color/accent"
+            android:padding="@dimen/view_padding"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_primary_size"
+            android:text="@string/registrar_subscribe"
+            android:drawableStart="@drawable/add" />
+
         <TextView
+            android:id="@+id/registrar_subscription_id_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
@@ -77,6 +105,7 @@ limitations under the License.
             android:textSize="@dimen/text_primary_size" />
 
         <TextView
+            android:id="@+id/registrar_subscription_invoices_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
@@ -91,6 +120,7 @@ limitations under the License.
             android:layout_height="wrap_content" />
 
         <TextView
+            android:id="@+id/registrar_subscription_charges_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"
@@ -105,6 +135,7 @@ limitations under the License.
             android:layout_height="wrap_content" />
 
         <TextView
+            android:id="@+id/registrar_subscription_usage_records_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/view_margin"

@@ -41,7 +41,9 @@ import com.aletheiaware.bc.android.ui.AccountActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.ChannelUtils;
 import com.aletheiaware.common.android.utils.CommonAndroidUtils;
+import com.aletheiaware.finance.FinanceProto.Registration;
 import com.aletheiaware.space.SpaceProto.Meta;
+import com.aletheiaware.space.SpaceProto.Registrar;
 import com.aletheiaware.space.android.MetaAdapter;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.utils.PreviewUtils;
@@ -53,8 +55,16 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -145,9 +155,28 @@ public class MainActivity extends AppCompatActivity {
             if (adapter == null || !alias.equals(adapter.getAlias())) {
                 // Adapter
                 adapter = new MetaAdapter(MainActivity.this, alias) {
+                    Network network;
                     @Override
-                    protected void loadPreview(ByteString hash) {
-                        PreviewUtils.loadPreview(MainActivity.this, cache, alias, keys, hash, isShared(hash), this);
+                    protected void loadPreview(final ByteString hash) {
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                try {
+                                    if (network == null) {
+                                        network = SpaceAndroidUtils.getSpaceNetwork();
+                                        Map<String, Registration> registrations = SpaceAndroidUtils.getRegistrations(alias, keys, cache, network);
+                                        Map<String, Registrar> registrars = SpaceAndroidUtils.getRegistrars(registrations.keySet(), cache, network);
+                                        if (!registrars.isEmpty()) {
+                                            network = SpaceAndroidUtils.getRegistrarNetwork(registrars);
+                                        }
+                                    }
+                                    PreviewUtils.loadPreview(alias, keys, cache, network, hash, isShared(hash), adapter);
+                                } catch (IOException | IllegalBlockSizeException | InvalidKeyException | NoSuchAlgorithmException | BadPaddingException | NoSuchPaddingException | InvalidAlgorithmParameterException e) {
+                                    /* Ignored */
+                                    e.printStackTrace();
+                                }
+                            }
+                        }.start();
                     }
 
                     @Override
@@ -165,6 +194,9 @@ public class MainActivity extends AppCompatActivity {
             if (adapter.isEmpty()) {
                 refresh();
             }
+            // TODO if this is first time the user has logged in, show welcome guide
+            //  Select Miner
+            //  Select Registrars
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
             startActivityForResult(intent, SpaceAndroidUtils.ACCESS_ACTIVITY);
@@ -190,6 +222,10 @@ public class MainActivity extends AppCompatActivity {
                         break;
                 }
                 break;
+            case SpaceAndroidUtils.PROVIDERS_ACTIVITY:
+                // Clear adapter to reload from new providers
+                adapter.clear();
+                // Fallthrough
             case SpaceAndroidUtils.ACCOUNT_ACTIVITY:
                 // Fallthrough
             case SpaceAndroidUtils.COMPOSE_ACTIVITY:
@@ -284,6 +320,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_account:
                 account();
                 return true;
+            case R.id.menu_providers:
+                providers();
+                return true;
             case R.id.menu_settings:
                 settings();
                 return true;
@@ -317,13 +356,24 @@ public class MainActivity extends AppCompatActivity {
                     final String alias = BCAndroidUtils.getAlias();
                     final KeyPair keys = BCAndroidUtils.getKeyPair();
                     final Cache cache = BCAndroidUtils.getCache();
-                    final Network network = SpaceAndroidUtils.getRegistrarNetwork(MainActivity.this, alias);
+                    Network network = SpaceAndroidUtils.getSpaceNetwork();
+                    try {
+                        Map<String, Registration> registrations = SpaceAndroidUtils.getRegistrations(alias, keys, cache, network);
+                        Map<String, Registrar> registrars = SpaceAndroidUtils.getRegistrars(registrations.keySet(), cache, network);
+                        if (!registrars.isEmpty()) {
+                            network = SpaceAndroidUtils.getRegistrarNetwork(registrars);
+                        }
+                    } catch (IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | BadPaddingException | NoSuchPaddingException | InvalidKeyException e) {
+                        /* Ignored */
+                        e.printStackTrace();
+                    }
                     try {
                         SpaceAndroidUtils.setStatus(MainActivity.this, progressStatus, R.string.main_loading_meta);
                         final PoWChannel metas = SpaceUtils.getMetaChannel(alias);
                         ChannelUtils.loadHead(metas, cache);
                         SpaceAndroidUtils.setStatus(MainActivity.this, progressStatus, R.string.main_pulling_meta);
                         try {
+                            // TODO is this pull needed since ChannelUtils.read will request missing blocks?
                             ChannelUtils.pull(metas, cache, network);
                         } catch (NoSuchAlgorithmException e) {
                             /* Ignored */
@@ -357,6 +407,7 @@ public class MainActivity extends AppCompatActivity {
                         ChannelUtils.loadHead(shares, cache);
                         SpaceAndroidUtils.setStatus(MainActivity.this, progressStatus, R.string.main_pulling_share);
                         try {
+                            // TODO is this pull needed since SpaceUtils.readShares will request missing blocks?
                             ChannelUtils.pull(shares, cache, network);
                         } catch (NoSuchAlgorithmException e) {
                             /* Ignored */
@@ -419,6 +470,11 @@ public class MainActivity extends AppCompatActivity {
     private void account() {
         Intent i = new Intent(this, AccountActivity.class);
         startActivityForResult(i, SpaceAndroidUtils.ACCOUNT_ACTIVITY);
+    }
+
+    private void providers() {
+        Intent i = new Intent(this, ProvidersActivity.class);
+        startActivityForResult(i, SpaceAndroidUtils.PROVIDERS_ACTIVITY);
     }
 
     private void settings() {

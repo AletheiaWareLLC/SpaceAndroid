@@ -21,10 +21,8 @@ import android.content.DialogInterface;
 import android.view.View;
 import android.widget.TextView;
 
-import com.aletheiaware.bc.Cache;
-import com.aletheiaware.bc.Network;
 import com.aletheiaware.space.SpaceProto.Meta;
-import com.aletheiaware.space.android.AliasAdapter;
+import com.aletheiaware.space.android.AliasArrayAdapter;
 import com.aletheiaware.space.android.R;
 
 import androidx.appcompat.app.AlertDialog;
@@ -32,18 +30,18 @@ import androidx.appcompat.app.AlertDialog;
 public abstract class PreviewDialog {
 
     private final Activity activity;
-    private final AliasAdapter adapter;
     private final byte[] metaRecordHash;
     private final Meta meta;
     private final boolean shared;
+    private final AliasArrayAdapter aliasArrayAdapter;
     private AlertDialog dialog;
 
-    public PreviewDialog(Activity activity, Cache cache, Network network, byte[] metaRecordHash, Meta meta, boolean shared) {
+    public PreviewDialog(Activity activity, byte[] metaRecordHash, Meta meta, boolean shared, AliasArrayAdapter aliasArrayAdapter) {
         this.activity = activity;
-        adapter = new AliasAdapter(activity, cache, network);
         this.metaRecordHash = metaRecordHash;
         this.meta = meta;
         this.shared = shared;
+        this.aliasArrayAdapter = aliasArrayAdapter;
     }
 
     public void create() {

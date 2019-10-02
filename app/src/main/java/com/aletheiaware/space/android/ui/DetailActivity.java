@@ -40,6 +40,7 @@ import com.aletheiaware.bc.BCProto.Record;
 import com.aletheiaware.bc.BCProto.Reference;
 import com.aletheiaware.bc.Cache;
 import com.aletheiaware.bc.Channel.RecordCallback;
+import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.PoWChannel;
 import com.aletheiaware.bc.TCPNetwork;
 import com.aletheiaware.bc.android.ui.AccessActivity;
@@ -48,12 +49,15 @@ import com.aletheiaware.bc.utils.BCUtils;
 import com.aletheiaware.bc.utils.ChannelUtils;
 import com.aletheiaware.common.android.utils.CommonAndroidUtils;
 import com.aletheiaware.common.utils.CommonUtils;
+import com.aletheiaware.finance.FinanceProto.Registration;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Miner;
 import com.aletheiaware.space.SpaceProto.Registrar;
 import com.aletheiaware.space.SpaceProto.Share;
 import com.aletheiaware.space.SpaceProto.Tag;
+import com.aletheiaware.space.android.AliasArrayAdapter;
 import com.aletheiaware.space.android.MetaLoader;
+import com.aletheiaware.space.android.MinerArrayAdapter;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.TagAdapter;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
@@ -95,6 +99,10 @@ import androidx.fragment.app.FragmentTransaction;
 public class DetailActivity extends AppCompatActivity {
 
     private Cache cache;
+    private Network spaceNetwork;
+    private Map<String, Registration> registrations;
+    private Map<String, Registrar> registrars;
+    private Network registrarNetwork;
     private MetaLoader loader;
 
     private TextView nameTextView;
@@ -131,24 +139,39 @@ public class DetailActivity extends AppCompatActivity {
             final String alias = BCAndroidUtils.getAlias();
             final KeyPair keys = BCAndroidUtils.getKeyPair();
             byte[] metaRecordHash = null;
-            boolean shared = false;
+            final boolean[] shared = {false};
             final Intent intent = getIntent();
             if (intent != null) {
                 Bundle extras = intent.getExtras();
                 if (extras != null) {
                     metaRecordHash = extras.getByteArray(SpaceAndroidUtils.HASH_EXTRA);
-                    shared = extras.getBoolean(SpaceAndroidUtils.SHARED_EXTRA, false);
+                    shared[0] = extras.getBoolean(SpaceAndroidUtils.SHARED_EXTRA, false);
                 }
             }
             if (metaRecordHash != null) {
-                ByteString metaRecordHashByteString = ByteString.copyFrom(metaRecordHash);
+                final ByteString metaRecordHashByteString = ByteString.copyFrom(metaRecordHash);
                 if (loader == null || !loader.getMetaRecordHash().equals(metaRecordHashByteString)) {
-                    loader = new MetaLoader(this, alias, keys, cache, metaRecordHashByteString, shared) {
+                    new Thread() {
                         @Override
-                        public void onMetaLoaded() {
-                            loadUI();
+                        public void run() {
+                            try {
+                                spaceNetwork = SpaceAndroidUtils.getSpaceNetwork();
+                                registrations = SpaceAndroidUtils.getRegistrations(alias, keys, cache, spaceNetwork);
+                                registrars = SpaceAndroidUtils.getRegistrars(registrations.keySet(), cache, spaceNetwork);
+                                registrarNetwork = SpaceAndroidUtils.getRegistrarNetwork(registrars);
+                                loader = new MetaLoader(alias, keys, cache, registrarNetwork, metaRecordHashByteString, shared[0]) {
+                                    @Override
+                                    public void onMetaLoaded() {
+                                        loadUI();
+                                    }
+                                };
+                                loader.loadMeta();
+                            } catch (IOException | IllegalBlockSizeException | InvalidKeyException | NoSuchAlgorithmException | BadPaddingException | NoSuchPaddingException | InvalidAlgorithmParameterException e) {
+                                /* Ignored */
+                                e.printStackTrace();
+                            }
                         }
-                    };
+                    }.start();
                 }
             }
         } else {
@@ -157,6 +180,7 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
+    @WorkerThread
     private void loadUI() {
         if (loader == null) {
             return;
@@ -203,6 +227,7 @@ public class DetailActivity extends AppCompatActivity {
                             decoder.setOnPartialImageListener(new ImageDecoder.OnPartialImageListener() {
                                 @Override
                                 public boolean onPartialImage(@NonNull ImageDecoder.DecodeException e) {
+                                    /* Ignored */
                                     e.printStackTrace();
                                     return true;
                                 }
@@ -214,6 +239,7 @@ public class DetailActivity extends AppCompatActivity {
                         }
                     });
                 } catch (IOException e) {
+                    /* Ignored */
                     e.printStackTrace();
                 }
             }
@@ -246,8 +272,9 @@ public class DetailActivity extends AppCompatActivity {
                     sb.append(in.nextLine());
                     sb.append(System.lineSeparator());
                 }
-            } catch (IOException ex) {
-                ex.printStackTrace();
+            } catch (IOException e) {
+                /* Ignored */
+                e.printStackTrace();
             }
             final String text = sb.toString();
             Log.d(SpaceUtils.TAG, "Text: " + text);
@@ -307,7 +334,7 @@ public class DetailActivity extends AppCompatActivity {
         final double size = loader.getMeta().getSize();
         final double[] progress = {0};
         final ProgressBar[] progressBar = new ProgressBar[1];
-        final Dialog[] dialog = new Dialog[1];
+        final Dialog[] progressDialog = new Dialog[1];
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -316,7 +343,7 @@ public class DetailActivity extends AppCompatActivity {
                 TextView progressStatus = progressView.findViewById(R.id.progress_status);
                 progressStatus.setVisibility(View.VISIBLE);
                 progressStatus.setText(getString(R.string.detail_writing_uri, uri.toString()));
-                dialog[0] = new AlertDialog.Builder(DetailActivity.this, R.style.AlertDialogTheme)
+                progressDialog[0] = new AlertDialog.Builder(DetailActivity.this, R.style.AlertDialogTheme)
                         .setTitle(R.string.title_dialog_loading_document)
                         .setCancelable(false)
                         .setView(progressView)
@@ -350,15 +377,15 @@ public class DetailActivity extends AppCompatActivity {
                     }
                 });
             }
-        } catch (IOException ex) {
+        } catch (IOException e) {
             /* Ignored */
-            ex.printStackTrace();
+            e.printStackTrace();
         } finally {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    if (dialog[0].isShowing()) {
-                        dialog[0].dismiss();
+                    if (progressDialog[0] != null && progressDialog[0].isShowing()) {
+                        progressDialog[0].dismiss();
                     }
                 }
             });
@@ -425,9 +452,9 @@ public class DetailActivity extends AppCompatActivity {
                                             });
                                             Log.d(SpaceUtils.TAG, "Downloaded: " + CommonUtils.binarySizeToString(count[0]));
                                         }
-                                    } catch (IOException ex) {
+                                    } catch (IOException e) {
                                         /* Ignored */
-                                        ex.printStackTrace();
+                                        e.printStackTrace();
                                     } finally {
                                         runOnUiThread(new Runnable() {
                                             @Override
@@ -491,212 +518,213 @@ public class DetailActivity extends AppCompatActivity {
     private void share() {
         final String alias = BCAndroidUtils.getAlias();
         final KeyPair keys = BCAndroidUtils.getKeyPair();
-        final TCPNetwork network = loader.getNetwork();
         final ByteString metaRecordHash = loader.getMetaRecordHash();
         final Meta meta = loader.getMeta();
         final boolean shared = loader.isShared();
-        new ShareMiningDialog(DetailActivity.this, cache, network, meta) {
+        final AliasArrayAdapter aliasArrayAdapter = new AliasArrayAdapter(DetailActivity.this, cache, registrarNetwork);
+        final MinerArrayAdapter minerArrayAdapter = new MinerArrayAdapter(DetailActivity.this, cache, registrarNetwork);
+        new ShareMiningDialog(DetailActivity.this, meta, aliasArrayAdapter) {
             @Override
             @UiThread
             public void onShare(final Alias recipient) {
-                View progressView = View.inflate(DetailActivity.this, R.layout.dialog_progress, null);
-                final ProgressBar progressBar = progressView.findViewById(R.id.progress_bar);
-                final TextView progressStatus = progressView.findViewById(R.id.progress_status);
-                progressStatus.setVisibility(View.VISIBLE);
-                final AlertDialog progressDialog = new AlertDialog.Builder(DetailActivity.this, R.style.AlertDialogTheme)
-                        .setTitle(R.string.title_dialog_sharing_document)
-                        .setIcon(R.drawable.share)
-                        .setCancelable(false)
-                        .setView(progressView)
-                        .show();
-                progressStatus.setText(meta.getName());
-                new Thread() {
+                Log.d(SpaceUtils.TAG, "Sharing with " + recipient.getAlias());
+                new MiningDialog(DetailActivity.this, alias, minerArrayAdapter, registrations) {
                     @Override
-                    public void run() {
-                        try {
-                            final PublicKey recipientKey = AliasUtils.getPublicKey(cache, network, recipient.getAlias());
-                            final Share.Builder sb = Share.newBuilder();
-                            if (shared) {
-                                PoWChannel shares = SpaceUtils.getShareChannel(alias);
-                                progressStatus.setText(R.string.detail_loading_share);
-                                ChannelUtils.loadHead(shares, cache);
-                                progressStatus.setText(R.string.detail_pulling_share);
-                                try {
-                                    ChannelUtils.pull(shares, cache, network);
-                                } catch (NoSuchAlgorithmException e) {
-                                    e.printStackTrace();
-                                }
-                                progressStatus.setText(R.string.detail_reading_share);
-                                SpaceUtils.readShares(shares, cache, network, alias, keys, null, metaRecordHash, null, new RecordCallback() {
-                                    @Override
-                                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                        sb.setMetaReference(Reference.newBuilder()
-                                                .setTimestamp(blockEntry.getRecord().getTimestamp())
-                                                .setChannelName(block.getChannelName())
-                                                .setRecordHash(blockEntry.getRecordHash()));
-                                        sb.setMetaKey(ByteString.copyFrom(key));
-                                        // TODO update progress dialog
-                                        return false;
-                                    }
-                                }, new RecordCallback() {
-                                    @Override
-                                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                        sb.addChunkKey(ByteString.copyFrom(key));
-                                        // TODO update progress dialog
-                                        return false;
-                                    }
-                                });
-                            } else {
-                                final PoWChannel files = SpaceUtils.getFileChannel(alias);
-                                progressStatus.setText(R.string.detail_loading_file);
-                                ChannelUtils.loadHead(files, cache, network);
+                    @UiThread
+                    public void onMine(final Miner miner) {
+                        final String website = "https://" + miner.getMerchant().getDomain();
 
-                                PoWChannel metas = SpaceUtils.getMetaChannel(alias);
-                                progressStatus.setText(R.string.detail_loading_meta);
-                                ChannelUtils.loadHead(metas, cache);
-                                progressStatus.setText(R.string.detail_pulling_meta);
+                        View progressView = View.inflate(DetailActivity.this, R.layout.dialog_progress, null);
+                        final ProgressBar progressBar = progressView.findViewById(R.id.progress_bar);
+                        progressBar.setIndeterminate(true);
+                        final TextView progressStatus = progressView.findViewById(R.id.progress_status);
+                        progressStatus.setVisibility(View.VISIBLE);
+                        progressStatus.setText(meta.getName());
+                        final Dialog progressDialog = new AlertDialog.Builder(DetailActivity.this, R.style.AlertDialogTheme)
+                                .setTitle(R.string.title_dialog_sharing_document)
+                                .setIcon(R.drawable.share)
+                                .setCancelable(false)
+                                .setView(progressView)
+                                .show();
+
+                        new Thread() {
+                            @Override
+                            public void run() {
                                 try {
-                                    ChannelUtils.pull(metas, cache, network);
-                                } catch (NoSuchAlgorithmException e) {
-                                    e.printStackTrace();
-                                }
-                                progressStatus.setText(R.string.detail_reading_meta);
-                                ChannelUtils.read(metas.getName(), metas.getHead(), null, cache, network, alias, keys, metaRecordHash, new RecordCallback() {
-                                    @Override
-                                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                        for (Reference r : blockEntry.getRecord().getReferenceList()) {
-                                            try {
-                                                ChannelUtils.read(files.getName(), files.getHead(), null, cache, network, alias, keys, r.getRecordHash(), new RecordCallback() {
-                                                    @Override
-                                                    public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                                        sb.addChunkKey(ByteString.copyFrom(key));
-                                                        // TODO update progress dialog
-                                                        return false;
-                                                    }
-                                                });
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
+                                    final Share.Builder sb = Share.newBuilder();
+                                    if (shared) {
+                                        PoWChannel shares = SpaceUtils.getShareChannel(alias);
+                                        SpaceAndroidUtils.setStatus(DetailActivity.this, progressStatus, R.string.detail_loading_share);
+                                        ChannelUtils.loadHead(shares, cache);
+                                        SpaceAndroidUtils.setStatus(DetailActivity.this, progressStatus, R.string.detail_pulling_share);
+                                        try {
+                                            // TODO is this pull needed since SpaceUtils.readShares will request missing blocks?
+                                            ChannelUtils.pull(shares, cache, registrarNetwork);
+                                        } catch (NoSuchAlgorithmException e) {
+                                            /* Ignored */
+                                            e.printStackTrace();
                                         }
-                                        sb.setMetaReference(Reference.newBuilder()
-                                                .setTimestamp(blockEntry.getRecord().getTimestamp())
-                                                .setChannelName(block.getChannelName())
-                                                .setRecordHash(blockEntry.getRecordHash()));
-                                        sb.setMetaKey(ByteString.copyFrom(key));
-                                        // TODO update progress dialog
-                                        return false;
-                                    }
-                                });
-                            }
-                            PoWChannel previews = SpaceUtils.getPreviewChannel(metaRecordHash);
-                            progressStatus.setText(R.string.detail_loading_preview);
-                            ChannelUtils.loadHead(previews, cache);
-                            progressStatus.setText(R.string.detail_pulling_preview);
-                            try {
-                                ChannelUtils.pull(previews, cache, network);
-                            } catch (NoSuchAlgorithmException e) {
-                                e.printStackTrace();
-                            }
-                            progressStatus.setText(R.string.detail_reading_preview);
-                            ChannelUtils.read(previews.getName(), previews.getHead(), null, cache, network, alias, keys, null, new RecordCallback() {
-                                @Override
-                                public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
-                                    sb.addPreviewReference(Reference.newBuilder()
-                                            .setTimestamp(blockEntry.getRecord().getTimestamp())
-                                            .setChannelName(block.getChannelName())
-                                            .setRecordHash(blockEntry.getRecordHash()));
-                                    sb.addPreviewKey(ByteString.copyFrom(key));
-                                    // TODO update progress dialog
-                                    return false;
-                                }
-                            });
-                            final Share share = sb.build();
-                            Log.d(SpaceUtils.TAG, "Share: " + share);
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    new MiningDialog(DetailActivity.this, alias, keys, cache, network) {
-                                        @Override
-                                        @WorkerThread
-                                        public void onMine(Miner miner, final Map<String, Registrar> registrars) {
-                                            // TODO show progress dialog
-                                            final String minerAlias = miner.getMerchant().getAlias();
-                                            final String website = "https://" + miner.getMerchant().getDomain();
-                                            try {
-                                                final Map<String, PublicKey> acl = new HashMap<>();
-                                                acl.put(recipient.getAlias(), recipientKey);
-                                                acl.put(alias, keys.getPublic());
-                                                final List<Reference> shareReferences = new ArrayList<>();
-                                                Record shareRecord = BCUtils.createRecord(alias, keys, acl, shareReferences, share.toByteArray());
-                                                final Reference[] shareReference = {null};
-                                                for (int i = 0; shareReference[0] == null && i < 5; i++) {
-                                                    int results = 1 + 1;// 1 for sharer + 1 for each recipient
-                                                    SpaceUtils.postRecord(website, "share", shareRecord, results, new RemoteMiningListener() {
-                                                        @Override
-                                                        public void onReference(Reference reference) {
-                                                            shareReference[0] = reference;
-                                                            // TODO update progress dialog
-                                                        }
+                                        SpaceAndroidUtils.setStatus(DetailActivity.this, progressStatus, R.string.detail_reading_share);
+                                        SpaceUtils.readShares(shares, cache, registrarNetwork, alias, keys, null, metaRecordHash, null, new RecordCallback() {
+                                            @Override
+                                            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                                sb.setMetaReference(Reference.newBuilder()
+                                                        .setTimestamp(blockEntry.getRecord().getTimestamp())
+                                                        .setChannelName(block.getChannelName())
+                                                        .setRecordHash(blockEntry.getRecordHash()));
+                                                sb.setMetaKey(ByteString.copyFrom(key));
+                                                // TODO update progress dialog
+                                                return false;
+                                            }
+                                        }, new RecordCallback() {
+                                            @Override
+                                            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                                sb.addChunkKey(ByteString.copyFrom(key));
+                                                // TODO update progress dialog
+                                                return false;
+                                            }
+                                        });
+                                    } else {
+                                        final PoWChannel files = SpaceUtils.getFileChannel(alias);
+                                        SpaceAndroidUtils.setStatus(DetailActivity.this, progressStatus, R.string.detail_loading_file);
+                                        ChannelUtils.loadHead(files, cache, registrarNetwork);
 
-                                                        @Override
-                                                        public void onBlock(ByteString hash, Block block) {
-                                                            Log.d(SpaceUtils.TAG, "Mined Block: " + block);
-                                                            // Write block to cache
-                                                            cache.putBlock(hash, block);
-                                                            for (String registrarAlias : registrars.keySet()) {
-                                                                if (!registrarAlias.equals(minerAlias)) {
-                                                                    Registrar registrar = registrars.get(registrarAlias);
-                                                                    if (registrar != null) {
-                                                                        try {
-                                                                            InetAddress address = InetAddress.getByName(registrar.getMerchant().getDomain());
-                                                                            network.cast(address, block.getChannelName(), cache, hash, block);
-                                                                        } catch (UnknownHostException e) {
-                                                                            e.printStackTrace();
-                                                                        }
-                                                                    }
-                                                                }
+                                        PoWChannel metas = SpaceUtils.getMetaChannel(alias);
+                                        SpaceAndroidUtils.setStatus(DetailActivity.this, progressStatus, R.string.detail_loading_meta);
+                                        ChannelUtils.loadHead(metas, cache);
+                                        SpaceAndroidUtils.setStatus(DetailActivity.this, progressStatus, R.string.detail_pulling_meta);
+                                        try {
+                                            // TODO is this pull needed since ChannelUtils.read will request missing blocks?
+                                            ChannelUtils.pull(metas, cache, registrarNetwork);
+                                        } catch (NoSuchAlgorithmException e) {
+                                            /* Ignored */
+                                            e.printStackTrace();
+                                        }
+                                        SpaceAndroidUtils.setStatus(DetailActivity.this, progressStatus, R.string.detail_reading_meta);
+                                        ChannelUtils.read(metas.getName(), metas.getHead(), null, cache, registrarNetwork, alias, keys, metaRecordHash, new RecordCallback() {
+                                            @Override
+                                            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                                for (Reference r : blockEntry.getRecord().getReferenceList()) {
+                                                    try {
+                                                        ChannelUtils.read(files.getName(), files.getHead(), null, cache, registrarNetwork, alias, keys, r.getRecordHash(), new RecordCallback() {
+                                                            @Override
+                                                            public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                                                sb.addChunkKey(ByteString.copyFrom(key));
+                                                                // TODO update progress dialog
+                                                                return false;
+                                                            }
+                                                        });
+                                                    } catch (IOException e) {
+                                                        /* Ignored */
+                                                        e.printStackTrace();
+                                                    }
+                                                }
+                                                sb.setMetaReference(Reference.newBuilder()
+                                                        .setTimestamp(blockEntry.getRecord().getTimestamp())
+                                                        .setChannelName(block.getChannelName())
+                                                        .setRecordHash(blockEntry.getRecordHash()));
+                                                sb.setMetaKey(ByteString.copyFrom(key));
+                                                // TODO update progress dialog
+                                                return false;
+                                            }
+                                        });
+                                    }
+                                    PoWChannel previews = SpaceUtils.getPreviewChannel(metaRecordHash);
+                                    SpaceAndroidUtils.setStatus(DetailActivity.this, progressStatus, R.string.detail_loading_preview);
+                                    ChannelUtils.loadHead(previews, cache);
+                                    SpaceAndroidUtils.setStatus(DetailActivity.this, progressStatus, R.string.detail_pulling_preview);
+                                    try {
+                                        // TODO is this pull needed since ChannelUtils.read will request missing blocks?
+                                        ChannelUtils.pull(previews, cache, registrarNetwork);
+                                    } catch (NoSuchAlgorithmException e) {
+                                        /* Ignored */
+                                        e.printStackTrace();
+                                    }
+                                    SpaceAndroidUtils.setStatus(DetailActivity.this, progressStatus, R.string.detail_reading_preview);
+                                    ChannelUtils.read(previews.getName(), previews.getHead(), null, cache, registrarNetwork, alias, keys, null, new RecordCallback() {
+                                        @Override
+                                        public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
+                                            sb.addPreviewReference(Reference.newBuilder()
+                                                    .setTimestamp(blockEntry.getRecord().getTimestamp())
+                                                    .setChannelName(block.getChannelName())
+                                                    .setRecordHash(blockEntry.getRecordHash()));
+                                            sb.addPreviewKey(ByteString.copyFrom(key));
+                                            // TODO update progress dialog
+                                            return false;
+                                        }
+                                    });
+                                    final Share share = sb.build();
+                                    Log.d(SpaceUtils.TAG, "Share: " + share);
+                                    final String minerAlias = miner.getMerchant().getAlias();
+                                    final Map<String, PublicKey> acl = new HashMap<>();
+                                    acl.put(recipient.getAlias(), AliasUtils.bytesToPublicKey(recipient.getPublicKey().toByteArray(), recipient.getPublicFormat()));
+                                    acl.put(alias, keys.getPublic());
+                                    final List<Reference> shareReferences = new ArrayList<>();
+                                    Record shareRecord = BCUtils.createRecord(alias, keys, acl, shareReferences, share.toByteArray());
+                                    final Reference[] shareReference = {null};
+                                    for (int i = 0; shareReference[0] == null && i < 5; i++) {
+                                        int results = 1 + 1;// 1 for sharer + 1 for each recipient
+                                        SpaceUtils.postRecord(website, "share", shareRecord, results, new RemoteMiningListener() {
+                                            @Override
+                                            public void onReference(Reference reference) {
+                                                shareReference[0] = reference;
+                                                // TODO update progress dialog
+                                            }
+
+                                            @Override
+                                            public void onBlock(ByteString hash, Block block) {
+                                                Log.d(SpaceUtils.TAG, "Mined Block: " + block);
+                                                // Write block to cache
+                                                cache.putBlock(hash, block);
+                                                for (String registrarAlias : registrars.keySet()) {
+                                                    if (!registrarAlias.equals(minerAlias)) {
+                                                        Registrar registrar = registrars.get(registrarAlias);
+                                                        if (registrar != null) {
+                                                            try {
+                                                                InetAddress address = InetAddress.getByName(registrar.getMerchant().getDomain());
+                                                                TCPNetwork.cast(address, block.getChannelName(), cache, registrarNetwork, hash, block);
+                                                            } catch (UnknownHostException e) {
+                                                                /* Ignored */
+                                                                e.printStackTrace();
                                                             }
                                                         }
-                                                    });
+                                                    }
                                                 }
-                                                if (shareReference[0] == null) {
-                                                    // FIXME show error dialog with retry option
-                                                    System.err.println("Failed to post share record 5 times");
-                                                    return;
-                                                }
-                                                Log.d(SpaceUtils.TAG, "Uploaded Share " + new String(CommonUtils.encodeBase64URL(shareReference[0].getRecordHash().toByteArray())));
-                                                // TODO update UI to show new Share
-                                            } catch (SocketException | SocketTimeoutException e) {
-                                                CommonAndroidUtils.showErrorDialog(DetailActivity.this, R.style.AlertDialogTheme, getString(R.string.error_connection, website), e);
-                                            } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                                                CommonAndroidUtils.showErrorDialog(DetailActivity.this, R.style.AlertDialogTheme, R.string.error_uploading, e);
-                                            } finally {
-                                                // TODO dismiss progress dialog
+                                            }
+                                        });
+                                    }
+                                    if (shareReference[0] == null) {
+                                        // FIXME show error dialog with retry option
+                                        System.err.println("Failed to post share record 5 times");
+                                        return;
+                                    }
+                                    Log.d(SpaceUtils.TAG, "Uploaded Share " + new String(CommonUtils.encodeBase64URL(shareReference[0].getRecordHash().toByteArray())));
+                                    // TODO update UI to show new Share
+                                } catch (SocketException | SocketTimeoutException e) {
+                                    CommonAndroidUtils.showErrorDialog(DetailActivity.this, R.style.AlertDialogTheme, getString(R.string.error_connection, website), e);
+                                } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | InvalidKeySpecException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
+                                    CommonAndroidUtils.showErrorDialog(DetailActivity.this, R.style.AlertDialogTheme, R.string.error_uploading, e);
+                                } finally {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            // Dismiss share progress dialog
+                                            if (progressDialog != null && progressDialog.isShowing()) {
+                                                progressDialog.dismiss();
                                             }
                                         }
-
-                                        @Override
-                                        public void onMiningCancelled() {
-                                            // TODO
-                                        }
-                                    }.create();
+                                    });
                                 }
-                            });
-                        } catch (IOException | InvalidKeySpecException | NoSuchAlgorithmException e) {
-                            e.printStackTrace();
-                        } finally {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    // Dismiss download progress dialog
-                                    if (progressDialog != null && progressDialog.isShowing()) {
-                                        progressDialog.dismiss();
-                                    }
-                                }
-                            });
-                        }
+                            }
+                        }.start();
                     }
-                }.start();
+
+                    @Override
+                    @UiThread
+                    public void onMiningCancelled() {
+                        // TODO
+                    }
+                }.create();
             }
         }.create();
     }
@@ -705,79 +733,103 @@ public class DetailActivity extends AppCompatActivity {
     private void tag() {
         final String alias = BCAndroidUtils.getAlias();
         final KeyPair keys = BCAndroidUtils.getKeyPair();
-        final TCPNetwork network = loader.getNetwork();
-        final TagAdapter adapter = new TagAdapter(DetailActivity.this, alias, keys, loader.getMetaRecordHash(), cache, network);
+        final Meta meta = loader.getMeta();
+        final TagAdapter adapter = new TagAdapter(DetailActivity.this, alias, keys, loader.getMetaRecordHash(), cache, registrarNetwork);
         final Reference reference = Reference.newBuilder()
                 .setTimestamp(loader.getTimestamp())
                 .setBlockHash(loader.getBlockHash())
                 .setChannelName(loader.getChannelName())
                 .setRecordHash(loader.getRecordHash())
                 .build();
-        new TagMiningDialog(DetailActivity.this, loader.getMeta(), adapter) {
+        final MinerArrayAdapter minerArrayAdapter = new MinerArrayAdapter(DetailActivity.this, cache, registrarNetwork);
+        new TagMiningDialog(DetailActivity.this, meta, adapter) {
             @Override
             @UiThread
             public void onTag(final Tag tag) {
                 Log.d(SpaceUtils.TAG, "Tagging " + reference + " with " + tag);
-                new MiningDialog(DetailActivity.this, alias, keys, cache, network) {
+                new MiningDialog(DetailActivity.this, alias, minerArrayAdapter, registrations) {
                     @Override
-                    @WorkerThread
-                    public void onMine(Miner miner, final Map<String, Registrar> registrars) {
-                        // TODO show progress dialog
-                        final String minerAlias = miner.getMerchant().getAlias();
+                    @UiThread
+                    public void onMine(final Miner miner) {
                         final String website = "https://" + miner.getMerchant().getDomain();
-                        try {
-                            final Map<String, PublicKey> acl = new HashMap<>();
-                            acl.put(alias, keys.getPublic());
-                            final List<Reference> tagReferences = new ArrayList<>();
-                            tagReferences.add(reference);
-                            Record tagRecord = BCUtils.createRecord(alias, keys, acl, tagReferences, tag.toByteArray());
-                            final Reference[] tagReference = {null};
-                            for (int i = 0; tagReference[0] == null && i < 5; i++) {
-                                SpaceUtils.postRecord(website, "tag", tagRecord, 1, new RemoteMiningListener() {
-                                    @Override
-                                    public void onReference(Reference reference) {
-                                        tagReference[0] = reference;
-                                        // TODO update progress dialog
-                                    }
 
-                                    @Override
-                                    public void onBlock(ByteString hash, Block block) {
-                                        Log.d(SpaceUtils.TAG, "Mined Block: " + block);
-                                        // Write block to cache
-                                        cache.putBlock(hash, block);
-                                        for (String registrarAlias : registrars.keySet()) {
-                                            if (!registrarAlias.equals(minerAlias)) {
-                                                Registrar registrar = registrars.get(registrarAlias);
-                                                if (registrar != null) {
-                                                    try {
-                                                        InetAddress address = InetAddress.getByName(registrar.getMerchant().getDomain());
-                                                        network.cast(address, block.getChannelName(), cache, hash, block);
-                                                    } catch (UnknownHostException e) {
-                                                        e.printStackTrace();
+                        View progressView = View.inflate(DetailActivity.this, R.layout.dialog_progress, null);
+                        final ProgressBar progressBar = progressView.findViewById(R.id.progress_bar);
+                        progressBar.setIndeterminate(true);
+                        final TextView progressStatus = progressView.findViewById(R.id.progress_status);
+                        progressStatus.setVisibility(View.VISIBLE);
+                        progressStatus.setText(meta.getName());
+                        final Dialog progressDialog = new AlertDialog.Builder(DetailActivity.this, R.style.AlertDialogTheme)
+                                .setTitle(R.string.title_dialog_tagging_document)
+                                .setIcon(R.drawable.tag)
+                                .setCancelable(false)
+                                .setView(progressView)
+                                .show();
+
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                try {
+                                    final String minerAlias = miner.getMerchant().getAlias();
+                                    final Map<String, PublicKey> acl = new HashMap<>();
+                                    acl.put(alias, keys.getPublic());
+                                    final List<Reference> tagReferences = new ArrayList<>();
+                                    tagReferences.add(reference);
+                                    Record tagRecord = BCUtils.createRecord(alias, keys, acl, tagReferences, tag.toByteArray());
+                                    final Reference[] tagReference = {null};
+                                    for (int i = 0; tagReference[0] == null && i < 5; i++) {
+                                        SpaceUtils.postRecord(website, "tag", tagRecord, 1, new RemoteMiningListener() {
+                                            @Override
+                                            public void onReference(Reference reference) {
+                                                tagReference[0] = reference;
+                                                // TODO update progress dialog
+                                            }
+
+                                            @Override
+                                            public void onBlock(ByteString hash, Block block) {
+                                                Log.d(SpaceUtils.TAG, "Mined Block: " + block);
+                                                // Write block to cache
+                                                cache.putBlock(hash, block);
+                                                for (String registrarAlias : registrars.keySet()) {
+                                                    if (!registrarAlias.equals(minerAlias)) {
+                                                        Registrar registrar = registrars.get(registrarAlias);
+                                                        if (registrar != null) {
+                                                            try {
+                                                                InetAddress address = InetAddress.getByName(registrar.getMerchant().getDomain());
+                                                                TCPNetwork.cast(address, block.getChannelName(), cache, registrarNetwork, hash, block);
+                                                            } catch (UnknownHostException e) {
+                                                                /* Ignored */
+                                                                e.printStackTrace();
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
+                                        });
                                     }
-                                });
+                                    if (tagReference[0] == null) {
+                                        // FIXME show error dialog with retry option
+                                        System.err.println("Failed to post tag record 5 times");
+                                        return;
+                                    }
+                                    Log.d(SpaceUtils.TAG, "Uploaded Tag " + new String(CommonUtils.encodeBase64URL(tagReference[0].getRecordHash().toByteArray())));
+                                    // TODO update UI to show new Tag
+                                } catch (SocketException | SocketTimeoutException e) {
+                                    CommonAndroidUtils.showErrorDialog(DetailActivity.this, R.style.AlertDialogTheme, getString(R.string.error_connection, website), e);
+                                } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
+                                    CommonAndroidUtils.showErrorDialog(DetailActivity.this, R.style.AlertDialogTheme, R.string.error_uploading, e);
+                                } finally {
+                                    // Dismiss tag progress dialog
+                                    if (progressDialog != null && progressDialog.isShowing()) {
+                                        progressDialog.dismiss();
+                                    }
+                                }
                             }
-                            if (tagReference[0] == null) {
-                                // FIXME show error dialog with retry option
-                                System.err.println("Failed to post tag record 5 times");
-                                return;
-                            }
-                            Log.d(SpaceUtils.TAG, "Uploaded Tag " + new String(CommonUtils.encodeBase64URL(tagReference[0].getRecordHash().toByteArray())));
-                            // TODO update UI to show new Tag
-                        } catch (SocketException | SocketTimeoutException e) {
-                            CommonAndroidUtils.showErrorDialog(DetailActivity.this, R.style.AlertDialogTheme, getString(R.string.error_connection, website), e);
-                        } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | SignatureException e) {
-                            CommonAndroidUtils.showErrorDialog(DetailActivity.this, R.style.AlertDialogTheme, R.string.error_uploading, e);
-                        } finally {
-                            // TODO dismiss progress dialog
-                        }
+                        }.start();
                     }
 
                     @Override
+                    @UiThread
                     public void onMiningCancelled() {
                         // TODO
                     }

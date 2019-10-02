@@ -51,16 +51,21 @@ import com.aletheiaware.space.android.BuildConfig;
 import com.aletheiaware.space.android.R;
 import com.aletheiaware.space.android.ui.ComposeDocumentActivity;
 import com.aletheiaware.space.utils.SpaceUtils;
+import com.aletheiaware.space.utils.SpaceUtils.MinerCallback;
+import com.aletheiaware.space.utils.SpaceUtils.RegistrarCallback;
 import com.stripe.android.model.Token;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.crypto.BadPaddingException;
@@ -87,6 +92,7 @@ public class SpaceAndroidUtils {
     public static final int OPEN_ACTIVITY = 107;
     public static final int SETTINGS_ACTIVITY = 108;
     public static final int UPLOAD_ACTIVITY = 109;
+    public static final int PROVIDERS_ACTIVITY = 110;
 
     public static final String DATA_EXTRA = "data";
     public static final String HASH_EXTRA = "hash";
@@ -96,23 +102,144 @@ public class SpaceAndroidUtils {
     private static Uri tempURI = null;
     private static String tempURIType = null;
 
-    public static String getSpaceHostname() {
-        return SpaceUtils.getSpaceHostname(BuildConfig.DEBUG);
+    @WorkerThread
+    public static Map<String, Registration> getRegistrations(String alias, KeyPair keys, Cache cache, Network network) throws IllegalBlockSizeException, InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+        final Map<String, Registration> registrations = new HashMap<>();
+        FinanceUtils.readRegistration(SpaceUtils.SPACE_REGISTRATION, cache, network, null, null, alias, keys, new RegistrationCallback() {
+            @Override
+            public boolean onRegistration(BlockEntry entry, Registration registration) {
+                Log.d(SpaceUtils.TAG, "Registration: " + registration);
+                if (registration != null) {
+                    String key = registration.getMerchantAlias();
+                    if (!registrations.containsKey(key)) {
+                        registrations.put(key, registration);
+                    }
+                }
+                return true;
+            }
+        });
+        return registrations;
     }
 
     @WorkerThread
-    public static TCPNetwork getRegistrarNetwork(final Context context, String alias) {
-        Set<String> registrars = getRegistrarsPreference(context, alias);
+    public static Map<String, Subscription> getSubscriptions(String alias, KeyPair keys, Cache cache, Network network) throws IllegalBlockSizeException, InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+        final Map<String, Subscription> subscriptions = new HashMap<>();
+        FinanceUtils.readSubscription(SpaceUtils.SPACE_SUBSCRIPTION, cache, network, null, null, alias, keys, null, null, new SubscriptionCallback() {
+            @Override
+            public boolean onSubscription(BlockEntry entry, Subscription subscription) {
+                Log.d(SpaceUtils.TAG, "Subscription: " + subscription);
+                if (subscription != null) {
+                    String key = subscription.getMerchantAlias() + subscription.getProductId() + subscription.getPlanId();
+                    if (!subscriptions.containsKey(key)) {
+                        subscriptions.put(key, subscription);
+                    }
+                }
+                return true;
+            }
+        });
+        return subscriptions;
+    }
+
+    @WorkerThread
+    public static Map<String, Registrar> getRegistrars(final Set<String> merchants, Cache cache, Network network) throws IOException {
+        final Map<String, Registrar> registrars = new HashMap<>();
+        SpaceUtils.readRegistrars(SpaceUtils.getRegistrarChannel(), cache, network, null, new RegistrarCallback() {
+            @Override
+            public boolean onRegistrar(BlockEntry blockEntry, Registrar registrar) {
+                String a = registrar.getMerchant().getAlias();
+                if (merchants.contains(a) && !registrars.containsKey(a)) {
+                    registrars.put(a, registrar);
+                }
+                return true;
+            }
+        });
+        return registrars;
+    }
+
+    @WorkerThread
+    public static Map<String, Miner> getMiners(final Set<String> merchants, Cache cache, Network network) throws IOException {
+        final Map<String, Miner> miners = new HashMap<>();
+        SpaceUtils.readMiners(SpaceUtils.getMinerChannel(), cache, network, null, new MinerCallback() {
+            @Override
+            public boolean onMiner(BlockEntry blockEntry, Miner miner) {
+                String a = miner.getMerchant().getAlias();
+                if (merchants.contains(a) && !miners.containsKey(a)) {
+                    miners.put(a, miner);
+                }
+                return true;
+            }
+        });
+        return miners;
+    }
+
+    @WorkerThread
+    public static Network getSpaceNetwork() {
+        Set<InetAddress> addresses = new HashSet<>();
+        for (String host : SpaceUtils.getSpaceHosts(BuildConfig.DEBUG)) {
+            try {
+                addresses.add(InetAddress.getByName(host));
+            } catch (UnknownHostException e) {
+                /* Ignored */
+                e.printStackTrace();
+            }
+        }
+        return new TCPNetwork(addresses.toArray(new InetAddress[0]));
+    }
+
+    @WorkerThread
+    public static Network getRegistrarNetwork(Map<String, Registrar> registrars) {
         Set<InetAddress> addresses = new HashSet<>();
         try {
-            for (String registrar : registrars) {
-                addresses.add(InetAddress.getByName(registrar));
+            for (String registrar : registrars.keySet()) {
+                Registrar r = registrars.get(registrar);
+                if (r != null) {
+                    addresses.add(InetAddress.getByName(r.getMerchant().getDomain()));
+                }
             }
         } catch (Exception e) {
             /* Ignored */
             e.printStackTrace();
         }
         return new TCPNetwork(addresses.toArray(new InetAddress[0]));
+    }
+
+    public interface CustomerIdCallback {
+        void onCustomerId(String customerId);
+    }
+
+    @UiThread
+    public static void registerCustomer(final Activity activity, final Merchant merchant, final String alias, final @Nullable CustomerIdCallback callback) {
+        Log.d(SpaceUtils.TAG, "Register Customer");
+        new StripeDialog(activity, merchant.getPublishableKey(), "SPACE Registration", null) {
+            @Override
+            public void onSubmit(final String email, final Token token) {
+                new Thread() {
+                    @Override
+                    public void run() {
+                        String customerId = null;
+                        try {
+                            customerId = BCUtils.register("https://" + merchant.getDomain() + merchant.getRegisterUrl(), alias, email, token.getId());
+                        } catch (Exception e) {
+                            CommonAndroidUtils.showErrorDialog(activity, R.style.AlertDialogTheme, R.string.error_registering, e);
+                        }
+                        if (customerId != null && !customerId.isEmpty() && callback != null) {
+                            callback.onCustomerId(customerId);
+                        }
+                    }
+                }.start();
+            }
+        }.create();
+    }
+
+    @WorkerThread
+    public static String subscribeCustomer(final Activity activity, final Merchant merchant, final Service service, final String alias, final String customerId) {
+        String subscriptionId = null;
+        try {
+            subscriptionId = BCUtils.subscribe("https://" + merchant.getDomain() + service.getSubscribeUrl(), alias, customerId);
+        } catch (Exception e) {
+            CommonAndroidUtils.showErrorDialog(activity, R.style.AlertDialogTheme, R.string.error_subscribing, e);
+        }
+        return subscriptionId;
     }
 
     public static Uri getTempURI() {
@@ -274,188 +401,6 @@ public class SpaceAndroidUtils {
         // 1 - chronological
         // 2 - reverse-chronological
         return CommonAndroidUtils.getPreference(context, context.getString(R.string.preference_sort_key, alias), "2");
-    }
-
-    public static void addRegistrarPreference(Context context, String alias, String registrar) {
-        Set<String> registrars = getRegistrarsPreference(context, alias);
-        registrars.add(registrar);
-        CommonAndroidUtils.setPreferences(context, context.getString(R.string.preference_registrars_key, alias), registrars);
-    }
-
-    public static Set<String> getRegistrarsPreference(Context context, String alias) {
-        Set<String> defaults = new HashSet<>();
-        defaults.add(getSpaceHostname());
-        return CommonAndroidUtils.getPreferences(context, context.getString(R.string.preference_registrars_key, alias), defaults);
-    }
-
-    public static void setMinerPreference(Context context, String alias, String value) {
-        CommonAndroidUtils.setPreference(context, context.getString(R.string.preference_miner_key, alias), value);
-    }
-
-    public static String getMinerPreference(Context context, String alias) {
-        return CommonAndroidUtils.getPreference(context, context.getString(R.string.preference_miner_key, alias), getSpaceHostname());
-    }
-
-    public interface RegistrationIdCallback {
-        void onRegistrationId(String registration);
-    }
-
-    @UiThread
-    public static void registerCustomer(final Activity parent, final Merchant merchant, final String description, final String alias, @Nullable final RegistrationIdCallback callback) {
-        Log.d(SpaceUtils.TAG, "Register Customer");
-        new StripeDialog(parent, merchant.getPublishableKey(), description, null) {
-            @Override
-            public void onSubmit(final String email, final Token token) {
-                new Thread() {
-                    @Override
-                    public void run() {
-                        String customerId = null;
-                        try {
-                            customerId = BCUtils.register("https://" + merchant.getDomain() + merchant.getRegisterUrl(), alias, email, token.getId());
-                        } catch (Exception e) {
-                            CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_registering, e);
-                        }
-                        if (customerId != null && !customerId.isEmpty() && callback != null) {
-                            //
-                            callback.onRegistrationId(customerId);
-                        }
-                    }
-                }.start();
-            }
-        }.create();
-    }
-
-    @UiThread
-    public static void registerSpaceCustomer(final Activity parent, final Merchant merchant, final String alias, @Nullable final RegistrationIdCallback callback) {
-        Log.d(SpaceUtils.TAG, "Register Space Customer");
-        registerCustomer(parent, merchant, "Space Registration", alias, callback);
-    }
-
-    @WorkerThread
-    public static void getRegistration(final Activity parent, final Cache cache, final Network network, final Merchant merchant, final String alias, final KeyPair keys, @Nullable final RegistrationCallback callback) throws IllegalBlockSizeException, InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        Log.d(SpaceUtils.TAG, "Get Registration");
-        final boolean[] success = {false};
-        FinanceUtils.readRegistration(SpaceUtils.SPACE_REGISTRATION, cache, network, merchant.getAlias(), null, alias, keys, new RegistrationCallback() {
-            @Override
-            public void onRegistration(BlockEntry entry, Registration registration) {
-                Log.d(SpaceUtils.TAG, "Registration: " + registration);
-                if (registration != null) {
-                    success[0] = true;
-                    if (callback != null) {
-                        callback.onRegistration(entry, registration);
-                    }
-                }
-            }
-        });
-        if (!success[0]) {
-            parent.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    registerSpaceCustomer(parent, merchant, alias, new RegistrationIdCallback() {
-                        @Override
-                        public void onRegistrationId(String registration) {
-                            if (registration != null && !registration.isEmpty()) {
-                                Log.d(SpaceUtils.TAG, "Registered: " + registration);
-                                try {
-                                    FinanceUtils.readRegistration(SpaceUtils.SPACE_REGISTRATION, cache, network, merchant.getAlias(), null, alias, keys, callback);
-                                } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchPaddingException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    });
-                }
-            });
-        }
-    }
-
-    public interface SubscriptionIdCallback {
-        void onSubscriptionId(String subscription);
-    }
-
-    @WorkerThread
-    public static void subscribeCustomer(final Activity parent, final Merchant merchant, final Service service, final String alias, final String customerId, @Nullable final SubscriptionIdCallback callback) {
-        String subscriptionId = null;
-        try {
-            subscriptionId = BCUtils.subscribe("https://" + merchant.getDomain() + service.getSubscribeUrl(), alias, customerId);
-        } catch (Exception e) {
-            CommonAndroidUtils.showErrorDialog(parent, R.style.AlertDialogTheme, R.string.error_subscribing, e);
-        }
-        if (subscriptionId != null && !subscriptionId.isEmpty() && callback != null) {
-            callback.onSubscriptionId(subscriptionId);
-        }
-    }
-
-    @WorkerThread
-    public static void subscribeSpaceMinerCustomer(final Activity parent, final Miner miner, final String alias, final String customerId, @Nullable final SubscriptionIdCallback callback) {
-        subscribeCustomer(parent, miner.getMerchant(), miner.getService(), alias, customerId, callback);
-    }
-
-    @WorkerThread
-    public static void subscribeSpaceRegistrarCustomer(final Activity parent, final Registrar registrar, final String alias, final String customerId, @Nullable final SubscriptionIdCallback callback) {
-        subscribeCustomer(parent, registrar.getMerchant(), registrar.getService(), alias, customerId, callback);
-    }
-
-    @WorkerThread
-    public static void getMinerSubscription(final Activity parent, final Cache cache, final Network network, final Miner miner, final String alias, final KeyPair keys, final String customerId, @Nullable final SubscriptionCallback callback) throws IllegalBlockSizeException, InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        Log.d(SpaceUtils.TAG, "Get Miner Subscription");
-        final boolean[] success = {false};
-        FinanceUtils.readSubscription(SpaceUtils.SPACE_SUBSCRIPTION, cache, network, miner.getMerchant().getAlias(), null, alias, keys, miner.getService().getProductId(), miner.getService().getPlanId(), new SubscriptionCallback() {
-            @Override
-            public void onSubscription(BlockEntry entry, Subscription subscription) {
-                if (subscription != null) {
-                    success[0] = true;
-                    if (callback != null) {
-                        callback.onSubscription(entry, subscription);
-                    }
-                }
-            }
-        });
-        if (!success[0]) {
-            SpaceAndroidUtils.subscribeSpaceMinerCustomer(parent, miner, alias, customerId, new SubscriptionIdCallback() {
-                @Override
-                public void onSubscriptionId(String subscription) {
-                    if (subscription != null && !subscription.isEmpty()) {
-                        try {
-                            FinanceUtils.readSubscription(SpaceUtils.SPACE_SUBSCRIPTION, cache, network, miner.getMerchant().getAlias(), null, alias, keys, miner.getService().getProductId(), miner.getService().getPlanId(), callback);
-                        } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchPaddingException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    @WorkerThread
-    public static void getRegistrarSubscription(final Activity parent, final Cache cache, final Network network, final Registrar registrar, final String alias, final KeyPair keys, final String customerId, @Nullable final SubscriptionCallback callback) throws IllegalBlockSizeException, InvalidKeyException, NoSuchAlgorithmException, IOException, BadPaddingException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        Log.d(SpaceUtils.TAG, "Get Registrar Subscription");
-        final boolean[] success = {false};
-        FinanceUtils.readSubscription(SpaceUtils.SPACE_SUBSCRIPTION, cache, network, registrar.getMerchant().getAlias(), null, alias, keys, registrar.getService().getProductId(), registrar.getService().getPlanId(), new SubscriptionCallback() {
-            @Override
-            public void onSubscription(BlockEntry entry, Subscription subscription) {
-                if (subscription != null) {
-                    success[0] = true;
-                    if (callback != null) {
-                        callback.onSubscription(entry, subscription);
-                    }
-                }
-            }
-        });
-        if (!success[0]) {
-            SpaceAndroidUtils.subscribeSpaceRegistrarCustomer(parent, registrar, alias, customerId, new SubscriptionIdCallback() {
-                @Override
-                public void onSubscriptionId(String subscription) {
-                    if (subscription != null && !subscription.isEmpty()) {
-                        try {
-                            FinanceUtils.readSubscription(SpaceUtils.SPACE_SUBSCRIPTION, cache, network, registrar.getMerchant().getAlias(), null, alias, keys, registrar.getService().getProductId(), registrar.getService().getPlanId(), callback);
-                        } catch (BadPaddingException | IOException | IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchPaddingException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-        }
     }
 
     @WorkerThread

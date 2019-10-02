@@ -112,6 +112,7 @@ public class PdfViewFragment extends UriContentFragment {
                 }
             }
         } catch (IOException e) {
+            /* Ignored */
             e.printStackTrace();
         }
     }
@@ -125,6 +126,7 @@ public class PdfViewFragment extends UriContentFragment {
             renderer.close();
             descriptor.close();
         } catch (IOException e) {
+            /* Ignored */
             e.printStackTrace();
         }
         super.onStop();
@@ -167,6 +169,7 @@ public class PdfViewFragment extends UriContentFragment {
                 bitmap = Bitmap.createBitmap(page.getWidth(), page.getHeight(), Bitmap.Config.ARGB_8888);
                 page.render(bitmap, null, null, Page.RENDER_MODE_FOR_DISPLAY);
             } catch (IOException e) {
+                /* Ignored */
                 e.printStackTrace();
             }
         }

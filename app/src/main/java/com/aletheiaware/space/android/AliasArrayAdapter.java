@@ -18,7 +18,6 @@ package com.aletheiaware.space.android;
 
 import android.app.Activity;
 import android.widget.ArrayAdapter;
-import android.widget.Filterable;
 
 import com.aletheiaware.alias.AliasProto.Alias;
 import com.aletheiaware.alias.utils.AliasUtils;
@@ -34,11 +33,11 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AliasAdapter extends ArrayAdapter<String> implements Filterable {
+public class AliasArrayAdapter extends ArrayAdapter<String> {
 
     private final Map<String, Alias> am = new HashMap<>();
 
-    public AliasAdapter(final Activity activity, final Cache cache, final Network network) {
+    public AliasArrayAdapter(final Activity activity, final Cache cache, final Network network) {
         super(activity, android.R.layout.simple_dropdown_item_1line);
         new Thread() {
             @Override
@@ -56,11 +55,12 @@ public class AliasAdapter extends ArrayAdapter<String> implements Filterable {
                             try {
                                 ab.mergeFrom(e.getRecord().getPayload());
                             } catch (InvalidProtocolBufferException ex) {
+                                /* Ignored */
                                 ex.printStackTrace();
                             }
                             Alias a = ab.build();
                             add(a.getAlias());// Add to adapter
-                            am.put(a.getAlias(), a);// Add to map
+                            am.put(a.getAlias(), a);// Put in map
                         }
                         bh = b.getPrevious();
                     }
