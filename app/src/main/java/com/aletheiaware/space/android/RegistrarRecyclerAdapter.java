@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 public abstract class RegistrarRecyclerAdapter extends RecyclerView.Adapter<RegistrarRecyclerAdapter.ViewHolder> {
@@ -126,7 +127,7 @@ public abstract class RegistrarRecyclerAdapter extends RecyclerView.Adapter<Regi
             if (alias != null) {
                 Registrar registrar = registrars.get(alias);
                 if (registrar != null) {
-                    holder.set(registrar);
+                    holder.set(registrar, registrations.get(alias), subscriptions.get(alias));
                 }
             }
         }
@@ -155,14 +156,22 @@ public abstract class RegistrarRecyclerAdapter extends RecyclerView.Adapter<Regi
             return alias;
         }
 
-        void set(Registrar registrar) {
+        void set(Registrar registrar, Registration registration, Subscription subscription) {
             alias = registrar.getMerchant().getAlias();
             itemText.setText(alias);
+            if (registration == null) {
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.text_secondary));
+            } else if (subscription == null) {
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.accent));
+            } else {
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.highlight));
+            }
         }
 
         void setEmptyView() {
             alias = null;
             itemText.setText(R.string.empty_registrars_list);
+            itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.text_secondary));
         }
     }
 }

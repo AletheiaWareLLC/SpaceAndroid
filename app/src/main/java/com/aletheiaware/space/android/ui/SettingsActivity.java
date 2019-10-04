@@ -72,8 +72,9 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        fragment.setAlias(BCAndroidUtils.getAlias());
-        fragment.update();
+        if (fragment != null) {
+            fragment.update();
+        }
     }
 
     public static class SettingsPreferenceFragment extends PreferenceFragmentCompat {
@@ -92,10 +93,6 @@ public class SettingsActivity extends AppCompatActivity {
         private Preference morePreference;
 
         private String alias;
-
-        public void setAlias(String alias) {
-            this.alias = alias;
-        }
 
         @Override
         public void onCreatePreferences(Bundle bundle, String key) {
@@ -250,9 +247,11 @@ public class SettingsActivity extends AppCompatActivity {
             aboutCategory.addPreference(morePreference);
 
             setPreferenceScreen(screen);
+            update();
         }
 
         void update() {
+            alias = BCAndroidUtils.getAlias();
             if (alias == null || alias.isEmpty()) {
                 sortPreference.setVisible(false);
             } else {

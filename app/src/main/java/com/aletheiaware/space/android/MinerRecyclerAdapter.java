@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 public abstract class MinerRecyclerAdapter extends RecyclerView.Adapter<MinerRecyclerAdapter.ViewHolder> {
@@ -126,7 +127,7 @@ public abstract class MinerRecyclerAdapter extends RecyclerView.Adapter<MinerRec
             if (alias != null) {
                 Miner miner = miners.get(alias);
                 if (miner != null) {
-                    holder.set(miner);
+                    holder.set(miner, registrations.get(alias), subscriptions.get(alias));
                 }
             }
         }
@@ -155,14 +156,22 @@ public abstract class MinerRecyclerAdapter extends RecyclerView.Adapter<MinerRec
             return alias;
         }
 
-        void set(Miner miner) {
+        void set(Miner miner, Registration registration, Subscription subscription) {
             alias = miner.getMerchant().getAlias();
             itemText.setText(alias);
+            if (registration == null) {
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.text_secondary));
+            } else if (subscription == null) {
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.accent));
+            } else {
+                itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.highlight));
+            }
         }
 
         void setEmptyView() {
             alias = null;
             itemText.setText(R.string.empty_miner_list);
+            itemText.setTextColor(ContextCompat.getColor(itemText.getContext(), R.color.text_secondary));
         }
     }
 }
