@@ -25,13 +25,13 @@ limitations under the License.
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
-        android:labelFor="@id/miner_spinner"
-        android:text="@string/miner_title"
+        android:labelFor="@id/registrars_list"
+        android:text="@string/registrars_title"
         android:textColor="@color/text_primary"
         android:textSize="@dimen/text_primary_size"/>
 
-    <Spinner
-        android:id="@+id/miner_spinner"
+    <ListView
+        android:id="@+id/registrars_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin" />
@@ -40,7 +40,7 @@ limitations under the License.
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/view_margin"
-        android:text="@string/miner_label"
+        android:text="@string/registrar_label"
         android:textColor="@color/text_secondary"
         android:textSize="@dimen/text_secondary_size"/>
 

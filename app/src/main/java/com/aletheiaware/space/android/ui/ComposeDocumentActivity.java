@@ -139,16 +139,16 @@ public class ComposeDocumentActivity extends MiningActivity {
                                 @Override
                                 public void run() {
                                     final MinerArrayAdapter minerArrayAdapter = new MinerArrayAdapter(ComposeDocumentActivity.this, cache, registrarNetwork);
-                                    new MiningDialog(ComposeDocumentActivity.this, alias, minerArrayAdapter, registrations) {
+                                    new MinerSelectionDialog(ComposeDocumentActivity.this, alias, minerArrayAdapter, registrations) {
                                         @Override
                                         @UiThread
-                                        public void onMine(Miner miner) {
+                                        public void onSelect(Miner miner) {
                                             mine(alias, keys, cache, registrarNetwork, miner, registrars, name, type, preview, in);
                                         }
 
                                         @Override
                                         @UiThread
-                                        public void onMiningCancelled() {
+                                        public void onCancel() {
                                             setEditable(true);
                                         }
                                     }.create();

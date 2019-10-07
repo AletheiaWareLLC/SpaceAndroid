@@ -92,6 +92,7 @@ limitations under the License.
     <string name="miner_label">Miners mine your data</string>
     <string name="miner_register">Register</string>
     <string name="miner_registration_id">Registration</string>
+    <string name="miner_selection_action">Select</string>
     <string name="miner_subscribe">Subscribe</string>
     <string name="miner_subscription_id">Subscription</string>
     <string name="miner_subscription_invoices">Invoices</string>
@@ -107,6 +108,7 @@ limitations under the License.
     <string name="registrar_subscription_invoices">Invoices</string>
     <string name="registrar_subscription_charges">Charges</string>
     <string name="registrar_subscription_usage_records">Usage Records</string>
+    <string name="registrars_selection_action">Select</string>
     <string name="registrars_title">Registrars</string>
     <string name="registrars_description">Select where your data is stored</string>
 
@@ -123,10 +125,11 @@ limitations under the License.
     <string name="title_dialog_add_document">Add Document</string>
     <string name="title_dialog_downloading_document">Downloading Document</string>
     <string name="title_dialog_loading_document">Loading Document</string>
-    <string name="title_dialog_mine">Mine</string>
+    <string name="title_dialog_miner_selection">Select Miner</string>
     <string name="title_dialog_mining">Mining</string>
     <string name="title_dialog_preview">Preview</string>
     <string name="title_dialog_refreshing">Refreshing</string>
+    <string name="title_dialog_registrars_selection">Select Registrars</string>
     <string name="title_dialog_share">Share</string>
     <string name="title_dialog_sharing_document">Sharing Document</string>
     <string name="title_dialog_subscription_mining">Mining Subscription</string>

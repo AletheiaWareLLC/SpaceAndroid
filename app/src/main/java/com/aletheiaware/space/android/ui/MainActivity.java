@@ -41,13 +41,16 @@ import com.aletheiaware.bc.android.ui.AccountActivity;
 import com.aletheiaware.bc.android.utils.BCAndroidUtils;
 import com.aletheiaware.bc.utils.ChannelUtils;
 import com.aletheiaware.common.android.utils.CommonAndroidUtils;
+import com.aletheiaware.finance.FinanceProto.Merchant;
 import com.aletheiaware.finance.FinanceProto.Registration;
 import com.aletheiaware.space.SpaceProto.Meta;
 import com.aletheiaware.space.SpaceProto.Registrar;
 import com.aletheiaware.space.android.MetaAdapter;
 import com.aletheiaware.space.android.R;
+import com.aletheiaware.space.android.RegistrarArrayAdapter;
 import com.aletheiaware.space.android.utils.PreviewUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
+import com.aletheiaware.space.android.utils.SpaceAndroidUtils.CustomerIdCallback;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
@@ -60,12 +63,15 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import androidx.annotation.UiThread;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.preference.PreferenceManager;
@@ -195,8 +201,6 @@ public class MainActivity extends AppCompatActivity {
                 refresh();
             }
             // TODO if this is first time the user has logged in, show welcome guide
-            //  Select Miner
-            //  Select Registrars
         } else {
             Intent intent = new Intent(this, AccessActivity.class);
             startActivityForResult(intent, SpaceAndroidUtils.ACCESS_ACTIVITY);
@@ -360,7 +364,42 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         Map<String, Registration> registrations = SpaceAndroidUtils.getRegistrations(alias, keys, cache, network);
                         Map<String, Registrar> registrars = SpaceAndroidUtils.getRegistrars(registrations.keySet(), cache, network);
-                        if (!registrars.isEmpty()) {
+                        if (registrars.isEmpty()) {
+                            final RegistrarArrayAdapter registrarArrayAdapter = new RegistrarArrayAdapter(MainActivity.this, cache, network);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    new RegistrarSelectionDialog(MainActivity.this, registrarArrayAdapter) {
+                                        @Override
+                                        @UiThread
+                                        public void onSelect(final Map<String, Registrar> registrars) {
+                                            Set<Merchant> merchants = new HashSet<>();
+                                            for (Registrar registrar : registrars.values()) {
+                                                merchants.add(registrar.getMerchant());
+                                            }
+                                            SpaceAndroidUtils.registerCustomer(MainActivity.this, merchants, alias, new CustomerIdCallback() {
+                                                @Override
+                                                public void onCustomerId(String merchant, String customerId) {
+                                                    Registrar registrar = registrars.get(merchant);
+                                                    if (registrar != null) {
+                                                        String subscriptionId = SpaceAndroidUtils.subscribeCustomer(MainActivity.this, registrar.getMerchant(), registrar.getService(), alias, customerId);
+                                                        if (subscriptionId != null && !subscriptionId.isEmpty()) {
+                                                            // TODO show success dialog with customerId and subscriptionId
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        }
+
+                                        @Override
+                                        @UiThread
+                                        public void onCancel() {
+                                            // TODO
+                                        }
+                                    }.create();
+                                }
+                            });
+                        } else {
                             network = SpaceAndroidUtils.getRegistrarNetwork(registrars);
                         }
                     } catch (IOException | IllegalBlockSizeException | InvalidAlgorithmParameterException | NoSuchAlgorithmException | BadPaddingException | NoSuchPaddingException | InvalidKeyException e) {

@@ -528,10 +528,10 @@ public class DetailActivity extends AppCompatActivity {
             @UiThread
             public void onShare(final Alias recipient) {
                 Log.d(SpaceUtils.TAG, "Sharing with " + recipient.getAlias());
-                new MiningDialog(DetailActivity.this, alias, minerArrayAdapter, registrations) {
+                new MinerSelectionDialog(DetailActivity.this, alias, minerArrayAdapter, registrations) {
                     @Override
                     @UiThread
-                    public void onMine(final Miner miner) {
+                    public void onSelect(final Miner miner) {
                         final String website = "https://" + miner.getMerchant().getDomain();
 
                         View progressView = View.inflate(DetailActivity.this, R.layout.dialog_progress, null);
@@ -721,7 +721,7 @@ public class DetailActivity extends AppCompatActivity {
 
                     @Override
                     @UiThread
-                    public void onMiningCancelled() {
+                    public void onCancel() {
                         // TODO
                     }
                 }.create();
@@ -747,10 +747,10 @@ public class DetailActivity extends AppCompatActivity {
             @UiThread
             public void onTag(final Tag tag) {
                 Log.d(SpaceUtils.TAG, "Tagging " + reference + " with " + tag);
-                new MiningDialog(DetailActivity.this, alias, minerArrayAdapter, registrations) {
+                new MinerSelectionDialog(DetailActivity.this, alias, minerArrayAdapter, registrations) {
                     @Override
                     @UiThread
-                    public void onMine(final Miner miner) {
+                    public void onSelect(final Miner miner) {
                         final String website = "https://" + miner.getMerchant().getDomain();
 
                         View progressView = View.inflate(DetailActivity.this, R.layout.dialog_progress, null);
@@ -830,7 +830,7 @@ public class DetailActivity extends AppCompatActivity {
 
                     @Override
                     @UiThread
-                    public void onMiningCancelled() {
+                    public void onCancel() {
                         // TODO
                     }
                 }.create();

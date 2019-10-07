@@ -204,15 +204,15 @@ public class SpaceAndroidUtils {
     }
 
     public interface CustomerIdCallback {
-        void onCustomerId(String customerId);
+        void onCustomerId(String merchant, String customerId);
     }
 
     @UiThread
-    public static void registerCustomer(final Activity activity, final Merchant merchant, final String alias, final @Nullable CustomerIdCallback callback) {
+    public static void registerCustomer(final Activity activity, final Set<Merchant> merchants, final String alias, final @Nullable CustomerIdCallback callback) {
         Log.d(SpaceUtils.TAG, "Register Customer");
-        new StripeDialog(activity, merchant.getPublishableKey(), "SPACE Registration", null) {
+        new StripeDialog(activity, merchants, "SPACE Registration", null) {
             @Override
-            public void onSubmit(final String email, final Token token) {
+            public void onSubmit(final Merchant merchant, final String email, final Token token) {
                 new Thread() {
                     @Override
                     public void run() {
@@ -223,7 +223,7 @@ public class SpaceAndroidUtils {
                             CommonAndroidUtils.showErrorDialog(activity, R.style.AlertDialogTheme, R.string.error_registering, e);
                         }
                         if (customerId != null && !customerId.isEmpty() && callback != null) {
-                            callback.onCustomerId(customerId);
+                            callback.onCustomerId(merchant.getAlias(), customerId);
                         }
                     }
                 }.start();

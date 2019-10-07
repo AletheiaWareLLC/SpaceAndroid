@@ -30,12 +30,13 @@ import com.aletheiaware.space.android.utils.SpaceAndroidUtils;
 import com.aletheiaware.space.android.utils.SpaceAndroidUtils.CustomerIdCallback;
 import com.aletheiaware.space.utils.SpaceUtils;
 
+import java.util.Collections;
 import java.util.Map;
 
 import androidx.annotation.UiThread;
 import androidx.appcompat.app.AlertDialog;
 
-public abstract class MiningDialog {
+public abstract class MinerSelectionDialog {
 
     private final Activity activity;
     private final String alias;
@@ -44,7 +45,7 @@ public abstract class MiningDialog {
     private AlertDialog dialog;
     private Spinner minerSpinner;
 
-    public MiningDialog(Activity activity, String alias, MinerArrayAdapter minerArrayAdapter, Map<String, Registration> registrations /*List<String> compressions, List<String> encryptions, List<String> signatures*/) {
+    public MinerSelectionDialog(Activity activity, String alias, MinerArrayAdapter minerArrayAdapter, Map<String, Registration> registrations) {
         this.activity = activity;
         this.alias = alias;
         this.minerArrayAdapter = minerArrayAdapter;
@@ -57,20 +58,16 @@ public abstract class MiningDialog {
     }
 
     public void create() {
-        View mineView = View.inflate(activity, R.layout.dialog_mine, null);
-        minerSpinner = mineView.findViewById(R.id.miner_spinner);
+        View view = View.inflate(activity, R.layout.dialog_miner_selection, null);
+        minerSpinner = view.findViewById(R.id.miner_spinner);
         minerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         minerSpinner.setAdapter(minerArrayAdapter);
         minerSpinner.setSelection(0);// TODO determine selection index from sharedpreferences
-        // TODO
-        //  - Add Compression Spinner
-        //  - Add Encryption Spinner
-        //  - Add Signature Spinner
         AlertDialog.Builder ab = new AlertDialog.Builder(activity, R.style.AlertDialogTheme);
-        ab.setTitle(R.string.title_dialog_mine);
+        ab.setTitle(R.string.title_dialog_miner_selection);
         ab.setIcon(R.drawable.bc_mine);
-        ab.setView(mineView);
-        ab.setPositiveButton(R.string.mine_action, new DialogInterface.OnClickListener() {
+        ab.setView(view);
+        ab.setPositiveButton(R.string.miner_selection_action, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 final String minerAlias = minerSpinner.getSelectedItem().toString();
@@ -80,14 +77,14 @@ public abstract class MiningDialog {
                     // FIXME show error
                 } else {
                     if (registrations.containsKey(minerAlias)) {
-                        onMine(miner /*, compression, encryption, signature*/);
+                        onSelect(miner);
                     } else {
-                        SpaceAndroidUtils.registerCustomer(activity, miner.getMerchant(), alias, new CustomerIdCallback() {
+                        SpaceAndroidUtils.registerCustomer(activity, Collections.singleton(miner.getMerchant()), alias, new CustomerIdCallback() {
                             @Override
-                            public void onCustomerId(String customerId) {
+                            public void onCustomerId(String merchant, String customerId) {
                                 String subscriptionId = SpaceAndroidUtils.subscribeCustomer(activity, miner.getMerchant(), miner.getService(), alias, customerId);
                                 if (subscriptionId != null && !subscriptionId.isEmpty()) {
-                                    onMine(miner);
+                                    onSelect(miner);
                                 }
                             }
                         });
@@ -98,21 +95,21 @@ public abstract class MiningDialog {
         ab.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                onMiningCancelled();
+                onCancel();
             }
         });
         ab.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
             public void onDismiss(DialogInterface dialog) {
-                onMiningCancelled();
+                onCancel();
             }
         });
         dialog = ab.show();
     }
 
     @UiThread
-    public abstract void onMine(Miner miner);
+    public abstract void onSelect(Miner miner);
 
     @UiThread
-    public abstract void onMiningCancelled();
+    public abstract void onCancel();
 }

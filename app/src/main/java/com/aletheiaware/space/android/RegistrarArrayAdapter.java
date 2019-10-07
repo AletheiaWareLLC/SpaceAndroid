@@ -26,7 +26,7 @@ import com.aletheiaware.bc.Channel.RecordCallback;
 import com.aletheiaware.bc.Network;
 import com.aletheiaware.bc.PoWChannel;
 import com.aletheiaware.bc.utils.ChannelUtils;
-import com.aletheiaware.space.SpaceProto.Miner;
+import com.aletheiaware.space.SpaceProto.Registrar;
 import com.aletheiaware.space.utils.SpaceUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -35,27 +35,27 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MinerArrayAdapter extends ArrayAdapter<String> {
+public class RegistrarArrayAdapter extends ArrayAdapter<String> {
 
-    private final Map<String, Miner> mm = new HashMap<>();
+    private final Map<String, Registrar> rm = new HashMap<>();
 
-    public MinerArrayAdapter(final Activity activity, final Cache cache, final Network network) {
-        super(activity, android.R.layout.simple_spinner_item);
+    public RegistrarArrayAdapter(final Activity activity, final Cache cache, final Network network) {
+        super(activity, android.R.layout.simple_list_item_multiple_choice);
         new Thread() {
             @Override
             public void run() {
                 try {
-                    PoWChannel miners = SpaceUtils.getMinerChannel();
-                    ChannelUtils.loadHead(miners, cache);
-                    ChannelUtils.read(miners.getName(), miners.getHead(), null, cache, network, null, null, null, new RecordCallback() {
+                    PoWChannel registrars = SpaceUtils.getRegistrarChannel();
+                    ChannelUtils.loadHead(registrars, cache);
+                    ChannelUtils.read(registrars.getName(), registrars.getHead(), null, cache, network, null, null, null, new RecordCallback() {
                         @Override
                         public boolean onRecord(ByteString blockHash, Block block, BlockEntry blockEntry, byte[] key, byte[] payload) {
                             try {
-                                Miner m = Miner.newBuilder().mergeFrom(payload).build();
-                                String a = m.getMerchant().getAlias();
-                                if (!mm.containsKey(a)) {
+                                Registrar r = Registrar.newBuilder().mergeFrom(payload).build();
+                                String a = r.getMerchant().getAlias();
+                                if (!rm.containsKey(a)) {
                                     add(a);// Add to adapter
-                                    mm.put(a, m);// Put in map
+                                    rm.put(a, r);// Put in map
                                 }
                             } catch (InvalidProtocolBufferException e) {
                                 /* Ignored */
@@ -79,7 +79,7 @@ public class MinerArrayAdapter extends ArrayAdapter<String> {
         }.start();
     }
 
-    public Miner get(String alias) {
-        return mm.get(alias);
+    public Registrar get(String alias) {
+        return rm.get(alias);
     }
 }

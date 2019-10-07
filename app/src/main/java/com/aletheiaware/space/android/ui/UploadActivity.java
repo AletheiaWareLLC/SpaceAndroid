@@ -120,16 +120,16 @@ public class UploadActivity extends MiningActivity {
                                 @Override
                                 public void run() {
                                     final MinerArrayAdapter minerArrayAdapter = new MinerArrayAdapter(UploadActivity.this, cache, registrarNetwork);
-                                    new MiningDialog(UploadActivity.this, alias, minerArrayAdapter, registrations) {
+                                    new MinerSelectionDialog(UploadActivity.this, alias, minerArrayAdapter, registrations) {
                                         @Override
                                         @UiThread
-                                        public void onMine(Miner miner) {
+                                        public void onSelect(Miner miner) {
                                             mine(alias, keys, cache, registrarNetwork, miner, registrars, name, type, preview, in);
                                         }
 
                                         @Override
                                         @UiThread
-                                        public void onMiningCancelled() {
+                                        public void onCancel() {
                                             setEditable(true);
                                         }
                                     }.create();

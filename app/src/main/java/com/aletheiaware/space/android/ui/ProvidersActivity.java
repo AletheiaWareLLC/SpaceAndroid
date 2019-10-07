@@ -52,6 +52,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -214,9 +215,9 @@ public class ProvidersActivity extends AppCompatActivity {
         new RegistrarSubscriptionDialog(ProvidersActivity.this, registrar, registration, subscription, invoiceAdapter, chargeAdapter, usageRecordAdapter) {
             @Override
             public void onRegister() {
-                SpaceAndroidUtils.registerCustomer(ProvidersActivity.this, registrar.getMerchant(), alias, new CustomerIdCallback() {
+                SpaceAndroidUtils.registerCustomer(ProvidersActivity.this, Collections.singleton(registrar.getMerchant()), alias, new CustomerIdCallback() {
                     @Override
-                    public void onCustomerId(String customerId) {
+                    public void onCustomerId(String merchant, String customerId) {
                         String storageSubscriptionId = SpaceAndroidUtils.subscribeCustomer(ProvidersActivity.this, registrar.getMerchant(), registrar.getService(), alias, customerId);
                         // TODO show success dialog with customerId and subscriptionId
                     }
@@ -308,9 +309,9 @@ public class ProvidersActivity extends AppCompatActivity {
         new MiningSubscriptionDialog(ProvidersActivity.this, miner, registration, subscription, invoiceAdapter, chargeAdapter, usageRecordAdapter) {
             @Override
             public void onRegister() {
-                SpaceAndroidUtils.registerCustomer(ProvidersActivity.this, miner.getMerchant(), alias, new CustomerIdCallback() {
+                SpaceAndroidUtils.registerCustomer(ProvidersActivity.this, Collections.singleton(miner.getMerchant()), alias, new CustomerIdCallback() {
                     @Override
-                    public void onCustomerId(String customerId) {
+                    public void onCustomerId(String merchant, String customerId) {
                         String miningSubscriptionId = SpaceAndroidUtils.subscribeCustomer(ProvidersActivity.this, miner.getMerchant(), miner.getService(), alias, customerId);
                         String storageSubscriptionId = null;
                         Registrar registrar = registrarMap.get(minerAlias);
