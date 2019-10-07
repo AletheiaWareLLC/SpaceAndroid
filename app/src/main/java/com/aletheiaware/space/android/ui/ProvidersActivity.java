@@ -101,6 +101,7 @@ public class ProvidersActivity extends AppCompatActivity {
             new Thread() {
                 @Override
                 public void run() {
+                    // TODO refresh information after onRegister or onSubscribe
                     network = SpaceAndroidUtils.getSpaceNetwork();
 
                     final Map<String, Registration> registrationMap = new HashMap<>();
@@ -224,10 +225,15 @@ public class ProvidersActivity extends AppCompatActivity {
 
             @Override
             public void onSubscribe() {
-                String storageSubscriptionId = SpaceAndroidUtils.subscribeCustomer(ProvidersActivity.this, registrar.getMerchant(), registrar.getService(), alias, registration.getCustomerId());
-                if (storageSubscriptionId != null && !storageSubscriptionId.isEmpty()) {
-                    // TODO show success dialog with subscriptionId
-                }
+                new Thread() {
+                    @Override
+                    public void run() {
+                        String storageSubscriptionId = SpaceAndroidUtils.subscribeCustomer(ProvidersActivity.this, registrar.getMerchant(), registrar.getService(), alias, registration.getCustomerId());
+                        if (storageSubscriptionId != null && !storageSubscriptionId.isEmpty()) {
+                            // TODO show success dialog with subscriptionId
+                        }
+                    }
+                }.start();
             }
         }.create();
         final String[] productId = {null};
@@ -318,15 +324,20 @@ public class ProvidersActivity extends AppCompatActivity {
 
             @Override
             public void onSubscribe() {
-                String miningSubscriptionId = SpaceAndroidUtils.subscribeCustomer(ProvidersActivity.this, miner.getMerchant(), miner.getService(), alias, registration.getCustomerId());
-                String storageSubscriptionId = null;
-                Registrar registrar = registrarMap.get(minerAlias);
-                if (registrar != null) {
-                    storageSubscriptionId = SpaceAndroidUtils.subscribeCustomer(ProvidersActivity.this, registrar.getMerchant(), registrar.getService(), alias, registration.getCustomerId());
-                }
-                if (miningSubscriptionId != null && !miningSubscriptionId.isEmpty()) {
-                    // TODO show success dialog with subscriptionIds
-                }
+                new Thread() {
+                    @Override
+                    public void run() {
+                        String miningSubscriptionId = SpaceAndroidUtils.subscribeCustomer(ProvidersActivity.this, miner.getMerchant(), miner.getService(), alias, registration.getCustomerId());
+                        String storageSubscriptionId = null;
+                        Registrar registrar = registrarMap.get(minerAlias);
+                        if (registrar != null) {
+                            storageSubscriptionId = SpaceAndroidUtils.subscribeCustomer(ProvidersActivity.this, registrar.getMerchant(), registrar.getService(), alias, registration.getCustomerId());
+                        }
+                        if (miningSubscriptionId != null && !miningSubscriptionId.isEmpty()) {
+                            // TODO show success dialog with subscriptionIds
+                        }
+                    }
+                }.start();
             }
         }.create();
         final String[] productId = {null};
