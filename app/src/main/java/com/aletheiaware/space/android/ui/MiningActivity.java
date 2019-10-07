@@ -77,6 +77,7 @@ public abstract class MiningActivity extends AppCompatActivity {
         progressBar.setIndeterminate(true);
         final Dialog dialog = new AlertDialog.Builder(MiningActivity.this, R.style.AlertDialogTheme)
                 .setTitle(R.string.title_dialog_mining)
+                .setIcon(R.drawable.bc_mine)
                 .setCancelable(false)
                 .setView(progressView)
                 .show();
